@@ -1,33 +1,42 @@
 <?php
 require_once 'config.php';
 $success = false;
+$error_message = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
-    // ریست جدول inventory
-    $conn->query("TRUNCATE TABLE `inventory`");
+    try {
+        // حذف رکوردهای جدول inventory به جای truncate برای جلوگیری از خطای کلید خارجی
+        $conn->query("DELETE FROM `inventory`");
 
-    // خواندن فایل CSV
-    $file = $_FILES['csv_file']['tmp_name'];
-    $rows = array_map('str_getcsv', file($file));
-    array_shift($rows); // حذف هدر
+        // خواندن فایل CSV
+        $file = $_FILES['csv_file']['tmp_name'];
+        $rows = array_map('str_getcsv', file($file));
+        array_shift($rows); // حذف هدر
 
-    $stmt = $conn->prepare("INSERT INTO `inventory` (`row_number`, `inventory_code`, `item_name`, `unit`, `min_inventory`, `supplier`, `current_inventory`, `required`, `notes`) 
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("isssisdds", $row_number, $inventory_code, $item_name, $unit, $min_inventory, $supplier, $current_inventory, $required, $notes);
+        $stmt = $conn->prepare("INSERT INTO `inventory` (`row_number`, `inventory_code`, `item_name`, `unit`, `min_inventory`, `supplier`, `current_inventory`, `required`, `notes`) 
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("isssisdds", $row_number, $inventory_code, $item_name, $unit, $min_inventory, $supplier, $current_inventory, $required, $notes);
 
-    foreach ($rows as $row) {
-        $row_number = intval($row[0]);
-        $inventory_code = $row[1];
-        $item_name = $row[2];
-        $unit = $row[3];
-        $min_inventory = $row[4] ? intval($row[4]) : null;
-        $supplier = $row[5];
-        $current_inventory = $row[7] ? floatval($row[7]) : null;
-        $required = $row[8] ? floatval($row[8]) : null;
-        $notes = $row[6] === 'توقف استفاده' ? 'توقف استفاده' : '';
-        $stmt->execute();
+        foreach ($rows as $row) {
+            // اعتبارسنجی داده‌ها
+            if (count($row) < 9 || empty($row[1]) || empty($row[2])) {
+                continue; // رد ردیف‌های ناقص یا بدون کد/نام کالا
+            }
+            $row_number = intval($row[0]);
+            $inventory_code = $row[1];
+            $item_name = $row[2];
+            $unit = $row[3];
+            $min_inventory = $row[4] ? intval($row[4]) : null;
+            $supplier = $row[5];
+            $current_inventory = $row[7] ? floatval($row[7]) : null;
+            $required = $row[8] ? floatval($row[8]) : null;
+            $notes = $row[6] === 'توقف استفاده' ? 'توقف استفاده' : '';
+            $stmt->execute();
+        }
+        $stmt->close();
+        $success = true;
+    } catch (Exception $e) {
+        $error_message = $e->getMessage();
     }
-    $stmt->close();
-    $success = true;
 }
 ?>
 
@@ -46,6 +55,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
     <h2 class="mb-4">📥 وارد کردن لیست انبار</h2>
     <?php if ($success): ?>
         <div class="alert alert-success">لیست انبار با موفقیت وارد شد!</div>
+    <?php elseif (!empty($error_message)): ?>
+        <div class="alert alert-danger">خطا در وارد کردن فایل: <?= htmlspecialchars($error_message) ?></div>
     <?php endif; ?>
     <form action="" method="POST" enctype="multipart/form-data" class="row g-3">
         <div class="col-md-6">

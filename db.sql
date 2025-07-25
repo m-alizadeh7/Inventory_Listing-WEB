@@ -26,3 +26,19 @@ CREATE TABLE IF NOT EXISTS `inventory_records` (
     `completed_at` DATETIME,
     FOREIGN KEY (`inventory_id`) REFERENCES `inventory`(`id`) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Creating table for inventory sessions
+CREATE TABLE IF NOT EXISTS `inventory_sessions` (
+    `session_id` VARCHAR(50) PRIMARY KEY,
+    `status` ENUM('draft', 'completed') DEFAULT 'draft',
+    `started_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `completed_by` VARCHAR(255),
+    `completed_at` DATETIME,
+    `notes` TEXT
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Add foreign key to inventory_records
+ALTER TABLE `inventory_records` 
+ADD FOREIGN KEY (`inventory_session`) 
+REFERENCES `inventory_sessions`(`session_id`) 
+ON DELETE CASCADE;

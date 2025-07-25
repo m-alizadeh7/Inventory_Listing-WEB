@@ -2,123 +2,233 @@
 require_once 'config.php';
 session_start();
 
-// ایجاد شناسه یکتا برای جلسه انبارداری
+// ایجاد یا بازیابی جلسه انبارداری
 if (!isset($_SESSION['inventory_session'])) {
     $_SESSION['inventory_session'] = uniqid('inv_');
+    // ایجاد جلسه جدید در پایگاه داده
+    $stmt = $conn->prepare("INSERT INTO inventory_sessions (session_id) VALUES (?)");
+    $stmt->bind_param("s", $_SESSION['inventory_session']);
+    $stmt->execute();
+    $stmt->close();
 }
 
-// خواندن اقلام انبار
-$result = $conn->query("SELECT * FROM inventory ORDER BY `row_number`");
-$items = [];
-while ($row = $result->fetch_assoc()) {
-    $items[] = $row;
-}
+// خواندن اقلام انبار و مقادیر ثبت شده قبلی
+$sql = "SELECT i.*, r.current_inventory as recorded_inventory, r.notes as recorded_notes 
+        FROM inventory i 
+        LEFT JOIN inventory_records r ON i.id = r.inventory_id 
+        AND r.inventory_session = ?
+        ORDER BY i.row_number";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("s", $_SESSION['inventory_session']);
+$stmt->execute();
+$result = $stmt->get_result();
+$items = $result->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
+
+// بررسی وضعیت جلسه
+$stmt = $conn->prepare("SELECT status FROM inventory_sessions WHERE session_id = ?");
+$stmt->bind_param("s", $_SESSION['inventory_session']);
+$stmt->execute();
+$session_status = $stmt->get_result()->fetch_assoc()['status'];
+$stmt->close();
 ?>
 
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>انبارداری جدید</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>انبارگردانی جدید</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <style>
         body { background: #f7f7f7; padding-top: 2rem; }
-        .table-responsive { max-height: 500px; }
+        .sticky-header { position: sticky; top: 0; background: #f8f9fa; z-index: 1000; }
+        .table-responsive { max-height: calc(100vh - 250px); }
+        @media (max-width: 768px) {
+            .container { padding: 0; }
+            .table-responsive { margin: 0; }
+            .mobile-full { width: 100% !important; }
+        }
+        .modified-row { background-color: #fff3cd; }
+        .saved-row { background-color: #d1e7dd; }
     </style>
 </head>
 <body>
 <div class="container">
-    <h2 class="mb-4">📦 انبارداری جدید (جلسه: <?= $_SESSION['inventory_session'] ?>)</h2>
-    <form action="save_inventory.php" method="POST" class="row g-3">
-        <div class="col-md-4">
-            <label class="form-label">نام کالا</label>
-            <select name="item_id" class="form-control" required>
-                <option value="">انتخاب کالا</option>
-                <?php foreach ($items as $item): ?>
-                    <option value="<?= $item['id'] ?>"><?= htmlspecialchars($item['item_name']) ?> (کد: <?= $item['inventory_code'] ?>)</option>
-                <?php endforeach; ?>
-            </select>
+    <div class="sticky-header pb-3">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>📦 انبارگردانی (جلسه: <?= $_SESSION['inventory_session'] ?>)</h2>
+            <span class="badge bg-<?= $session_status == 'draft' ? 'warning' : 'success' ?>">
+                <?= $session_status == 'draft' ? 'در حال انجام' : 'تکمیل شده' ?>
+            </span>
         </div>
-        <div class="col-md-3">
-            <label class="form-label">موجودی فعلی</label>
-            <input type="number" name="current_inventory" class="form-control" step="0.01" required>
-        </div>
-        <div class="col-md-5">
-            <label class="form-label">توضیحات</label>
-            <textarea name="notes" class="form-control"></textarea>
-        </div>
-        <div class="col-12">
-            <button type="submit" class="btn btn-primary">ذخیره</button>
-        </div>
-    </form>
 
-    <hr class="my-4">
-    <h4>📋 اقلام ثبت‌شده در این انبارداری</h4>
-    <input type="text" id="searchInput" class="form-control mb-3" placeholder="جستجو در نام کالا...">
-
-    <div class="table-responsive">
-        <table class="table table-bordered table-hover">
-            <thead>
-                <tr>
-                    <th>ردیف</th>
-                    <th>کد انبار</th>
-                    <th>نام کالا</th>
-                    <th>واحد</th>
-                    <th>موجودی فعلی</th>
-                    <th>مورد نیاز</th>
-                    <th>توضیحات</th>
-                    <th>زمان ثبت</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody">
-                <?php
-                $result = $conn->query("SELECT i.`row_number`, i.`inventory_code`, i.`item_name`, i.`unit`, r.`current_inventory`, r.`required`, r.`notes`, r.`updated_at`
-                                        FROM `inventory_records` r
-                                        JOIN `inventory` i ON r.`inventory_id` = i.`id`
-                                        WHERE r.`inventory_session` = '" . $conn->real_escape_string($_SESSION['inventory_session']) . "'
-                                        ORDER BY i.`row_number`");
-                while ($row = $result->fetch_assoc()): ?>
-                    <tr>
-                        <td><?= htmlspecialchars($row['row_number']) ?></td>
-                        <td><?= htmlspecialchars($row['inventory_code']) ?></td>
-                        <td><?= htmlspecialchars($row['item_name']) ?></td>
-                        <td><?= htmlspecialchars($row['unit']) ?: '-' ?></td>
-                        <td><?= htmlspecialchars($row['current_inventory']) ?: '-' ?></td>
-                        <td><?= htmlspecialchars($row['required']) ?: '-' ?></td>
-                        <td><?= htmlspecialchars($row['notes']) ?: '-' ?></td>
-                        <td><?= htmlspecialchars($row['updated_at']) ?: '-' ?></td>
-                    </tr>
-                <?php endwhile; ?>
-            </tbody>
-        </table>
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <input type="text" id="searchInput" class="form-control" placeholder="جستجو در نام کالا...">
+            </div>
+            <div class="col-md-8 text-end">
+                <button type="button" class="btn btn-primary" onclick="saveAll(false)">ذخیره موقت</button>
+                <button type="button" class="btn btn-success" onclick="showFinalizeModal()">پایان انبارگردانی</button>
+            </div>
+        </div>
     </div>
 
-    <hr class="my-4">
-    <h4>🏁 نهایی کردن انبارداری</h4>
-    <form action="finalize_inventory.php" method="POST" class="row g-3">
-        <div class="col-md-6">
-            <label class="form-label">نام مسئول</label>
-            <input type="text" name="completed_by" class="form-control" required>
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">تاریخ</label>
-            <input type="date" name="completed_at" class="form-control" value="<?= date('Y-m-d') ?>" required>
-        </div>
-        <div class="col-12">
-            <button type="submit" class="btn btn-success">پایان انبارداری و ارسال گزارش</button>
+    <form id="inventoryForm" class="mb-4">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>ردیف</th>
+                        <th>کد انبار</th>
+                        <th>نام کالا</th>
+                        <th>واحد</th>
+                        <th>موجودی فعلی</th>
+                        <th>توضیحات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($items as $item): ?>
+                    <tr data-item-id="<?= $item['id'] ?>" class="<?= $item['recorded_inventory'] ? 'saved-row' : '' ?>">
+                        <td><?= htmlspecialchars($item['row_number']) ?></td>
+                        <td><?= htmlspecialchars($item['inventory_code']) ?></td>
+                        <td><?= htmlspecialchars($item['item_name']) ?></td>
+                        <td><?= htmlspecialchars($item['unit']) ?></td>
+                        <td>
+                            <input type="number" class="form-control inventory-input" 
+                                   value="<?= htmlspecialchars($item['recorded_inventory'] ?? '') ?>" 
+                                   step="0.01" onchange="markModified(this)">
+                        </td>
+                        <td>
+                            <input type="text" class="form-control notes-input" 
+                                   value="<?= htmlspecialchars($item['recorded_notes'] ?? '') ?>"
+                                   onchange="markModified(this)">
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
     </form>
+
+    <!-- مودال نهایی کردن -->
+    <div class="modal fade" id="finalizeModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">نهایی کردن انبارگردانی</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">نام مسئول</label>
+                        <input type="text" id="completedBy" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">تاریخ</label>
+                        <input type="date" id="completedAt" class="form-control" value="<?= date('Y-m-d') ?>" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                    <button type="button" class="btn btn-success" onclick="finalizeInventory()">تایید و پایان</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    const searchInput = document.getElementById('searchInput');
-    const tableBody = document.getElementById('tableBody');
-    searchInput.addEventListener('input', () => {
-        const value = searchInput.value.toLowerCase();
-        [...tableBody.rows].forEach(row => {
-            row.style.display = row.cells[2].textContent.toLowerCase().includes(value) ? '' : 'none';
-        });
+function markModified(input) {
+    const row = input.closest('tr');
+    row.classList.remove('saved-row');
+    row.classList.add('modified-row');
+}
+
+function saveAll(isFinalize = false) {
+    const rows = document.querySelectorAll('tr[data-item-id]');
+    const data = [];
+    
+    rows.forEach(row => {
+        if (row.classList.contains('modified-row') || isFinalize) {
+            data.push({
+                item_id: row.dataset.itemId,
+                current_inventory: row.querySelector('.inventory-input').value,
+                notes: row.querySelector('.notes-input').value
+            });
+        }
     });
+
+    if (data.length === 0 && !isFinalize) {
+        alert('هیچ تغییری برای ذخیره وجود ندارد.');
+        return;
+    }
+
+    fetch('save_inventory.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: data, finalize: isFinalize })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            if (!isFinalize) {
+                document.querySelectorAll('.modified-row').forEach(row => {
+                    row.classList.remove('modified-row');
+                    row.classList.add('saved-row');
+                });
+                alert('اطلاعات با موفقیت ذخیره شد.');
+            }
+        } else {
+            alert('خطا در ذخیره اطلاعات: ' + result.message);
+        }
+    })
+    .catch(error => alert('خطا در ارتباط با سرور'));
+}
+
+function showFinalizeModal() {
+    const modal = new bootstrap.Modal(document.getElementById('finalizeModal'));
+    modal.show();
+}
+
+function finalizeInventory() {
+    const completedBy = document.getElementById('completedBy').value;
+    const completedAt = document.getElementById('completedAt').value;
+    
+    if (!completedBy || !completedAt) {
+        alert('لطفاً تمام فیلدها را پر کنید.');
+        return;
+    }
+
+    fetch('finalize_inventory.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            completed_by: completedBy,
+            completed_at: completedAt
+        })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            alert('انبارگردانی با موفقیت نهایی شد.');
+            window.location.href = 'index.php';
+        } else {
+            alert('خطا در نهایی کردن انبارگردانی: ' + result.message);
+        }
+    })
+    .catch(error => alert('خطا در ارتباط با سرور'));
+}
+
+// جستجو در جدول
+document.getElementById('searchInput').addEventListener('input', function(e) {
+    const searchText = e.target.value.toLowerCase();
+    document.querySelectorAll('tbody tr').forEach(row => {
+        const itemName = row.children[2].textContent.toLowerCase();
+        row.style.display = itemName.includes(searchText) ? '' : 'none';
+    });
+});
 </script>
 </body>
 </html>

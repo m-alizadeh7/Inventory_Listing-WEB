@@ -1,6 +1,12 @@
 <?php
-require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/../app/Core/Autoloader.php';
+// مسیر اصلی پروژه
+define('BASE_PATH', dirname(__DIR__));
+
+// لود کردن تنظیمات
+require_once BASE_PATH . '/config.php';
+
+// لود کردن Autoloader
+require_once BASE_PATH . '/app/Core/Autoloader.php';
 
 use App\Core\Router;
 use App\Controllers\InventoryController;

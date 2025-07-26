@@ -1,6 +1,10 @@
 <?php
 namespace App\Core;
 
+/**
+ * Router Class
+ * مسئول مسیریابی درخواست‌ها
+ */
 class Router {
     private $routes = [];
 

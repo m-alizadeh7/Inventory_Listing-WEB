@@ -3,38 +3,32 @@
 ## پیش‌نیازها
 - PHP 7.4 یا بالاتر
 - MySQL 5.7 یا بالاتر
-- Composer
 - وب‌سرور Apache یا Nginx
 
 ## مراحل نصب
 
-### 1. آماده‌سازی پروژه
-```bash
-# کلون کردن پروژه
-git clone https://github.com/m-alizadeh7/Inventory_Listing-WEB.git
-cd Inventory_Listing-WEB
+### 1. آپلود فایل‌ها
+1. فایل inventory-system.zip را دانلود کنید
+2. محتویات فایل را در هاست خود آپلود کنید
+3. به فایل‌ها و پوشه‌های زیر دسترسی نوشتن بدهید:
+   - پوشه اصلی (برای ایجاد config.php)
+   - پوشه public/uploads (برای آپلود فایل‌ها)
 
-# سوییچ به برنچ MVC
-git checkout feature/mvc-structure
+### 2. شروع نصب
+1. در مرورگر به آدرس `http://your-domain.com/install.php` بروید
+2. اطلاعات پایگاه داده را وارد کنید:
+   - نام هاست (معمولاً localhost)
+   - نام کاربری دیتابیس
+   - رمز عبور دیتابیس
+   - نام دیتابیس
+3. روی "ادامه نصب" کلیک کنید
+4. صبر کنید تا جداول ایجاد شوند
+5. در صورت موفقیت، پیام تایید نمایش داده می‌شود
 
-# نصب وابستگی‌ها
-composer install
-```
-
-### 2. تنظیمات پایگاه داده
-1. فایل `config.example.php` را به `config.php` کپی کنید
-2. اطلاعات دیتابیس را در فایل `config.php` وارد کنید:
-```php
-define('DB_HOST', 'localhost');
-define('DB_USER', 'your_username');
-define('DB_PASS', 'your_password');
-define('DB_NAME', 'your_database');
-```
-
-### 3. نصب دیتابیس
-1. به آدرس `http://your-domain.com/setup.php` بروید
-2. صفحه نصب، جداول مورد نیاز را ایجاد می‌کند
-3. در صورت موفقیت، پیام تایید نمایش داده می‌شود
+### 3. تنظیمات امنیتی
+بعد از نصب موفق:
+1. فایل install.php را حذف کنید
+2. اطمینان حاصل کنید که config.php قابل خواندن نیست
 
 ### 4. تنظیم وب‌سرور
 مسیر root وب‌سرور را به پوشه `public` تنظیم کنید.

@@ -1,9 +1,14 @@
 <?php
 require_once 'config.php';
-$result = $conn->query("SELECT DISTINCT `inventory_session`, `completed_by`, `completed_at` 
-                        FROM `inventory_records` 
-                        WHERE `completed_at` IS NOT NULL 
-                        ORDER BY `completed_at` DESC");
+$result = $conn->query("SELECT 
+                        `session_id`, 
+                        `status`,
+                        `started_at`,
+                        `completed_by`, 
+                        `completed_at`,
+                        `notes`
+                        FROM `inventory_sessions` 
+                        ORDER BY `started_at` DESC");
 $sessions = [];
 while ($row = $result->fetch_assoc()) {
     $sessions[] = $row;
@@ -27,19 +32,25 @@ while ($row = $result->fetch_assoc()) {
         <thead>
             <tr>
                 <th>شناسه جلسه</th>
+                <th>وضعیت</th>
+                <th>تاریخ شروع</th>
                 <th>مسئول</th>
                 <th>تاریخ تکمیل</th>
+                <th>توضیحات</th>
                 <th>عملیات</th>
             </tr>
         </thead>
         <tbody>
             <?php foreach ($sessions as $session): ?>
                 <tr>
-                    <td><?= htmlspecialchars($session['inventory_session']) ?></td>
-                    <td><?= htmlspecialchars($session['completed_by']) ?></td>
-                    <td><?= htmlspecialchars($session['completed_at']) ?></td>
+                    <td><?= htmlspecialchars($session['session_id']) ?></td>
+                    <td><?= $session['status'] == 'completed' ? 'تکمیل شده' : 'در حال انجام' ?></td>
+                    <td><?= htmlspecialchars($session['started_at']) ?></td>
+                    <td><?= htmlspecialchars($session['completed_by'] ?? '-') ?></td>
+                    <td><?= htmlspecialchars($session['completed_at'] ?? '-') ?></td>
+                    <td><?= htmlspecialchars($session['notes'] ?? '-') ?></td>
                     <td>
-                        <a href="export_inventory.php?session=<?= urlencode($session['inventory_session']) ?>" class="btn btn-success btn-sm">دانلود CSV</a>
+                        <a href="export_inventory.php?session=<?= urlencode($session['session_id']) ?>" class="btn btn-success btn-sm">دانلود CSV</a>
                     </td>
                 </tr>
             <?php endforeach; ?>

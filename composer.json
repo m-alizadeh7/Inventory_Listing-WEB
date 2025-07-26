@@ -1,4 +1,7 @@
 {
+  "require": {
+    "morilog/jalali": "3.*"
+  },
   "require-dev": {
     "phpunit/phpunit": "^9.5"
   }

@@ -1,19 +1,34 @@
 <?php
-// Database configuration
-define('DB_HOST', 'localhost');
-define('DB_USER', 'h312810_anbarus');
-define('DB_PASS', '-XZ!)MwBW.ae');
-define('DB_NAME', 'h312810_anbar');
+// تنظیمات دیتابیس
+define('DB_HOST', 'localhost');     // آدرس سرور دیتابیس
+define('DB_USER', 'h312810_anbarus');   // نام کاربری دیتابیس
+define('DB_PASS', '-XZ!)MwBW.ae');   // رمز عبور دیتابیس
+define('DB_NAME', 'h312810_anbar');   // نام دیتابیس
 
-// Email configuration
-define('EMAIL_TO', 'm.alizadeh7@live.com'); // ایمیل مقصد برای گزارش‌ها
-define('EMAIL_FROM', 'no-reply@mecaco-service.com'); // ایمیل فرستنده
-define('EMAIL_SUBJECT', 'گزارش انبارداری');
+// تنظیمات عمومی
+define('SITE_TITLE', 'سیستم انبارداری');
+define('UPLOAD_DIR', 'uploads/');
+ini_set('display_errors', 0);
 
-// Connect to database
-$conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+// اتصال به دیتابیس
+try {
+    $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+    $conn->set_charset("utf8mb4");
+} catch (Exception $e) {
+    die("خطا در اتصال به دیتابیس");
 }
-$conn->set_charset("utf8mb4");
+
+// توابع کمکی
+function redirect($url) {
+    header("Location: $url");
+    exit();
+}
+
+function show_message($message, $type = 'success') {
+    $_SESSION['message'] = $message;
+    $_SESSION['message_type'] = $type;
+}
+
+// شروع جلسه
+session_start();
 ?>

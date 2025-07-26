@@ -59,6 +59,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if ($conn->multi_query($sql)) {
                         $success = 'نصب با موفقیت انجام شد!';
                         session_destroy();
+                        // انتظار برای اجرای همه کوئری‌ها
+                        while ($conn->more_results() && $conn->next_result());
+                        // ریدایرکت به صفحه اصلی
+                        header('Location: index.php');
+                        exit();
                     } else {
                         $error = 'خطا در ایجاد جداول: ' . $conn->error;
                     }

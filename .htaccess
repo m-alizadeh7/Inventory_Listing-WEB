@@ -1,0 +1,15 @@
+# استفاده از RewriteEngine
+RewriteEngine On
+
+# اگر درخواست برای فایل یا پوشه واقعی نیست
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# هدایت همه درخواست‌ها به public/index.php
+RewriteRule ^(.*)$ public/index.php [QSA,L]
+
+# محافظت از فایل‌های حساس
+<FilesMatch "^(config\.php|db\.sql)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>

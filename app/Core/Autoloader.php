@@ -2,8 +2,7 @@
 
 // اتولودر با قابلیت نمایش خطاها
 spl_autoload_register(function ($class) {
-    // تبدیل App\Core\Database به app/Core/Database.php
-    $base_dir = dirname(dirname(__DIR__));
+    global $BASE_PATH;
     
     // حذف App\ از ابتدای نام کلاس
     $prefix = 'App\\';
@@ -14,7 +13,7 @@ spl_autoload_register(function ($class) {
     }
     
     $relative_class = substr($class, $len);
-    $file = $base_dir . '/app/' . str_replace('\\', '/', $relative_class) . '.php';
+    $file = BASE_PATH . '/app/' . str_replace('\\', '/', $relative_class) . '.php';
     
     echo "<!-- Looking for file: $file -->\n";
     

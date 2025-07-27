@@ -27,10 +27,95 @@ class Inventory extends Model {
     }
 
     public function importFromCSV($file) {
-        // پیاده‌سازی وارد کردن از CSV
+        if (!file_exists($file)) {
+            throw new \Exception('File not found');
+        }
+
+        $handle = fopen($file, "r");
+        if (!$handle) {
+            throw new \Exception('Could not open file');
+        }
+
+        // Read header
+        $header = fgetcsv($handle);
+        if (!$header) {
+            fclose($handle);
+            throw new \Exception('Empty CSV file');
+        }
+
+        $requiredColumns = ['row_number', 'name', 'quantity', 'unit'];
+        foreach ($requiredColumns as $column) {
+            if (!in_array($column, $header)) {
+                fclose($handle);
+                throw new \Exception("Missing required column: {$column}");
+            }
+        }
+
+        $this->db->query("START TRANSACTION");
+        try {
+            while (($data = fgetcsv($handle)) !== false) {
+                $row = array_combine($header, $data);
+                
+                $rowNumber = $this->db->escapeString($row['row_number']);
+                $name = $this->db->escapeString($row['name']);
+                $quantity = (int)$row['quantity'];
+                $unit = $this->db->escapeString($row['unit']);
+                
+                $query = "INSERT INTO {$this->table} (row_number, name, quantity, unit) 
+                         VALUES ('{$rowNumber}', '{$name}', {$quantity}, '{$unit}')
+                         ON DUPLICATE KEY UPDATE 
+                         name = VALUES(name),
+                         quantity = VALUES(quantity),
+                         unit = VALUES(unit)";
+                
+                $this->db->query($query);
+            }
+            $this->db->query("COMMIT");
+        } catch (\Exception $e) {
+            $this->db->query("ROLLBACK");
+            fclose($handle);
+            throw $e;
+        }
+        
+        fclose($handle);
+        return true;
     }
 
     public function exportToCSV($sessionId) {
-        // پیاده‌سازی خروجی CSV
+        $data = $this->getInventoryWithSession($sessionId);
+        if (empty($data)) {
+            throw new \Exception('No data found for this session');
+        }
+
+        $filename = 'inventory_export_' . date('Y-m-d_His') . '.csv';
+        $filepath = sys_get_temp_dir() . '/' . $filename;
+        
+        $handle = fopen($filepath, 'w');
+        if (!$handle) {
+            throw new \Exception('Could not create export file');
+        }
+
+        // Write headers
+        $headers = [
+            'row_number',
+            'name',
+            'quantity',
+            'unit',
+            'counted_inventory',
+            'needed_quantity',
+            'session_notes',
+            'updated_at',
+            'completed_by'
+        ];
+        fputcsv($handle, $headers);
+
+        // Write data
+        foreach ($data as $row) {
+            $exportRow = array_intersect_key($row, array_flip($headers));
+            fputcsv($handle, $exportRow);
+        }
+
+        fclose($handle);
+        return $filepath;
     }
 }

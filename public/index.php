@@ -1,9 +1,12 @@
 <?php
 // مسیر اصلی پروژه
-define('BASE_PATH', dirname(__DIR__));
+define('BASE_PATH', realpath(dirname(__DIR__)));
+
+// Debug: نمایش مسیر پروژه
+error_log("Base Path: " . BASE_PATH);
 
 // لود کردن تنظیمات
-require_once BASE_PATH . '/config.php';
+require_once BASE_PATH . DIRECTORY_SEPARATOR . 'config.php';
 
 // لود کردن Autoloader
 require_once BASE_PATH . '/app/Core/Autoloader.php';

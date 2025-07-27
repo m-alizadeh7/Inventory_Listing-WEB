@@ -1,9 +1,18 @@
 <?php
+// نمایش خطاها
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 // مسیر اصلی پروژه
 define('BASE_PATH', realpath(dirname(__DIR__)));
 
-// Debug: نمایش مسیر پروژه
-error_log("Base Path: " . BASE_PATH);
+// Debug: چاپ مسیر فعلی
+var_dump([
+    'BASE_PATH' => BASE_PATH,
+    'Current Script' => __FILE__,
+    'Document Root' => $_SERVER['DOCUMENT_ROOT']
+]);
 
 // لود کردن تنظیمات
 require_once BASE_PATH . DIRECTORY_SEPARATOR . 'config.php';

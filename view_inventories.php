@@ -16,7 +16,7 @@ $result = $conn->query("SELECT
     COUNT(r.id) as total_items,
     SUM(CASE WHEN r.current_inventory IS NOT NULL THEN 1 ELSE 0 END) as counted_items
 FROM inventory_sessions s
-LEFT JOIN inventory_records r ON s.session_id = r.session_id
+LEFT JOIN inventory_records r ON s.session_id = r.inventory_session
 GROUP BY s.session_id, s.status, s.started_at, s.completed_by, s.completed_at, s.notes
 ORDER BY s.started_at DESC");
     

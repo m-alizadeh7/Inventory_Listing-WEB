@@ -73,6 +73,45 @@ if (defined('SYSTEM_VERSION')) {
             </div>
         </div>
     </div>
+    <h2 class="mb-4">🏭 مدیریت تولید</h2>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">ثبت سفارش تولید</h5>
+                    <p class="card-text">ایجاد سفارش جدید برای تولید محصول.</p>
+                    <a href="new_production_order.php" class="btn btn-primary">ثبت سفارش</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">لیست سفارشات تولید</h5>
+                    <p class="card-text">مشاهده و مدیریت سفارشات تولید.</p>
+                    <a href="production_orders.php" class="btn btn-primary">مشاهده</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">تامین‌کنندگان</h5>
+                    <p class="card-text">مدیریت لیست تامین‌کنندگان و قطعات.</p>
+                    <a href="suppliers.php" class="btn btn-primary">مدیریت</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">دستگاه‌ها و BOM</h5>
+                    <p class="card-text">مدیریت لیست دستگاه‌ها و قطعات آن‌ها.</p>
+                    <a href="devices.php" class="btn btn-primary">مدیریت</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

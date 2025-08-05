@@ -1,4 +1,23 @@
-<?php require_once 'config.php'; ?>
+<?php
+// بررسی نصب سیستم
+if (!file_exists('config.php')) {
+    header('Location: setup.php');
+    exit;
+}
+
+require_once 'config.php';
+
+// بررسی نیاز به آپدیت
+if (defined('SYSTEM_VERSION')) {
+    $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'system_version'");
+    if ($result && $row = $result->fetch_assoc()) {
+        if (version_compare($row['setting_value'], SYSTEM_VERSION, '<')) {
+            header('Location: setup.php');
+            exit;
+        }
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>

@@ -40,22 +40,7 @@ if (defined('SYSTEM_VERSION')) {
 <div class="container">
     <nav class="main-menu navbar navbar-expand-lg navbar-light bg-light rounded shadow-sm mb-4">
         <div class="container-fluid">
-            <a class="navbar-brand fw-bold" href="#">📦 سیستم انبارداری</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="منو">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="mainNavbar">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item"><a class="nav-link" href="index.php">خانه</a></li>
-                    <li class="nav-item"><a class="nav-link" href="new_inventory.php">انبارداری جدید</a></li>
-                    <li class="nav-item"><a class="nav-link" href="import_inventory.php">ورود لیست انبار (CSV)</a></li>
-                    <li class="nav-item"><a class="nav-link" href="view_inventories.php">گزارش/ویرایش انبارداری‌ها</a></li>
-                    <li class="nav-item"><a class="nav-link" href="suppliers.php">مدیریت تامین‌کنندگان</a></li>
-                    <li class="nav-item"><a class="nav-link" href="production_orders.php">سفارشات تولید</a></li>
-                    <li class="nav-item"><a class="nav-link" href="devices.php">مدیریت دستگاه‌ها</a></li>
-                    <li class="nav-item"><a class="nav-link" href="device_bom.php">مدیریت BOM</a></li>
-                </ul>
-            </div>
+            <span class="navbar-brand fw-bold">📦 سیستم انبارداری</span>
         </div>
     </nav>
     <h2 class="mb-4">📦 سیستم انبارداری</h2>

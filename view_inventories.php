@@ -1,17 +1,15 @@
 <?php
 require_once 'config.php';
-
-function gregorianToJalali($date) {
+require_once 'includes/functions.php';($date) {
     if (empty($date)) return '-';
     $datetime = new DateTime($date);
     $timestamp = $datetime->getTimestamp();
     
-    $array = date::getDate($timestamp);
-    $year = $array['year'];
-    $month = $array['mon'];
-    $day = $array['mday'];
-    $hour = $array['hours'];
-    $minute = $array['minutes'];
+    $year = date('Y', $timestamp);
+    $month = date('n', $timestamp);
+    $day = date('j', $timestamp);
+    $hour = date('H', $timestamp);
+    $minute = date('i', $timestamp);
     
     $jYear = $jMonth = $jDay = 0;
     convertToJalali($year, $month, $day, $jYear, $jMonth, $jDay);

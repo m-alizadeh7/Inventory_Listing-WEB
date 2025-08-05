@@ -1,8 +1,29 @@
 {
-  "require": {
-    "morilog/jalali": "3.*"
-  },
-  "require-dev": {
-    "phpunit/phpunit": "^9.5"
-  }
+    "name": "alizadeh/inventory",
+    "description": "سیستم مدیریت انبارداری ساده و کاربردی",
+    "version": "1.0.0",
+    "type": "project",
+    "require": {
+        "php": ">=7.4",
+        "morilog/jalali": "3.*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5"
+    },
+    "authors": [
+        {
+            "name": "Mohammad Alizadeh",
+            "email": "your-email@example.com"
+        }
+    ],
+    "autoload": {
+        "files": [
+            "includes/functions.php"
+        ]
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "php -r \"copy('config.example.php', 'config.php');\""
+        ]
+    }
 }

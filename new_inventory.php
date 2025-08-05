@@ -29,7 +29,8 @@ $stmt->close();
 $stmt = $conn->prepare("SELECT status FROM inventory_sessions WHERE session_id = ?");
 $stmt->bind_param("s", $_SESSION['inventory_session']);
 $stmt->execute();
-$session_status = $stmt->get_result()->fetch_assoc()['status'];
+$statusRow = $stmt->get_result()->fetch_assoc();
+$session_status = $statusRow ? $statusRow['status'] : 'draft';
 $stmt->close();
 ?>
 

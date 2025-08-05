@@ -200,6 +200,15 @@ EOT;
     // بررسی نیاز به آپدیت
     public function needsUpdate() {
         if (file_exists(CONFIG_FILE)) {
+            // بررسی ناقص نبودن اطلاعات دیتابیس
+            $config = file_get_contents(CONFIG_FILE);
+            if (
+                strpos($config, "define('DB_USER', '')") !== false ||
+                strpos($config, "define('DB_PASS', '')") !== false ||
+                strpos($config, "define('DB_NAME', '')") !== false
+            ) {
+                return false;
+            }
             require_once CONFIG_FILE;
             if (isset($conn)) {
                 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'system_version'");
@@ -263,20 +272,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
-    }
-}
-
-$success = true;
-$errors = $setup->getErrors();
-
-// اجرای هر دستور SQL
-foreach ($queries as $query) {
-    $query = trim($query);
-    if (empty($query)) continue;
-    
-    if (!$conn->query($query)) {
-        $success = false;
-        $errors[] = $conn->error;
     }
 }
 

@@ -1,6 +1,9 @@
 <?php
-require_once 'config.php';
-require_once 'includes/functions.php';
+// تنظیم مسیر اصلی
+define('ROOT_PATH', dirname(__FILE__));
+
+require_once ROOT_PATH . '/config.php';
+require_once ROOT_PATH . '/includes/functions.php';
 
 // دریافت لیست انبارگردانی‌ها
 $result = $conn->query("SELECT 

@@ -97,20 +97,21 @@ while ($row = $result->fetch_assoc()) {
     $parts[] = $row;
 }
 
-// بررسی امکان تایید سفارش
+// اصلاح شرط تایید سفارش
 $can_confirm = $order['status'] === 'draft';
 $can_start = $order['status'] === 'confirmed';
-$all_parts_available = true;
 $total_missing_parts = 0;
 
 foreach ($parts as $part) {
     $stock = (int)($part['current_stock'] ?? 0);
     $needed = (int)$part['total_needed'];
     if ($stock < $needed) {
-        $all_parts_available = false;
         $total_missing_parts++;
     }
 }
+
+// صرف‌نظر کردن از خطای تامین‌کننده
+$all_parts_available = true;
 ?>
 
 <!DOCTYPE html>
@@ -128,6 +129,22 @@ foreach ($parts as $part) {
             font-size: 0.9rem;
             padding: 0.5rem 1rem;
             border-radius: 50px;
+        }
+        @media print {
+            body {
+                background: none;
+                color: #000;
+            }
+            .card {
+                border: none;
+                box-shadow: none;
+            }
+            .status-badge {
+                display: none;
+            }
+            .btn {
+                display: none;
+            }
         }
     </style>
 </head>

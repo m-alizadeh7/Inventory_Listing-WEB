@@ -52,6 +52,21 @@ if ($res && $res->num_rows === 0) {
     }
 }
 
+// بررسی و اضافه کردن ستون item_code به جدول‌های مرتبط
+$res = $conn->query("SHOW COLUMNS FROM device_bom LIKE 'item_code'");
+if ($res && $res->num_rows === 0) {
+    $conn->query("ALTER TABLE device_bom ADD COLUMN item_code VARCHAR(50) NULL");
+}
+
+$res = $conn->query("SHOW COLUMNS FROM inventory_records LIKE 'item_code'");
+if ($res && $res->num_rows === 0) {
+    $conn->query("ALTER TABLE inventory_records ADD COLUMN item_code VARCHAR(50) NULL");
+}
+
+// تغییر collation ستون‌های مرتبط به utf8mb4_unicode_ci
+$conn->query("ALTER TABLE device_bom MODIFY item_code VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+$conn->query("ALTER TABLE inventory_records MODIFY item_code VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: production_orders.php');
     exit;
@@ -122,4 +137,48 @@ try {
 } catch (Exception $e) {
     $conn->rollback();
     die("خطا: " . $e->getMessage());
+}
+
+// نمایش گزارش موجودی ناکافی به صورت خوانا و ساختار یافته
+if (!empty($missing_parts)) {
+    echo "<html lang='fa' dir='rtl'>";
+    echo "<head>";
+    echo "<meta charset='UTF-8'>";
+    echo "<title>گزارش موجودی ناکافی</title>";
+    echo "<link href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css' rel='stylesheet'>";
+    echo "<style>";
+    echo "body { background-color: #f8f9fa; font-family: 'Tahoma', sans-serif; }";
+    echo "table { border-collapse: collapse; width: 100%; margin-top: 20px; }";
+    echo "th, td { border: 1px solid #dee2e6; padding: 8px; text-align: center; }";
+    echo "th { background-color: #e9ecef; font-weight: bold; }";
+    echo "@media print { .btn { display: none; } }";
+    echo "</style>";
+    echo "</head>";
+    echo "<body>";
+    echo "<div class='container mt-4'>";
+    echo "<h3 class='text-center text-danger'>گزارش موجودی ناکافی</h3>";
+    echo "<p class='text-center'>این گزارش شامل قطعاتی است که موجودی کافی برای تولید ندارند.</p>";
+    echo "<table class='table table-bordered'>";
+    echo "<thead><tr><th>ردیف</th><th>کد انبار</th><th>نام کالا</th><th>واحد کالا</th><th>تعداد مورد نیاز</th><th>تاریخ</th></tr></thead>";
+    echo "<tbody>";
+    $row_number = 1;
+    foreach ($missing_parts as $part) {
+        echo "<tr>";
+        echo "<td>" . $row_number++ . "</td>";
+        echo "<td>" . htmlspecialchars($part['item_code']) . "</td>";
+        echo "<td>" . htmlspecialchars($part['item_name']) . "</td>";
+        echo "<td>واحد</td>";
+        echo "<td>" . htmlspecialchars($part['total_needed']) . "</td>";
+        echo "<td>" . date('Y-m-d') . "</td>";
+        echo "</tr>";
+    }
+    echo "</tbody>";
+    echo "</table>";
+    echo "<div class='text-center mt-4'>";
+    echo "<button class='btn btn-primary' onclick='window.print()'>چاپ</button>";
+    echo "</div>";
+    echo "</div>";
+    echo "</body>";
+    echo "</html>";
+    exit;
 }

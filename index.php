@@ -80,7 +80,7 @@ if (defined('SYSTEM_VERSION')) {
                 <div class="card-body">
                     <h5 class="card-title">ثبت سفارش تولید</h5>
                     <p class="card-text">ایجاد سفارش جدید برای تولید محصول.</p>
-                    <a href="new_production_order.php" class="btn btn-primary">ثبت سفارش</a>
+                    <a href="production/new_production_order.php" class="btn btn-primary">ثبت سفارش</a>
                 </div>
             </div>
         </div>
@@ -89,7 +89,7 @@ if (defined('SYSTEM_VERSION')) {
                 <div class="card-body">
                     <h5 class="card-title">لیست سفارشات تولید</h5>
                     <p class="card-text">مشاهده و مدیریت سفارشات تولید.</p>
-                    <a href="production_orders.php" class="btn btn-primary">مشاهده</a>
+                    <a href="production/production_orders.php" class="btn btn-primary">مشاهده</a>
                 </div>
             </div>
         </div>
@@ -98,7 +98,7 @@ if (defined('SYSTEM_VERSION')) {
                 <div class="card-body">
                     <h5 class="card-title">تامین‌کنندگان</h5>
                     <p class="card-text">مدیریت لیست تامین‌کنندگان و قطعات.</p>
-                    <a href="suppliers.php" class="btn btn-primary">مدیریت</a>
+                    <a href="production/suppliers.php" class="btn btn-primary">مدیریت</a>
                 </div>
             </div>
         </div>
@@ -107,7 +107,7 @@ if (defined('SYSTEM_VERSION')) {
                 <div class="card-body">
                     <h5 class="card-title">دستگاه‌ها و BOM</h5>
                     <p class="card-text">مدیریت لیست دستگاه‌ها و قطعات آن‌ها.</p>
-                    <a href="devices.php" class="btn btn-primary">مدیریت</a>
+                    <a href="production/devices.php" class="btn btn-primary">مدیریت</a>
                 </div>
             </div>
         </div>

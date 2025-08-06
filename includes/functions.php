@@ -111,3 +111,32 @@ function checkMigrationsPrompt() {
         echo "</div>";
     }
 }
+
+/**
+ * اطمینان از وجود ساختار کامل جدول suppliers
+ */
+function ensureSupplierSchema() {
+    global $conn;
+    
+    // اطمینان از وجود جدول suppliers
+    $conn->query("CREATE TABLE IF NOT EXISTS suppliers (
+        supplier_id INT AUTO_INCREMENT PRIMARY KEY,
+        supplier_name VARCHAR(255) NOT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+    
+    // ستون‌هایی که باید در جدول suppliers وجود داشته باشند
+    $required_columns = [
+        'supplier_code' => 'VARCHAR(50) NULL',
+        'contact_person' => 'VARCHAR(100) NULL',
+        'phone' => 'VARCHAR(30) NULL',
+        'email' => 'VARCHAR(100) NULL',
+        'address' => 'TEXT NULL'
+    ];
+    
+    foreach ($required_columns as $column => $definition) {
+        $res = $conn->query("SHOW COLUMNS FROM suppliers LIKE '$column'");
+        if ($res && $res->num_rows === 0) {
+            $conn->query("ALTER TABLE suppliers ADD COLUMN $column $definition");
+        }
+    }
+}

@@ -48,6 +48,27 @@ try {
         $stmt->execute();
     }
 
+if (isset($data['finalize']) && $data['finalize']) {
+        $completed_by = $data['completed_by'];
+        $completed_at = $data['completed_at'];
+
+        // Update inventory session
+        $stmt = $conn->prepare("UPDATE inventory_sessions SET status = 'completed', completed_by = ?, completed_at = ? WHERE session_id = ?");
+        $stmt->bind_param("sss", $completed_by, $completed_at, $session_id);
+        $stmt->execute();
+
+        // Update main inventory table
+        $updateStmt = $conn->prepare("UPDATE inventory SET current_inventory = ? WHERE id = ?");
+        foreach ($data['items'] as $item) {
+            $updateStmt->bind_param("di", $item['current_inventory'], $item['item_id']);
+            $updateStmt->execute();
+        }
+        $updateStmt->close();
+        
+        // Clear session
+        unset($_SESSION['inventory_session']);
+    }
+
     $conn->commit();
     echo json_encode(['success' => true]);
 } catch (Exception $e) {

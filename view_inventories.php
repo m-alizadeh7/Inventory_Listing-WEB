@@ -18,6 +18,9 @@ if ($res && $res->num_rows === 0) {
 define('ROOT_PATH', dirname(__FILE__));
 
 require_once ROOT_PATH . '/config.php';
+if (!isset($conn) || !$conn) {
+    die('Database connection failed.');
+}
 require_once ROOT_PATH . '/includes/functions.php';
 
 // دریافت لیست انبارگردانی‌ها

@@ -2,6 +2,59 @@
 require_once 'config.php';
 require_once 'includes/functions.php';
 
+// بررسی و ایجاد جدول inventory اگر وجود ندارد
+$res = $conn->query("SHOW TABLES LIKE 'inventory'");
+if ($res && $res->num_rows === 0) {
+    $createTable = "CREATE TABLE inventory (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        row_number INT NOT NULL,
+        inventory_code VARCHAR(50) NOT NULL,
+        item_name VARCHAR(255) NOT NULL,
+        unit VARCHAR(50),
+        min_inventory INT,
+        supplier VARCHAR(255),
+        current_inventory FLOAT,
+        required FLOAT,
+        notes TEXT,
+        last_updated DATETIME
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+    if (!$conn->query($createTable)) {
+        die('خطا در ایجاد جدول inventory: ' . $conn->error);
+    }
+}
+
+// بررسی و ایجاد جدول devices اگر وجود ندارد
+$res = $conn->query("SHOW TABLES LIKE 'devices'");
+if ($res && $res->num_rows === 0) {
+    $createTable = "CREATE TABLE devices (
+        device_id INT AUTO_INCREMENT PRIMARY KEY,
+        device_name VARCHAR(255) NOT NULL,
+        device_code VARCHAR(100),
+        description TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+    if (!$conn->query($createTable)) {
+        die('خطا در ایجاد جدول devices: ' . $conn->error);
+    }
+}
+
+// بررسی و ایجاد جدول device_bom اگر وجود ندارد
+$res = $conn->query("SHOW TABLES LIKE 'device_bom'");
+if ($res && $res->num_rows === 0) {
+    $createTable = "CREATE TABLE device_bom (
+        bom_id INT AUTO_INCREMENT PRIMARY KEY,
+        device_id INT NOT NULL,
+        item_code VARCHAR(100) NOT NULL,
+        item_name VARCHAR(255),
+        quantity_needed INT,
+        supplier_id INT,
+        notes TEXT
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+    if (!$conn->query($createTable)) {
+        die('خطا در ایجاد جدول device_bom: ' . $conn->error);
+    }
+}
+
 // اطمینان از وجود ستون‌های مورد نیاز در جدول device_bom با بررسی وجود قبلی
 $columns_to_add = ['item_name', 'quantity_needed', 'supplier_id'];
 foreach ($columns_to_add as $column) {

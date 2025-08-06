@@ -1,6 +1,46 @@
 <?php
 require_once 'config.php';
 
+// بررسی و ایجاد جدول inventory اگر وجود ندارد
+$res = $conn->query("SHOW TABLES LIKE 'inventory'");
+if ($res && $res->num_rows === 0) {
+    $createTable = "CREATE TABLE inventory (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        row_number INT NOT NULL,
+        inventory_code VARCHAR(50) NOT NULL,
+        item_name VARCHAR(255) NOT NULL,
+        unit VARCHAR(50),
+        min_inventory INT,
+        supplier VARCHAR(255),
+        current_inventory FLOAT,
+        required FLOAT,
+        notes TEXT,
+        last_updated DATETIME
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+    if (!$conn->query($createTable)) {
+        die('خطا در ایجاد جدول inventory: ' . $conn->error);
+    }
+}
+
+// بررسی و ایجاد جدول inventory_records اگر وجود ندارد
+$res = $conn->query("SHOW TABLES LIKE 'inventory_records'");
+if ($res && $res->num_rows === 0) {
+    $createTable = "CREATE TABLE inventory_records (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        inventory_id INT NOT NULL,
+        inventory_session VARCHAR(50) NOT NULL,
+        current_inventory FLOAT,
+        required FLOAT,
+        notes TEXT,
+        updated_at DATETIME,
+        completed_by VARCHAR(255),
+        completed_at DATETIME
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+    if (!$conn->query($createTable)) {
+        die('خطا در ایجاد جدول inventory_records: ' . $conn->error);
+    }
+}
+
 function gregorianToJalali($date) {
     if (empty($date)) return '-';
     $datetime = new DateTime($date);

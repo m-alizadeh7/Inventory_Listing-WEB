@@ -2,6 +2,56 @@
 require_once 'config.php';
 require_once 'includes/functions.php';
 
+// بررسی و ایجاد جدول production_orders اگر وجود ندارد
+$res = $conn->query("SHOW TABLES LIKE 'production_orders'");
+if ($res && $res->num_rows === 0) {
+    $createTable = "CREATE TABLE production_orders (
+        order_id INT AUTO_INCREMENT PRIMARY KEY,
+        order_number VARCHAR(100) NOT NULL,
+        status ENUM('pending', 'in_progress', 'completed') DEFAULT 'pending',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        completed_at DATETIME NULL,
+        notes TEXT
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+    if (!$conn->query($createTable)) {
+        die('خطا در ایجاد جدول production_orders: ' . $conn->error);
+    }
+}
+
+// بررسی و ایجاد جدول production_order_items اگر وجود ندارد
+$res = $conn->query("SHOW TABLES LIKE 'production_order_items'");
+if ($res && $res->num_rows === 0) {
+    $createTable = "CREATE TABLE production_order_items (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        order_id INT NOT NULL,
+        device_id INT NOT NULL,
+        quantity INT NOT NULL,
+        notes TEXT
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+    if (!$conn->query($createTable)) {
+        die('خطا در ایجاد جدول production_order_items: ' . $conn->error);
+    }
+}
+
+// بررسی و ایجاد جدول inventory_records اگر وجود ندارد
+$res = $conn->query("SHOW TABLES LIKE 'inventory_records'");
+if ($res && $res->num_rows === 0) {
+    $createTable = "CREATE TABLE inventory_records (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        inventory_id INT NOT NULL,
+        inventory_session VARCHAR(50) NOT NULL,
+        current_inventory FLOAT,
+        required FLOAT,
+        notes TEXT,
+        updated_at DATETIME,
+        completed_by VARCHAR(255),
+        completed_at DATETIME
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+    if (!$conn->query($createTable)) {
+        die('خطا در ایجاد جدول inventory_records: ' . $conn->error);
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: production_orders.php');
     exit;

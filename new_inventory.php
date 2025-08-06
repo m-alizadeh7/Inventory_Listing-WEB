@@ -2,6 +2,60 @@
 require_once 'config.php';
 session_start();
 
+// بررسی و ایجاد جدول inventory اگر وجود ندارد
+$res = $conn->query("SHOW TABLES LIKE 'inventory'");
+if ($res && $res->num_rows === 0) {
+    $createTable = "CREATE TABLE inventory (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        row_number INT NOT NULL,
+        inventory_code VARCHAR(50) NOT NULL,
+        item_name VARCHAR(255) NOT NULL,
+        unit VARCHAR(50),
+        min_inventory INT,
+        supplier VARCHAR(255),
+        current_inventory FLOAT,
+        required FLOAT,
+        notes TEXT,
+        last_updated DATETIME
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+    if (!$conn->query($createTable)) {
+        die('خطا در ایجاد جدول inventory: ' . $conn->error);
+    }
+}
+
+// بررسی و ایجاد جدول inventory_records اگر وجود ندارد
+$res = $conn->query("SHOW TABLES LIKE 'inventory_records'");
+if ($res && $res->num_rows === 0) {
+    $createTable = "CREATE TABLE inventory_records (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        inventory_id INT NOT NULL,
+        inventory_session VARCHAR(50) NOT NULL,
+        current_inventory FLOAT,
+        required FLOAT,
+        notes TEXT,
+        updated_at DATETIME,
+        completed_by VARCHAR(255),
+        completed_at DATETIME
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+    if (!$conn->query($createTable)) {
+        die('خطا در ایجاد جدول inventory_records: ' . $conn->error);
+    }
+}
+
+// بررسی و ایجاد جدول inventory_sessions اگر وجود ندارد
+$res = $conn->query("SHOW TABLES LIKE 'inventory_sessions'");
+if ($res && $res->num_rows === 0) {
+    $createTable = "CREATE TABLE inventory_sessions (
+        session_id VARCHAR(64) PRIMARY KEY,
+        status VARCHAR(20) DEFAULT 'draft',
+        completed_by VARCHAR(100) NULL,
+        completed_at DATETIME NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+    if (!$conn->query($createTable)) {
+        die('خطا در ایجاد جدول inventory_sessions: ' . $conn->error);
+    }
+}
+
 // ایجاد یا بازیابی جلسه انبارداری
 if (!isset($_SESSION['inventory_session'])) {
     $_SESSION['inventory_session'] = uniqid('inv_');
@@ -10,6 +64,14 @@ if (!isset($_SESSION['inventory_session'])) {
     $stmt->bind_param("s", $_SESSION['inventory_session']);
     $stmt->execute();
     $stmt->close();
+}
+
+// Check and create 'notes' column in 'inventory_records' table if missing
+$res = $conn->query("SHOW COLUMNS FROM inventory_records LIKE 'notes'");
+if ($res && $res->num_rows === 0) {
+    if (!$conn->query("ALTER TABLE inventory_records ADD COLUMN notes TEXT NULL")) {
+        die('Error adding notes column to inventory_records: ' . $conn->error);
+    }
 }
 
 // خواندن اقلام انبار و مقادیر ثبت شده قبلی

@@ -1,4 +1,19 @@
 <?php
+// بررسی و ایجاد جدول inventory_sessions اگر وجود ندارد
+$res = $conn->query("SHOW TABLES LIKE 'inventory_sessions'");
+if ($res && $res->num_rows === 0) {
+    $createTable = "CREATE TABLE inventory_sessions (
+        session_id VARCHAR(64) PRIMARY KEY,
+        status VARCHAR(20) DEFAULT 'draft',
+        started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        completed_by VARCHAR(100) NULL,
+        completed_at DATETIME NULL,
+        notes TEXT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+    if (!$conn->query($createTable)) {
+        die('خطا در ایجاد جدول inventory_sessions: ' . $conn->error);
+    }
+}
 // تنظیم مسیر اصلی
 define('ROOT_PATH', dirname(__FILE__));
 

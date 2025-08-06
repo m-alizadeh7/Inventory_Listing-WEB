@@ -2,6 +2,22 @@
 require_once 'config.php';
 require_once 'includes/functions.php';
 
+// بررسی و ایجاد جدول production_orders اگر وجود ندارد
+$res = $conn->query("SHOW TABLES LIKE 'production_orders'");
+if ($res && $res->num_rows === 0) {
+    $createTable = "CREATE TABLE production_orders (
+        order_id INT AUTO_INCREMENT PRIMARY KEY,
+        order_number VARCHAR(100) NOT NULL,
+        status ENUM('pending', 'in_progress', 'completed') DEFAULT 'pending',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        completed_at DATETIME NULL,
+        notes TEXT
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+    if (!$conn->query($createTable)) {
+        die('خطا در ایجاد جدول production_orders: ' . $conn->error);
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: production_orders.php');
     exit;

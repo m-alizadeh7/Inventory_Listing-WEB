@@ -2,6 +2,25 @@
 require_once 'config.php';
 session_start();
 
+// بررسی و ایجاد جدول inventory_records اگر وجود ندارد
+$res = $conn->query("SHOW TABLES LIKE 'inventory_records'");
+if ($res && $res->num_rows === 0) {
+    $createTable = "CREATE TABLE inventory_records (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        inventory_id INT NOT NULL,
+        inventory_session VARCHAR(50) NOT NULL,
+        current_inventory FLOAT,
+        required FLOAT,
+        notes TEXT,
+        updated_at DATETIME,
+        completed_by VARCHAR(255),
+        completed_at DATETIME
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+    if (!$conn->query($createTable)) {
+        die('خطا در ایجاد جدول inventory_records: ' . $conn->error);
+    }
+}
+
 header('Content-Type: application/json');
 
 // دریافت داده‌های ارسالی

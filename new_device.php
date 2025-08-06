@@ -1,6 +1,22 @@
 <?php
 require_once 'config.php';
 require_once 'includes/functions.php';
+
+// بررسی و ایجاد جدول devices اگر وجود ندارد
+$res = $conn->query("SHOW TABLES LIKE 'devices'");
+if ($res && $res->num_rows === 0) {
+    $createTable = "CREATE TABLE devices (
+        device_id INT AUTO_INCREMENT PRIMARY KEY,
+        device_name VARCHAR(255) NOT NULL,
+        device_code VARCHAR(100),
+        description TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+    if (!$conn->query($createTable)) {
+        die('خطا در ایجاد جدول devices: ' . $conn->error);
+    }
+}
+
 // افزودن ستون description اگر وجود ندارد
 $descExists = false;
 $res = $conn->query("SHOW COLUMNS FROM devices LIKE 'description'");

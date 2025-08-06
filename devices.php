@@ -1,6 +1,14 @@
 <?php
 require_once 'config.php';
 require_once 'includes/functions.php';
+// اطمینان از وجود جدول devices
+$conn->query("CREATE TABLE IF NOT EXISTS devices (
+    device_id INT AUTO_INCREMENT PRIMARY KEY,
+    device_code VARCHAR(50) NOT NULL,
+    device_name VARCHAR(255) NOT NULL,
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
 // بررسی درخواست حذف دستگاه
 if (isset($_POST['delete_device'])) {
@@ -66,7 +74,7 @@ while ($row = $result->fetch_assoc()) {
                             <td><?= htmlspecialchars($device['device_code']) ?></td>
                             <td><?= htmlspecialchars($device['device_name']) ?></td>
                             <td><?= htmlspecialchars($device['description'] ?? '-') ?></td>
-                            <td><?= gregorianToJalali($device['created_at']) ?></td>
+                            <td><?= isset($device['created_at']) ? gregorianToJalali($device['created_at']) : '-' ?></td>
                             <td>
                                 <div class="btn-group">
                                     <a href="edit_device.php?id=<?= $device['device_id'] ?>" 

@@ -1,6 +1,24 @@
 <?php
 require_once 'config.php';
 require_once 'includes/functions.php';
+// اطمینان از وجود جداول اصلی
+$conn->query("CREATE TABLE IF NOT EXISTS suppliers (
+    supplier_id INT AUTO_INCREMENT PRIMARY KEY,
+    supplier_code VARCHAR(50),
+    supplier_name VARCHAR(255),
+    address TEXT,
+    contact_person VARCHAR(255),
+    phone VARCHAR(50),
+    email VARCHAR(255)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+$conn->query("CREATE TABLE IF NOT EXISTS device_bom (
+    bom_id INT AUTO_INCREMENT PRIMARY KEY,
+    device_id INT,
+    supplier_id INT,
+    item_code VARCHAR(50),
+    FOREIGN KEY (device_id) REFERENCES devices(device_id) ON DELETE CASCADE,
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
 // حذف تامین‌کننده
 if (isset($_POST['delete_supplier'])) {

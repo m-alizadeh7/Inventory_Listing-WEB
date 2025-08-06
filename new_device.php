@@ -1,6 +1,15 @@
 <?php
 require_once 'config.php';
 require_once 'includes/functions.php';
+// افزودن ستون description اگر وجود ندارد
+$descExists = false;
+$res = $conn->query("SHOW COLUMNS FROM devices LIKE 'description'");
+if ($res && $res->num_rows === 1) {
+    $descExists = true;
+}
+if (!$descExists) {
+    $conn->query("ALTER TABLE devices ADD COLUMN description TEXT NULL");
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $device_code = clean($_POST['device_code']);

@@ -7,6 +7,31 @@ if (!file_exists('config.php')) {
 
 require_once 'config.php';
 require_once 'includes/functions.php';
+// اطمینان از وجود جدول settings
+$conn->query("CREATE TABLE IF NOT EXISTS settings (
+    setting_name VARCHAR(64) PRIMARY KEY,
+    setting_value TEXT NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+// ریست دیتابیس با رمز عبور
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset_db'])) {
+    $pw = $_POST['reset_password'] ?? '';
+    if ($pw === '2581') {
+        // حذف تمام جداول با غیرفعال‌سازی موقت بررسی کلید خارجی
+        $conn->query("SET FOREIGN_KEY_CHECKS=0");
+        $res = $conn->query("SHOW TABLES");
+        while ($tbl = $res->fetch_array()) {
+            $conn->query("DROP TABLE `{$tbl[0]}`");
+        }
+        $conn->query("SET FOREIGN_KEY_CHECKS=1");
+        // اجرای مایگریشن‌ها
+        require_once __DIR__ . '/migrate.php';
+        header('Location: index.php');
+        exit;
+    } else {
+        $reset_error = 'رمز عبور اشتباه است.';
+    }
+}
 // اجرای مایگریشن پس از تایید اپراتور
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_migrations'])) {
     require_once __DIR__ . '/migrate.php';
@@ -46,6 +71,19 @@ if (defined('SYSTEM_VERSION')) {
 <body>
 <div class="container">
     <?php checkMigrationsPrompt(); ?>
+    <!-- فرم ریست دیتابیس -->
+    <div class="my-4 p-3 border rounded bg-light">
+        <h5>ریست دیتابیس</h5>
+        <?php if (!empty(
+            $reset_error
+        )): ?>
+            <div class="alert alert-danger"><?php echo $reset_error; ?></div>
+        <?php endif; ?>
+        <form method="post" class="d-flex align-items-center">
+            <input type="password" name="reset_password" class="form-control me-2" placeholder="رمز عبور" required>
+            <button type="submit" name="reset_db" class="btn btn-danger">ریست دیتابیس</button>
+        </form>
+    </div>
     <nav class="main-menu navbar navbar-expand-lg navbar-light bg-light rounded shadow-sm mb-4">
         <div class="container-fluid">
             <span class="navbar-brand fw-bold">📦 سیستم انبارداری</span>

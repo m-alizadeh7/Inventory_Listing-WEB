@@ -2,6 +2,11 @@
 require_once 'config.php';
 require_once 'includes/functions.php';
 
+// اطمینان از وجود ستون‌های مورد نیاز در جدول device_bom
+$conn->query("ALTER TABLE device_bom ADD COLUMN item_name VARCHAR(255) NULL");
+$conn->query("ALTER TABLE device_bom ADD COLUMN quantity_needed INT NULL");
+$conn->query("ALTER TABLE device_bom ADD COLUMN supplier_id INT NULL");
+
 $device_id = clean($_GET['id'] ?? '');
 if (!$device_id) {
     header('Location: devices.php');

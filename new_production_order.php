@@ -1,6 +1,22 @@
 <?php
 require_once 'config.php';
 require_once 'includes/functions.php';
+// اطمینان از وجود جداول devices و device_bom
+$conn->query("CREATE TABLE IF NOT EXISTS devices (
+    device_id INT AUTO_INCREMENT PRIMARY KEY,
+    device_code VARCHAR(50) NOT NULL,
+    device_name VARCHAR(255) NOT NULL,
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+$conn->query("CREATE TABLE IF NOT EXISTS device_bom (
+    bom_id INT AUTO_INCREMENT PRIMARY KEY,
+    device_id INT,
+    supplier_id INT,
+    item_code VARCHAR(50),
+    FOREIGN KEY (device_id) REFERENCES devices(device_id) ON DELETE CASCADE,
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
 // ایجاد کد سفارش جدید
 function generateOrderCode() {

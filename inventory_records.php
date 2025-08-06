@@ -7,7 +7,7 @@ $res = $conn->query("SHOW TABLES LIKE 'inventory'");
 if ($res && $res->num_rows === 0) {
     $createTable = "CREATE TABLE inventory (
         id INT AUTO_INCREMENT,
-        row_number INT NULL,
+        `row_number` INT NULL,
         inventory_code VARCHAR(50) NOT NULL,
         item_name VARCHAR(255) NOT NULL,
         unit VARCHAR(50) NULL,
@@ -88,7 +88,7 @@ $offset = ($page - 1) * $records_per_page;
 $total_pages = ceil($total / $records_per_page);
 
 // دریافت رکوردها
-$query = "SELECT * FROM inventory $where_clause ORDER BY row_number LIMIT ? OFFSET ?";
+$query = "SELECT * FROM inventory $where_clause ORDER BY `row_number` LIMIT ? OFFSET ?";
 $params[] = $records_per_page;
 $params[] = $offset;
 $types .= 'ii';

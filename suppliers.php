@@ -1,7 +1,7 @@
 <?php
 require_once 'config.php';
 require_once 'includes/functions.php';
-// اطمینان از وجود جداول اصلی
+// اطمینان از وجود جداول اصلی و ستون bom_id
 $conn->query("CREATE TABLE IF NOT EXISTS suppliers (
     supplier_id INT AUTO_INCREMENT PRIMARY KEY,
     supplier_code VARCHAR(50),
@@ -12,13 +12,22 @@ $conn->query("CREATE TABLE IF NOT EXISTS suppliers (
     email VARCHAR(255)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 $conn->query("CREATE TABLE IF NOT EXISTS device_bom (
-    bom_id INT AUTO_INCREMENT PRIMARY KEY,
     device_id INT,
     supplier_id INT,
     item_code VARCHAR(50),
     FOREIGN KEY (device_id) REFERENCES devices(device_id) ON DELETE CASCADE,
     FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+$res = $conn->query("SHOW COLUMNS FROM device_bom LIKE 'bom_id'");
+if ($res && $res->num_rows === 0) {
+    // بررسی وجود ستون AUTO_INCREMENT دیگر
+    $auto = $conn->query("SHOW COLUMNS FROM device_bom WHERE Extra LIKE '%auto_increment%'");
+    if ($auto && $auto->num_rows === 0) {
+        $conn->query("ALTER TABLE device_bom ADD COLUMN bom_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY FIRST");
+    } else {
+        $conn->query("ALTER TABLE device_bom ADD COLUMN bom_id INT NULL FIRST");
+    }
+}
 
 // حذف تامین‌کننده
 if (isset($_POST['delete_supplier'])) {

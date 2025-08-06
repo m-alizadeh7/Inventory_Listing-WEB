@@ -1,6 +1,45 @@
 <?php
 require_once 'config.php';
 require_once 'includes/functions.php';
+// افزودن ستون supplier_code اگر وجود ندارد
+$res = $conn->query("SHOW COLUMNS FROM suppliers LIKE 'supplier_code'");
+if ($res && $res->num_rows === 0) {
+    if (!$conn->query("ALTER TABLE suppliers ADD COLUMN supplier_code VARCHAR(50) NULL")) {
+        die('خطا در افزودن ستون supplier_code: ' . $conn->error);
+    }
+}
+
+// افزودن ستون contact_person اگر وجود ندارد
+$res = $conn->query("SHOW COLUMNS FROM suppliers LIKE 'contact_person'");
+if ($res && $res->num_rows === 0) {
+    if (!$conn->query("ALTER TABLE suppliers ADD COLUMN contact_person VARCHAR(100) NULL")) {
+        die('خطا در افزودن ستون contact_person: ' . $conn->error);
+    }
+}
+
+// افزودن ستون phone اگر وجود ندارد
+$res = $conn->query("SHOW COLUMNS FROM suppliers LIKE 'phone'");
+if ($res && $res->num_rows === 0) {
+    if (!$conn->query("ALTER TABLE suppliers ADD COLUMN phone VARCHAR(30) NULL")) {
+        die('خطا در افزودن ستون phone: ' . $conn->error);
+    }
+}
+
+// افزودن ستون email اگر وجود ندارد
+$res = $conn->query("SHOW COLUMNS FROM suppliers LIKE 'email'");
+if ($res && $res->num_rows === 0) {
+    if (!$conn->query("ALTER TABLE suppliers ADD COLUMN email VARCHAR(100) NULL")) {
+        die('خطا در افزودن ستون email: ' . $conn->error);
+    }
+}
+
+// افزودن ستون address اگر وجود ندارد
+$res = $conn->query("SHOW COLUMNS FROM suppliers LIKE 'address'");
+if ($res && $res->num_rows === 0) {
+    if (!$conn->query("ALTER TABLE suppliers ADD COLUMN address TEXT NULL")) {
+        die('خطا در افزودن ستون address: ' . $conn->error);
+    }
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $supplier_code = clean($_POST['supplier_code']);

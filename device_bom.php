@@ -115,26 +115,33 @@ while ($row = $result->fetch_assoc()) {
                 </thead>
                 <tbody id="bomTableBody">
                     <?php foreach ($bom_items as $item): ?>
+                        <?php
+                        $bom_id = isset($item['bom_id']) ? $item['bom_id'] : uniqid('bom_');
+                        $item_code = isset($item['item_code']) ? htmlspecialchars($item['item_code']) : '';
+                        $item_name = isset($item['item_name']) ? htmlspecialchars($item['item_name']) : '';
+                        $quantity_needed = isset($item['quantity_needed']) ? $item['quantity_needed'] : '';
+                        $supplier_id = isset($item['supplier_id']) ? $item['supplier_id'] : '';
+                        ?>
                         <tr>
                             <td>
-                                <input type="text" name="items[<?= $item['bom_id'] ?>][code]" 
-                                       class="form-control" value="<?= htmlspecialchars($item['item_code']) ?>" required>
+                                <input type="text" name="items[<?= $bom_id ?>][code]" 
+                                       class="form-control" value="<?= $item_code ?>" required>
                             </td>
                             <td>
-                                <input type="text" name="items[<?= $item['bom_id'] ?>][name]" 
-                                       class="form-control" value="<?= htmlspecialchars($item['item_name']) ?>" required>
+                                <input type="text" name="items[<?= $bom_id ?>][name]" 
+                                       class="form-control" value="<?= $item_name ?>" required>
                             </td>
                             <td>
-                                <input type="number" name="items[<?= $item['bom_id'] ?>][quantity]" 
-                                       class="form-control" value="<?= $item['quantity_needed'] ?>" 
+                                <input type="number" name="items[<?= $bom_id ?>][quantity]" 
+                                       class="form-control" value="<?= $quantity_needed ?>" 
                                        min="1" required>
                             </td>
                             <td>
-                                <select name="items[<?= $item['bom_id'] ?>][supplier_id]" class="form-select">
+                                <select name="items[<?= $bom_id ?>][supplier_id]" class="form-select">
                                     <option value="">انتخاب تامین‌کننده</option>
                                     <?php foreach ($suppliers as $supplier): ?>
                                         <option value="<?= $supplier['supplier_id'] ?>" 
-                                            <?= $supplier['supplier_id'] == $item['supplier_id'] ? 'selected' : '' ?>>
+                                            <?= $supplier['supplier_id'] == $supplier_id ? 'selected' : '' ?>>
                                             <?= htmlspecialchars($supplier['supplier_name']) ?>
                                         </option>
                                     <?php endforeach; ?>

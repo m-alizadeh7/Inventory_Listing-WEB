@@ -1,6 +1,29 @@
+
 <?php
 require_once 'config.php';
 require_once 'includes/functions.php';
+// بررسی و ایجاد جدول inventory_records اگر وجود ندارد
+$res = $conn->query("SHOW TABLES LIKE 'inventory_records'");
+if ($res && $res->num_rows === 0) {
+    $createTable = "CREATE TABLE inventory_records (
+        record_id INT AUTO_INCREMENT PRIMARY KEY,
+        supplier_id INT NULL,
+        part_id INT NULL,
+        quantity INT NULL,
+        date DATETIME NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+    if (!$conn->query($createTable)) {
+        die('خطا در ایجاد جدول inventory_records: ' . $conn->error);
+    }
+}
+
+// افزودن ستون current_inventory اگر وجود ندارد
+$res = $conn->query("SHOW COLUMNS FROM inventory_records LIKE 'current_inventory'");
+if ($res && $res->num_rows === 0) {
+    if (!$conn->query("ALTER TABLE inventory_records ADD COLUMN current_inventory INT NULL")) {
+        die('خطا در افزودن ستون current_inventory: ' . $conn->error);
+    }
+}
 
 $supplier_id = clean($_GET['id'] ?? '');
 if (!$supplier_id) {

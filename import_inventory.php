@@ -1,5 +1,24 @@
 <?php
 require_once 'config.php';
+$res = $conn->query("SHOW TABLES LIKE 'inventory'");
+if ($res && $res->num_rows === 0) {
+    $createTable = "CREATE TABLE inventory (
+        id INT AUTO_INCREMENT,
+        row_number INT NULL,
+        inventory_code VARCHAR(50) NOT NULL,
+        item_name VARCHAR(255) NOT NULL,
+        unit VARCHAR(50) NULL,
+        min_inventory INT NULL,
+        supplier VARCHAR(100) NULL,
+        current_inventory DOUBLE NULL,
+        required DOUBLE NULL,
+        notes VARCHAR(255) NULL,
+        PRIMARY KEY (id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+    if (!$conn->query($createTable)) {
+        die('خطا در ایجاد جدول inventory: ' . $conn->error);
+    }
+}
 $success = false;
 $error_message = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {

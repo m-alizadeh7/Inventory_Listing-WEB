@@ -6,6 +6,13 @@ if (!file_exists('config.php')) {
 }
 
 require_once 'config.php';
+require_once 'includes/functions.php';
+// اجرای مایگریشن پس از تایید اپراتور
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_migrations'])) {
+    require_once __DIR__ . '/migrate.php';
+    header('Location: index.php');
+    exit;
+}
 
 // بررسی نیاز به آپدیت
 if (defined('SYSTEM_VERSION')) {
@@ -38,6 +45,7 @@ if (defined('SYSTEM_VERSION')) {
 </head>
 <body>
 <div class="container">
+    <?php checkMigrationsPrompt(); ?>
     <nav class="main-menu navbar navbar-expand-lg navbar-light bg-light rounded shadow-sm mb-4">
         <div class="container-fluid">
             <span class="navbar-brand fw-bold">📦 سیستم انبارداری</span>
@@ -80,7 +88,7 @@ if (defined('SYSTEM_VERSION')) {
                 <div class="card-body">
                     <h5 class="card-title">ثبت سفارش تولید</h5>
                     <p class="card-text">ایجاد سفارش جدید برای تولید محصول.</p>
-                    <a href="production/new_production_order.php" class="btn btn-primary">ثبت سفارش</a>
+                    <a href="new_production_order.php" class="btn btn-primary">ثبت سفارش</a>
                 </div>
             </div>
         </div>
@@ -89,7 +97,7 @@ if (defined('SYSTEM_VERSION')) {
                 <div class="card-body">
                     <h5 class="card-title">لیست سفارشات تولید</h5>
                     <p class="card-text">مشاهده و مدیریت سفارشات تولید.</p>
-                    <a href="production/production_orders.php" class="btn btn-primary">مشاهده</a>
+                    <a href="production_orders.php" class="btn btn-primary">مشاهده</a>
                 </div>
             </div>
         </div>
@@ -98,7 +106,7 @@ if (defined('SYSTEM_VERSION')) {
                 <div class="card-body">
                     <h5 class="card-title">تامین‌کنندگان</h5>
                     <p class="card-text">مدیریت لیست تامین‌کنندگان و قطعات.</p>
-                    <a href="production/suppliers.php" class="btn btn-primary">مدیریت</a>
+                    <a href="suppliers.php" class="btn btn-primary">مدیریت</a>
                 </div>
             </div>
         </div>
@@ -107,12 +115,19 @@ if (defined('SYSTEM_VERSION')) {
                 <div class="card-body">
                     <h5 class="card-title">دستگاه‌ها و BOM</h5>
                     <p class="card-text">مدیریت لیست دستگاه‌ها و قطعات آن‌ها.</p>
-                    <a href="production/devices.php" class="btn btn-primary">مدیریت</a>
+                    <a href="devices.php" class="btn btn-primary">مدیریت</a>
                 </div>
             </div>
         </div>
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<footer class="text-center py-3" style="font-size:0.9rem;color:#6c757d;border-top:1px solid #dee2e6;margin-top:2rem;">
+    <small>
+        © <?php echo date('Y'); ?> سیستم انبارداری | سازنده: <a href="https://alizadehx.ir" target="_blank">alizadehx.ir</a> | 
+        <a href="https://github.com/m-alizadeh7" target="_blank">GitHub</a> | 
+        <a href="https://t.me/alizadeh_channel" target="_blank">Telegram</a>
+    </small>
+</footer>
 </body>
 </html>

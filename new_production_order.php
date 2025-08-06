@@ -205,5 +205,8 @@ function validateForm() {
 // اضافه کردن یک ردیف در شروع
 addDeviceRow();
 </script>
+<footer class="text-center py-3" style="font-size:0.9rem;color:#6c757d;border-top:1px solid #dee2e6;margin-top:2rem;">
+    <small>© <?php echo date('Y'); ?> سیستم انبارداری | سازنده: <a href="https://alizadehx.ir" target="_blank">alizadehx.ir</a> | <a href="https://github.com/m-alizadeh7" target="_blank">GitHub</a> | <a href="https://t.me/alizadeh_channel" target="_blank">Telegram</a></small>
+</footer>
 </body>
 </html>

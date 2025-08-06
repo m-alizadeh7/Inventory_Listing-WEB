@@ -84,3 +84,24 @@ function clean($string) {
     global $conn;
     return $conn->real_escape_string(trim($string));
 }
+/**
+ * بررسی و نمایش اعلان مایگریشن‌های جدید
+ */
+function checkMigrationsPrompt() {
+    global $conn;
+    $migrationsDir = __DIR__ . '/../migrations';
+    $files = glob($migrationsDir . '/*.sql');
+    $pending = [];
+    foreach ($files as $file) {
+        $name = basename($file);
+        $res = $conn->query("SELECT id FROM migrations WHERE migration='" . $conn->real_escape_string($name) . "'");
+        if ($res && $res->num_rows === 0) {
+            $pending[] = $name;
+        }
+    }
+    if (count($pending) > 0) {
+        echo "<div class='alert alert-warning text-center'>";
+        echo "نسخه دیتابیس قدیمی است. برای بروز رسانی جداول <form method='post' style='display:inline;'><button name='run_migrations' class='btn btn-sm btn-primary'>اجرای به‌روزرسانی</button></form> کلیک کنید.";
+        echo "</div>";
+    }
+}

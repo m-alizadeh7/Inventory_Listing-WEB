@@ -2,10 +2,20 @@
 require_once 'config.php';
 require_once 'includes/functions.php';
 
-// اطمینان از وجود ستون‌های مورد نیاز در جدول device_bom
-$conn->query("ALTER TABLE device_bom ADD COLUMN item_name VARCHAR(255) NULL");
-$conn->query("ALTER TABLE device_bom ADD COLUMN quantity_needed INT NULL");
-$conn->query("ALTER TABLE device_bom ADD COLUMN supplier_id INT NULL");
+// اطمینان از وجود ستون‌های مورد نیاز در جدول device_bom با بررسی وجود قبلی
+$columns_to_add = ['item_name', 'quantity_needed', 'supplier_id'];
+foreach ($columns_to_add as $column) {
+    $res = $conn->query("SHOW COLUMNS FROM device_bom LIKE '$column'");
+    if ($res && $res->num_rows === 0) {
+        if ($column === 'item_name') {
+            $conn->query("ALTER TABLE device_bom ADD COLUMN $column VARCHAR(255) NULL");
+        } elseif ($column === 'quantity_needed') {
+            $conn->query("ALTER TABLE device_bom ADD COLUMN $column INT NULL");
+        } elseif ($column === 'supplier_id') {
+            $conn->query("ALTER TABLE device_bom ADD COLUMN $column INT NULL");
+        }
+    }
+}
 
 $device_id = clean($_GET['id'] ?? '');
 if (!$device_id) {

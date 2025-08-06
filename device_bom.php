@@ -30,6 +30,28 @@ if (!$device) {
     exit;
 }
 
+// افزودن کالا به BOM
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add_to_bom') {
+    $inventory_id = clean($_POST['inventory_id']);
+    
+    // دریافت اطلاعات کالا
+    $inventory_item = $conn->query("SELECT * FROM inventory WHERE id = $inventory_id")->fetch_assoc();
+    if ($inventory_item) {
+        // بررسی تکراری نبودن کالا در BOM
+        $check = $conn->query("SELECT bom_id FROM device_bom WHERE device_id = $device_id AND item_code = '" . $inventory_item['inventory_code'] . "'");
+        if ($check->num_rows === 0) {
+            // افزودن به BOM
+            $stmt = $conn->prepare("INSERT INTO device_bom (device_id, item_code, item_name, quantity_needed) VALUES (?, ?, ?, 1)");
+            $stmt->bind_param("iss", $device_id, $inventory_item['inventory_code'], $inventory_item['item_name']);
+            $stmt->execute();
+            $stmt->close();
+            
+            header("Location: device_bom.php?id=$device_id&msg=added");
+            exit;
+        }
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['save_bom'])) {
         // حذف قطعات قبلی
@@ -100,6 +122,116 @@ while ($row = $result->fetch_assoc()) {
     <?php if (isset($_GET['msg']) && $_GET['msg'] === 'saved'): ?>
         <div class="alert alert-success">لیست قطعات با موفقیت ذخیره شد.</div>
     <?php endif; ?>
+    
+    <?php if (isset($_GET['msg']) && $_GET['msg'] === 'added'): ?>
+        <div class="alert alert-success">کالا با موفقیت به BOM اضافه شد.</div>
+    <?php endif; ?>
+
+    <!-- جستجو در کالاهای انبار -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">🔍 افزودن کالا از انبار</h5>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <input type="hidden" name="id" value="<?= $device_id ?>">
+                <div class="col-md-4">
+                    <label class="form-label">کد کالا</label>
+                    <input type="text" name="search_code" class="form-control" value="<?= htmlspecialchars($_GET['search_code'] ?? '') ?>">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">نام کالا</label>
+                    <input type="text" name="search_name" class="form-control" value="<?= htmlspecialchars($_GET['search_name'] ?? '') ?>">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary d-block w-100">جستجو</button>
+                </div>
+            </form>
+
+            <?php
+            // نمایش نتایج جستجو
+            if (isset($_GET['search_code']) || isset($_GET['search_name'])) {
+                $search_code = clean($_GET['search_code'] ?? '');
+                $search_name = clean($_GET['search_name'] ?? '');
+                
+                $where = [];
+                $params = [];
+                $types = '';
+                
+                if ($search_code) {
+                    $where[] = "inventory_code LIKE ?";
+                    $params[] = "%$search_code%";
+                    $types .= 's';
+                }
+                if ($search_name) {
+                    $where[] = "item_name LIKE ?";
+                    $params[] = "%$search_name%";
+                    $types .= 's';
+                }
+                
+                $where_clause = !empty($where) ? "WHERE " . implode(" AND ", $where) : "";
+                
+                $stmt = $conn->prepare("
+                    SELECT * FROM inventory 
+                    $where_clause 
+                    ORDER BY item_name 
+                    LIMIT 10
+                ");
+                
+                if (!empty($params)) {
+                    $stmt->bind_param($types, ...$params);
+                }
+                
+                $stmt->execute();
+                $result = $stmt->get_result();
+                
+                if ($result->num_rows > 0) {
+                    echo '<div class="table-responsive mt-3">
+                        <table class="table table-hover table-sm">
+                            <thead>
+                                <tr>
+                                    <th>کد کالا</th>
+                                    <th>نام کالا</th>
+                                    <th>واحد</th>
+                                    <th>موجودی</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>';
+                    
+                    while ($row = $result->fetch_assoc()) {
+                        echo '<tr>
+                            <td>' . htmlspecialchars($row['inventory_code']) . '</td>
+                            <td>' . htmlspecialchars($row['item_name']) . '</td>
+                            <td>' . htmlspecialchars($row['unit'] ?? '') . '</td>
+                            <td>' . ($row['current_inventory'] ?? 0) . '</td>
+                            <td>
+                                <form method="POST" class="d-inline">
+                                    <input type="hidden" name="inventory_id" value="' . $row['id'] . '">
+                                    <input type="hidden" name="action" value="add_to_bom">
+                                    <button type="submit" class="btn btn-sm btn-success">
+                                        <i class="bi bi-plus-lg"></i> افزودن به BOM
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>';
+                    }
+                    
+                    echo '</tbody></table></div>';
+                    
+                    if ($result->num_rows === 10) {
+                        echo '<div class="text-muted mt-2">نمایش 10 نتیجه اول. لطفاً جستجو را دقیق‌تر کنید.</div>';
+                    }
+                } else {
+                    echo '<div class="alert alert-info mt-3">هیچ کالایی یافت نشد.</div>';
+                }
+                
+                $stmt->close();
+            }
+            ?>
+        </div>
+    </div>
 
     <form method="POST" onsubmit="return validateForm()">
         <div class="table-responsive">

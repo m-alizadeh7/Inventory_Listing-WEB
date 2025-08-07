@@ -81,8 +81,7 @@ function validateCSV($file) {
 
 // تابع تمیز کردن ورودی
 function clean($string) {
-    global $conn;
-    return $conn->real_escape_string(trim($string));
+    return trim($string);
 }
 /**
  * بررسی و نمایش اعلان مایگریشن‌های جدید

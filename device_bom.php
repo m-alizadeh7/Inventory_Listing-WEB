@@ -1,10 +1,17 @@
 <?php
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-ini_set('max_execution_time', 30);
-ini_set('memory_limit', '128M');
+ini_set('max_execution_time', 300); // افزایش به 5 دقیقه
+ini_set('memory_limit', '512M'); // افزایش به 512 مگابایت
+set_time_limit(300); // تنظیم مجدد محدودیت زمانی
 require_once 'config.php';
 require_once 'includes/functions.php';
+require_once 'includes/locks.php';
+
+// Enable detailed error logging
+function logError($message) {
+    error_log("[" . date('Y-m-d H:i:s') . "] device_bom.php: $message", 0);
+}
 
 $device_id = clean($_GET['id'] ?? '');
 if (!$device_id) {
@@ -13,39 +20,92 @@ if (!$device_id) {
 }
 
 // دریافت اطلاعات دستگاه
-$stmt = $conn->prepare("SELECT device_name FROM devices WHERE device_id = ? LIMIT 1");
-$stmt->bind_param("i", $device_id);
-$stmt->execute();
-$device = $stmt->get_result()->fetch_assoc();
-$stmt->close();
-if (!$device) {
-    header('Location: devices.php');
+try {
+    $stmt = $conn->prepare("SELECT device_name FROM devices WHERE device_id = ? LIMIT 1");
+    $stmt->bind_param("i", $device_id);
+    $stmt->execute();
+    $device = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    if (!$device) {
+        logError("Device not found with ID: $device_id");
+        header('Location: devices.php');
+        exit;
+    }
+} catch (Exception $e) {
+    logError("Error getting device info: " . $e->getMessage());
+    header('Location: devices.php?error=device_not_found');
     exit;
 }
 
 // افزودن کالا به BOM
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($_POST['action'] === 'add_to_bom') {
-        $inventory_id = intval(clean($_POST['inventory_id']));
-        $stmt = $conn->prepare("SELECT inventory_code, item_name FROM inventory WHERE id = ? LIMIT 1");
-        $stmt->bind_param("i", $inventory_id);
-        $stmt->execute();
-        $inventory_item = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
-        
-        if ($inventory_item) {
-            $check = $conn->prepare("SELECT 1 FROM device_bom WHERE device_id = ? AND item_code = ? LIMIT 1");
-            $check->bind_param("is", $device_id, $inventory_item['inventory_code']);
-            $check->execute();
-            $result = $check->get_result();
-            if ($result->num_rows === 0) {
-                $insert = $conn->prepare("INSERT INTO device_bom (device_id, item_code, item_name, quantity_needed) VALUES (?, ?, ?, 1)");
-                $insert->bind_param("iss", $device_id, $inventory_item['inventory_code'], $inventory_item['item_name']);
-                $insert->execute();
-                $insert->close();
+        try {
+            // استفاده از سیستم قفل‌گذاری برای جلوگیری از درخواست‌های همزمان
+            $lockName = "device_bom_add_{$device_id}";
+            
+            if (!acquireLock($lockName, 30)) {
+                // قفل قبلی هنوز فعال است، پس عملیات قبلی هنوز در حال اجراست
+                header("Location: device_bom.php?id=$device_id&msg=error&error=" . urlencode("یک عملیات در حال انجام است. لطفاً چند لحظه صبر کنید."));
+                exit;
             }
-            $check->close();
+            
+            // اضافه کردن تاخیر مصنوعی برای جلوگیری از فشار بیش از حد به دیتابیس
+            usleep(100000); // 100ms تاخیر
+            
+            logError("Starting add_to_bom operation");
+            $inventory_id = intval(clean($_POST['inventory_id']));
+            
+            // Optimize this query to select only the needed fields
+            $stmt = $conn->prepare("SELECT id, inventory_code, item_name FROM inventory WHERE id = ? LIMIT 1");
+            $stmt->bind_param("i", $inventory_id);
+            $stmt->execute();
+            $inventory_item = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+            
+            if ($inventory_item) {
+                logError("Found inventory item: " . $inventory_item['inventory_code']);
+                
+                // Use direct comparison without conversion for performance
+                $check = $conn->prepare("SELECT 1 FROM device_bom WHERE device_id = ? AND item_code = ? LIMIT 1");
+                $check->bind_param("is", $device_id, $inventory_item['inventory_code']);
+                $check->execute();
+                $result = $check->get_result();
+                
+                if ($result->num_rows === 0) {
+                    logError("No duplicate found, proceeding with insert");
+                    
+                    // به جای استفاده از transaction، روش ساده‌تر را امتحان کنیم
+                    $insert = $conn->prepare("INSERT INTO device_bom (device_id, item_code, item_name, quantity_needed) VALUES (?, ?, ?, 1)");
+                    $insert->bind_param("iss", $device_id, $inventory_item['inventory_code'], $inventory_item['item_name']);
+                    $success = $insert->execute();
+                    
+                    if (!$success) {
+                        logError("Insert failed: " . $conn->error);
+                        // Redirect to error page instead of continuing
+                        header("Location: device_bom.php?id=$device_id&msg=error&error=" . urlencode($conn->error));
+                        exit;
+                    }
+                    
+                    logError("Insert successful");
+                    $insert->close();
+                } else {
+                    logError("Duplicate item found, skipping insert");
+                }
+                $check->close();
+            } else {
+                logError("Inventory item not found with ID: $inventory_id");
+            }
+        } catch (Exception $e) {
+            logError("Exception: " . $e->getMessage());
+            header("Location: device_bom.php?id=$device_id&msg=error&error=" . urlencode($e->getMessage()));
+            exit;
+        } finally {
+            // آزادسازی قفل در هر صورت
+            releaseLock("device_bom_add_{$device_id}");
         }
+        
+        // Redirect regardless of success/failure to avoid resubmission
         header("Location: device_bom.php?id=$device_id&msg=added");
         exit;
     } elseif ($_POST['action'] === 'update_bom') {
@@ -72,20 +132,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
 // دریافت لیست قطعات دستگاه
 $bom_items = [];
-$stmt = $conn->prepare("
-    SELECT b.bom_id, b.item_code, b.item_name, b.quantity_needed, s.supplier_name 
-    FROM device_bom b 
-    LEFT JOIN suppliers s ON b.supplier_id = s.supplier_id 
-    WHERE b.device_id = ? 
-    ORDER BY b.item_code
-");
-$stmt->bind_param("i", $device_id);
-$stmt->execute();
-$result = $stmt->get_result();
-while ($row = $result->fetch_assoc()) {
-    $bom_items[] = $row;
+try {
+    $stmt = $conn->prepare("
+        SELECT b.bom_id, b.item_code, b.item_name, b.quantity_needed, s.supplier_name 
+        FROM device_bom b 
+        LEFT JOIN suppliers s ON b.supplier_id = s.supplier_id 
+        WHERE b.device_id = ? 
+        ORDER BY b.item_code
+        LIMIT 100
+    ");
+    $stmt->bind_param("i", $device_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) {
+        $bom_items[] = $row;
+    }
+    $stmt->close();
+} catch (Exception $e) {
+    logError("Error retrieving BOM items: " . $e->getMessage());
 }
-$stmt->close();
 ?>
 
 <!DOCTYPE html>
@@ -111,13 +176,16 @@ $stmt->close();
     <?php if (isset($_GET['msg'])): ?>
         <?php 
         $messages = [
-            'updated' => 'لیست قطعات با موفقیت به‌روزرسانی شد.',
-            'added' => 'کالا با موفقیت به BOM اضافه شد.',
-            'deleted' => 'کالا با موفقیت از BOM حذف شد.'
+            'updated' => ['لیست قطعات با موفقیت به‌روزرسانی شد.', 'success'],
+            'added' => ['کالا با موفقیت به BOM اضافه شد.', 'success'],
+            'deleted' => ['کالا با موفقیت از BOM حذف شد.', 'success'],
+            'error' => ['خطا در عملیات: ' . htmlspecialchars($_GET['error'] ?? 'خطای نامشخص'), 'danger']
         ];
-        $msg_type = 'success';
+        $msg_data = $messages[$_GET['msg']] ?? ['عملیات موفق', 'success'];
+        $msg_text = $msg_data[0];
+        $msg_type = $msg_data[1];
         ?>
-        <div class="alert alert-<?= $msg_type ?>"><?= $messages[$_GET['msg']] ?? 'عملیات موفق' ?></div>
+        <div class="alert alert-<?= $msg_type ?>"><?= $msg_text ?></div>
     <?php endif; ?>
 
     <!-- Search and Add from Inventory -->
@@ -140,54 +208,61 @@ $stmt->close();
 
             <?php
             if (isset($_GET['search_term']) && !empty($_GET['search_term'])) {
-                $search_term = clean($_GET['search_term']);
-                $search_query = "%$search_term%";
-                
-                $stmt = $conn->prepare("
-                    SELECT id, inventory_code, item_name, current_inventory FROM inventory 
-                    WHERE (inventory_code LIKE ? OR item_name LIKE ?)
-                    ORDER BY item_name 
-                    LIMIT 10
-                ");
-                $stmt->bind_param("ss", $search_query, $search_query);
-                $stmt->execute();
-                $result = $stmt->get_result();
-                
-                if ($result->num_rows > 0) {
-                    echo '<div class="table-responsive mt-3">
-                        <table class="table table-hover table-sm">
-                            <thead>
-                                <tr>
-                                    <th>کد کالا</th>
-                                    <th>نام کالا</th>
-                                    <th>موجودی</th>
-                                    <th>عملیات</th>
-                                </tr>
-                            </thead>
-                            <tbody>';
+                try {
+                    $search_term = clean($_GET['search_term']);
+                    $search_query = "%$search_term%";
                     
-                    while ($row = $result->fetch_assoc()) {
-                        echo '<tr>
-                            <td>' . htmlspecialchars($row['inventory_code']) . '</td>
-                            <td>' . htmlspecialchars($row['item_name']) . '</td>
-                            <td>' . ($row['current_inventory'] ?? 0) . '</td>
-                            <td>
-                                <form method="POST" class="d-inline">
-                                    <input type="hidden" name="inventory_id" value="' . $row['id'] . '">
-                                    <input type="hidden" name="action" value="add_to_bom">
-                                    <button type="submit" class="btn btn-sm btn-success">
-                                        <i class="bi bi-plus-lg"></i> افزودن
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>';
+                    // Optimize query - use LIMIT 5 for faster results
+                    $stmt = $conn->prepare("
+                        SELECT id, inventory_code, item_name, current_inventory 
+                        FROM inventory 
+                        WHERE (inventory_code LIKE ? OR item_name LIKE ?)
+                        ORDER BY item_name 
+                        LIMIT 5
+                    ");
+                    $stmt->bind_param("ss", $search_query, $search_query);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    
+                    if ($result->num_rows > 0) {
+                        echo '<div class="table-responsive mt-3">
+                            <table class="table table-hover table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>کد کالا</th>
+                                        <th>نام کالا</th>
+                                        <th>موجودی</th>
+                                        <th>عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>';
+                        
+                        while ($row = $result->fetch_assoc()) {
+                            echo '<tr>
+                                <td>' . htmlspecialchars($row['inventory_code']) . '</td>
+                                <td>' . htmlspecialchars($row['item_name']) . '</td>
+                                <td>' . ($row['current_inventory'] ?? 0) . '</td>
+                                <td>
+                                    <form method="POST" class="d-inline">
+                                        <input type="hidden" name="inventory_id" value="' . $row['id'] . '">
+                                        <input type="hidden" name="action" value="add_to_bom">
+                                        <button type="submit" class="btn btn-sm btn-success">
+                                            <i class="bi bi-plus-lg"></i> افزودن
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>';
+                        }
+                        
+                        echo '</tbody></table></div>';
+                    } else {
+                        echo '<div class="alert alert-info mt-3">هیچ کالایی یافت نشد.</div>';
                     }
-                    
-                    echo '</tbody></table></div>';
-                } else {
-                    echo '<div class="alert alert-info mt-3">هیچ کالایی یافت نشد.</div>';
+                    $stmt->close();
+                } catch (Exception $e) {
+                    logError("Error in search query: " . $e->getMessage());
+                    echo '<div class="alert alert-danger mt-3">خطا در جستجو: لطفا مجددا تلاش کنید.</div>';
                 }
-                $stmt->close();
             }
             ?>
         </div>

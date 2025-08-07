@@ -4,44 +4,22 @@ if (!file_exists('config.php')) {
     header('Location: setup.php');
     exit;
 }
-
 require_once 'config.php';
 require_once 'includes/functions.php';
-// اطمینان از وجود جدول settings
-$conn->query("CREATE TABLE IF NOT EXISTS settings (
-    setting_name VARCHAR(64) PRIMARY KEY,
-    setting_value TEXT NOT NULL,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
-// اجرای مایگریشن پس از تایید اپراتور
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_migrations'])) {
-    require_once __DIR__ . '/migrate.php';
-    header('Location: index.php');
-    exit;
-}
-
-// دریافت اطلاعات کسب و کار
 $business_info = getBusinessInfo();
-
-// بررسی نیاز به آپدیت
-if (defined('SYSTEM_VERSION')) {
-    $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'system_version'");
-    if ($result && $row = $result->fetch_assoc()) {
-        if (version_compare($row['setting_value'], SYSTEM_VERSION, '<')) {
-            header('Location: setup.php');
-            exit;
-        }
-    }
-}
 ?>
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title><?php echo htmlspecialchars($business_info['business_name']); ?></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سیستم انبارداری</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        body { background: #f7f7f7; padding-top: 2rem; }
+        body {
+            font-family: 'Vazir', sans-serif;
+        }
         .card { margin-bottom: 1rem; }
         .main-menu {
             margin-bottom: 2rem;
@@ -122,15 +100,6 @@ if (defined('SYSTEM_VERSION')) {
         <div class="col-md-4">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">تامین‌کنندگان</h5>
-                    <p class="card-text">مدیریت لیست تامین‌کنندگان و قطعات.</p>
-                    <a href="suppliers.php" class="btn btn-primary">مدیریت</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
                     <h5 class="card-title">دستگاه‌ها و BOM</h5>
                     <p class="card-text">مدیریت لیست دستگاه‌ها و قطعات آن‌ها.</p>
                     <a href="devices.php" class="btn btn-primary">مدیریت</a>
@@ -144,6 +113,9 @@ if (defined('SYSTEM_VERSION')) {
     <div class="mb-2">
         <a href="settings.php" class="btn btn-outline-secondary btn-sm me-2">
             <i class="bi bi-gear"></i> تنظیمات سیستم
+        </a>
+        <a href="other_sections.php" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-grid"></i> سایر بخش‌ها
         </a>
     </div>
     <small>

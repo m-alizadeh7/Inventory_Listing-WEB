@@ -180,6 +180,20 @@ foreach ($business_fields as $field) {
             <?php endif; ?>
 
             <!-- اطلاعات کسب و کار -->
+            <!-- وارد کردن لیست انبار -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-upload"></i> وارد کردن لیست انبار
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3">آپلود فایل CSV برای به‌روزرسانی لیست کالاها.</p>
+                    <a href="import_inventory.php" class="btn btn-outline-primary">
+                        <i class="bi bi-upload"></i> آپلود لیست انبار
+                    </a>
+                </div>
+            </div>
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="card-title mb-0">

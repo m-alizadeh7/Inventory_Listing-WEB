@@ -19,6 +19,3 @@ define('SYSTEM_VERSION', '1.0.0');
 
 // فراخوانی functions.php برای دسترسی به توابع اطمینان از ساختار دیتابیس
 require_once __DIR__ . '/includes/functions.php';
-
-// اطمینان از ساختار صحیح جدول suppliers
-ensureSupplierSchema();

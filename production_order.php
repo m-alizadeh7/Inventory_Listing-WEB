@@ -83,9 +83,9 @@ $result = $conn->query("
            s.supplier_name, s.supplier_code,
            SUM(b.quantity_needed * i.quantity) as total_needed,
            (
-               SELECT SUM(current_inventory)
-               FROM inventory_records
-               WHERE item_code = b.item_code
+               SELECT SUM(inv.current_inventory)
+               FROM inventory inv
+               WHERE CONVERT(inv.inventory_code USING utf8mb4) = CONVERT(b.item_code USING utf8mb4)
            ) as current_stock
     FROM production_order_items i
     JOIN device_bom b ON i.device_id = b.device_id
@@ -110,11 +110,43 @@ foreach ($parts as $part) {
     $needed = (int)$part['total_needed'];
     if ($stock < $needed) {
         $total_missing_parts++;
+        $missing_parts_list[] = [
+            'item_code' => $part['item_code'],
+            'item_name' => $part['item_name'],
+            'needed' => $needed,
+            'stock' => $stock,
+            'missing' => $needed - $stock
+        ];
     }
 }
 
 // صرف‌نظر کردن از خطای تامین‌کننده
+
 $all_parts_available = true;
+
+// نمایش پیام ساختار یافته کسری قطعات (در صورت وجود)
+if (!empty($missing_parts_list)) {
+    echo '<div class="alert alert-danger shadow-sm p-3 mb-4 rounded-3">';
+    echo '<div class="d-flex align-items-center mb-2">';
+    echo '<i class="bi bi-exclamation-triangle-fill fs-3 me-2 text-danger"></i>';
+    echo '<span class="fw-bold fs-5">موجودی قطعات زیر کافی نیست:</span>';
+    echo '</div>';
+    echo '<div class="table-responsive">';
+    echo '<table class="table table-bordered table-striped table-sm mb-0 mt-2 align-middle">';
+    echo '<thead class="table-danger"><tr>';
+    echo '<th>کد قطعه</th><th>نام قطعه</th><th>مورد نیاز</th><th>موجودی فعلی</th><th>کسری</th>';
+    echo '</tr></thead><tbody>';
+    foreach ($missing_parts_list as $mp) {
+        echo '<tr>';
+        echo '<td class="fw-bold">' . htmlspecialchars($mp['item_code']) . '</td>';
+        echo '<td>' . htmlspecialchars($mp['item_name']) . '</td>';
+        echo '<td>' . $mp['needed'] . '</td>';
+        echo '<td>' . $mp['stock'] . '</td>';
+        echo '<td class="text-danger fw-bold">' . $mp['missing'] . '</td>';
+        echo '</tr>';
+    }
+    echo '</tbody></table></div></div>';
+}
 ?>
 
 <!DOCTYPE html>

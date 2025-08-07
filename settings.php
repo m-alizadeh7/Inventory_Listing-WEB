@@ -26,44 +26,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $conn->query("SET FOREIGN_KEY_CHECKS=1");
             require_once __DIR__ . '/migrate.php';
-            $message = 'دیتابیس با موفقیت ریست شد.';
+            header('Location: settings.php?reset=1');
+            exit;
         } else {
             $error = 'رمز عبور اشتباه است.';
         }
     }
     
-    // بک‌آپ دیتابیس
+    // بک‌آپ دیتابیس بدون exec
     if (isset($_POST['backup_db'])) {
         try {
             $backupDir = 'backups';
             if (!is_dir($backupDir)) {
                 mkdir($backupDir, 0755, true);
             }
-            
             $filename = 'backup_' . date('Y-m-d_H-i-s') . '.sql';
             $filepath = $backupDir . '/' . $filename;
-            
-            $command = sprintf(
-                'mysqldump --host=%s --user=%s --password=%s %s > %s',
-                DB_HOST,
-                DB_USER,
-                DB_PASS,
-                DB_NAME,
-                $filepath
-            );
-            
-            exec($command, $output, $return_var);
-            
-            if ($return_var === 0 && file_exists($filepath)) {
-                header('Content-Type: application/octet-stream');
-                header('Content-Disposition: attachment; filename="' . $filename . '"');
-                header('Content-Length: ' . filesize($filepath));
-                readfile($filepath);
-                unlink($filepath); // حذف فایل بعد از دانلود
-                exit;
-            } else {
-                $error = 'خطا در ایجاد بک‌آپ.';
+            $tables = [];
+            $result = $conn->query('SHOW TABLES');
+            while ($row = $result->fetch_array()) {
+                $tables[] = $row[0];
             }
+            $sqlScript = "SET NAMES utf8mb4;\n";
+            foreach ($tables as $table) {
+                $res = $conn->query("SHOW CREATE TABLE `$table`");
+                $row2 = $res->fetch_assoc();
+                $sqlScript .= "\n-- ----------------------------\n";
+                $sqlScript .= "-- Table structure for `$table`\n";
+                $sqlScript .= "-- ----------------------------\n";
+                $sqlScript .= $row2['Create Table'] . ";\n\n";
+                $sqlScript .= "-- Dumping data for table `$table`\n";
+                $res = $conn->query("SELECT * FROM `$table`");
+                while ($data = $res->fetch_assoc()) {
+                    $cols = array_map(function($v){return '`'.$v.'`';}, array_keys($data));
+                    $vals = array_map(function($v) use ($conn){return "'".$conn->real_escape_string($v)."'";}, array_values($data));
+                    $sqlScript .= "INSERT INTO `$table` (".implode(",",$cols).") VALUES (".implode(",",$vals).");\n";
+                }
+                $sqlScript .= "\n";
+            }
+            file_put_contents($filepath, $sqlScript);
+            header('Content-Type: application/octet-stream');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Content-Length: ' . filesize($filepath));
+            readfile($filepath);
+            unlink($filepath);
+            exit;
         } catch (Exception $e) {
             $error = 'خطا در ایجاد بک‌آپ: ' . $e->getMessage();
         }
@@ -124,12 +131,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// نمایش پیام موفقیت ریست دیتابیس
+if (isset($_GET['reset']) && $_GET['reset'] == 1) {
+    $message = 'دیتابیس با موفقیت ریست شد.';
+}
+
 // دریافت اطلاعات کسب و کار فعلی
 $business_info = [];
 $business_fields = ['business_name', 'business_address', 'business_phone', 'business_email', 'business_website'];
 foreach ($business_fields as $field) {
     $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = '$field'");
-    $business_info[$field] = $result && $row = $result->fetch_assoc() ? $row['setting_value'] : '';
+    $business_info[$field] = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
 }
 ?>
 

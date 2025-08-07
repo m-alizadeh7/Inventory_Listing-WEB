@@ -18,6 +18,11 @@ $conn->query("CREATE TABLE IF NOT EXISTS device_bom (
     FOREIGN KEY (device_id) REFERENCES devices(device_id) ON DELETE CASCADE,
     FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+// اطمینان از وجود ستون supplier_id در device_bom
+$res = $conn->query("SHOW COLUMNS FROM device_bom LIKE 'supplier_id'");
+if ($res && $res->num_rows === 0) {
+    $conn->query("ALTER TABLE device_bom ADD COLUMN supplier_id INT");
+}
 $res = $conn->query("SHOW COLUMNS FROM device_bom LIKE 'bom_id'");
 if ($res && $res->num_rows === 0) {
     // بررسی وجود ستون AUTO_INCREMENT دیگر

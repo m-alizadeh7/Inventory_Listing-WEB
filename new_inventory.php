@@ -7,7 +7,7 @@ $res = $conn->query("SHOW TABLES LIKE 'inventory'");
 if ($res && $res->num_rows === 0) {
     $createTable = "CREATE TABLE inventory (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        row_number INT NOT NULL,
+        `row_number` INT NOT NULL,
         inventory_code VARCHAR(50) NOT NULL,
         item_name VARCHAR(255) NOT NULL,
         unit VARCHAR(50),

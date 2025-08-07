@@ -1,4 +1,23 @@
 <?php
+// تنظیم مسیر اصلی
+define('ROOT_PATH', dirname(__FILE__));
+
+global $conn;
+require_once ROOT_PATH . '/config.php';
+if (!isset($conn) || !$conn || !($conn instanceof mysqli)) {
+    echo '<div style="color:red; font-weight:bold; margin:2rem;">خطا در اتصال به پایگاه داده. لطفاً تنظیمات دیتابیس را بررسی کنید.</div>';
+    exit;
+}
+
+// حذف جلسه انبارگردانی در صورت ارسال درخواست
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_session_id'])) {
+    $del_id = $conn->real_escape_string($_POST['delete_session_id']);
+    $conn->query("DELETE FROM inventory_records WHERE inventory_session = '$del_id'");
+    $conn->query("DELETE FROM inventory_sessions WHERE session_id = '$del_id'");
+    header('Location: view_inventories.php?deleted=1');
+    exit;
+}
+
 // بررسی و ایجاد جدول inventory_sessions اگر وجود ندارد
 $res = $conn->query("SHOW TABLES LIKE 'inventory_sessions'");
 if ($res && $res->num_rows === 0) {
@@ -14,12 +33,15 @@ if ($res && $res->num_rows === 0) {
         die('خطا در ایجاد جدول inventory_sessions: ' . $conn->error);
     }
 }
-// تنظیم مسیر اصلی
-define('ROOT_PATH', dirname(__FILE__));
-
-require_once ROOT_PATH . '/config.php';
-if (!isset($conn) || !$conn) {
-    die('Database connection failed.');
+// اطمینان از وجود ستون started_at
+$res = $conn->query("SHOW COLUMNS FROM inventory_sessions LIKE 'started_at'");
+if ($res && $res->num_rows === 0) {
+    $conn->query("ALTER TABLE inventory_sessions ADD COLUMN started_at DATETIME DEFAULT CURRENT_TIMESTAMP");
+}
+// اطمینان از وجود ستون notes
+$res = $conn->query("SHOW COLUMNS FROM inventory_sessions LIKE 'notes'");
+if ($res && $res->num_rows === 0) {
+    $conn->query("ALTER TABLE inventory_sessions ADD COLUMN notes TEXT NULL");
 }
 require_once ROOT_PATH . '/includes/functions.php';
 
@@ -64,6 +86,12 @@ while ($row = $result->fetch_assoc()) {
 </head>
 <body>
 <div class="container">
+    <?php if (isset($_GET['deleted']) && $_GET['deleted'] == 1): ?>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle"></i> جلسه انبارگردانی با موفقیت حذف شد.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>📋 گزارش‌های انبارداری</h2>
         <a href="index.php" class="btn btn-secondary">بازگشت</a>
@@ -124,6 +152,10 @@ while ($row = $result->fetch_assoc()) {
                                    class="btn btn-success btn-sm">
                                     دانلود فایل
                                 </a>
+                                <form method="POST" action="" style="display:inline-block;" onsubmit="return confirm('آیا از حذف این انبارگردانی مطمئن هستید؟');">
+                                    <input type="hidden" name="delete_session_id" value="<?= htmlspecialchars($session['session_id']) ?>">
+                                    <button type="submit" class="btn btn-danger btn-sm">حذف</button>
+                                </form>
                             </td>
                         </tr>
                     <?php endforeach; ?>

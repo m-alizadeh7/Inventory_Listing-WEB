@@ -140,3 +140,28 @@ function ensureSupplierSchema() {
         }
     }
 }
+
+/**
+ * دریافت اطلاعات کسب و کار
+ */
+function getBusinessInfo() {
+    global $conn;
+    
+    $business_info = [
+        'business_name' => 'سیستم انبارداری',
+        'business_address' => '',
+        'business_phone' => '',
+        'business_email' => '',
+        'business_website' => ''
+    ];
+    
+    $business_fields = ['business_name', 'business_address', 'business_phone', 'business_email', 'business_website'];
+    foreach ($business_fields as $field) {
+        $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = '$field'");
+        if ($result && $row = $result->fetch_assoc()) {
+            $business_info[$field] = $row['setting_value'];
+        }
+    }
+    
+    return $business_info;
+}

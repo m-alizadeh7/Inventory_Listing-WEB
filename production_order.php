@@ -2,6 +2,9 @@
 require_once 'config.php';
 require_once 'includes/functions.php';
 
+// دریافت اطلاعات کسب و کار
+$business_info = getBusinessInfo();
+
 // بررسی و ایجاد جدول production_orders اگر وجود ندارد
 $res = $conn->query("SHOW TABLES LIKE 'production_orders'");
 if ($res && $res->num_rows === 0) {
@@ -118,7 +121,7 @@ $all_parts_available = true;
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>جزئیات سفارش تولید</title>
+    <title>جزئیات سفارش تولید - <?php echo htmlspecialchars($business_info['business_name']); ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
     <style>

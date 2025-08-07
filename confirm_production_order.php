@@ -2,6 +2,9 @@
 require_once 'config.php';
 require_once 'includes/functions.php';
 
+// دریافت اطلاعات کسب و کار
+$business_info = getBusinessInfo();
+
 // بررسی و ایجاد جدول production_orders اگر وجود ندارد
 $res = $conn->query("SHOW TABLES LIKE 'production_orders'");
 if ($res && $res->num_rows === 0) {
@@ -68,13 +71,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'])) {
         echo "<html lang='fa' dir='rtl'>";
         echo "<head>";
         echo "<meta charset='UTF-8'>";
-        echo "<title>لیست تامین‌کننده</title>";
+        echo "<title>لیست تامین‌کننده - " . htmlspecialchars($business_info['business_name']) . "</title>";
         echo "<link href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css' rel='stylesheet'>";
-        echo "<style>@media print { .btn { display: none; } }</style>";
+        echo "<style>@media print { .btn { display: none; } .business-header { margin-bottom: 20px; } }</style>";
         echo "</head>";
         echo "<body>";
         echo "<div class='container mt-4'>";
+        
+        // هدر اطلاعات کسب و کار
+        echo "<div class='business-header text-center mb-4'>";
+        echo "<h2>" . htmlspecialchars($business_info['business_name']) . "</h2>";
+        if ($business_info['business_address']) {
+            echo "<p class='mb-1'><strong>آدرس:</strong> " . htmlspecialchars($business_info['business_address']) . "</p>";
+        }
+        if ($business_info['business_phone']) {
+            echo "<p class='mb-1'><strong>تلفن:</strong> " . htmlspecialchars($business_info['business_phone']) . "</p>";
+        }
+        if ($business_info['business_email']) {
+            echo "<p class='mb-1'><strong>ایمیل:</strong> " . htmlspecialchars($business_info['business_email']) . "</p>";
+        }
+        echo "<hr>";
+        echo "</div>";
+        
         echo "<h3 class='text-center'>لیست تامین‌کننده</h3>";
+        echo "<p class='text-center text-muted'>تاریخ: " . date('Y/m/d H:i') . "</p>";
         echo "<table class='table table-bordered'>";
         echo "<thead><tr><th>کد کالا</th><th>نام کالا</th><th>تعداد مورد نیاز</th><th>تامین‌کننده</th></tr></thead>";
         echo "<tbody>";

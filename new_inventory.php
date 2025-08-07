@@ -70,10 +70,25 @@ if ($res && $res->num_rows === 0) {
 if (!isset($_SESSION['inventory_session'])) {
     $_SESSION['inventory_session'] = uniqid('inv_');
     // ایجاد جلسه جدید در پایگاه داده
-    $stmt = $conn->prepare("INSERT INTO inventory_sessions (session_id) VALUES (?)");
+    $stmt = $conn->prepare("INSERT INTO inventory_sessions (session_id, status) VALUES (?, 'draft') ON DUPLICATE KEY UPDATE status = status");
     $stmt->bind_param("s", $_SESSION['inventory_session']);
     $stmt->execute();
     $stmt->close();
+} else {
+    // اطمینان از وجود جلسه در دیتابیس
+    $checkStmt = $conn->prepare("SELECT session_id FROM inventory_sessions WHERE session_id = ?");
+    $checkStmt->bind_param("s", $_SESSION['inventory_session']);
+    $checkStmt->execute();
+    $result = $checkStmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        // اگر جلسه در دیتابیس وجود ندارد، آن را ایجاد کن
+        $stmt = $conn->prepare("INSERT INTO inventory_sessions (session_id, status) VALUES (?, 'draft')");
+        $stmt->bind_param("s", $_SESSION['inventory_session']);
+        $stmt->execute();
+        $stmt->close();
+    }
+    $checkStmt->close();
 }
 
 // Check and create 'notes' column in 'inventory_records' table if missing

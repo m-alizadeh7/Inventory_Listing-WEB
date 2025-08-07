@@ -7,6 +7,24 @@ header('Content-Type: application/json');
 // Log برای دیباگ
 error_log("finalize_inventory.php called");
 
+// اطمینان از وجود جدول و ستون‌های لازم
+$conn->query("CREATE TABLE IF NOT EXISTS inventory_sessions (
+    session_id VARCHAR(64) PRIMARY KEY,
+    status VARCHAR(20) DEFAULT 'draft',
+    completed_by VARCHAR(100) NULL,
+    completed_at DATETIME NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+// اطمینان از وجود ستون‌های completed_by و completed_at
+$res = $conn->query("SHOW COLUMNS FROM inventory_sessions LIKE 'completed_by'");
+if ($res && $res->num_rows === 0) {
+    $conn->query("ALTER TABLE inventory_sessions ADD COLUMN completed_by VARCHAR(100) NULL");
+}
+$res = $conn->query("SHOW COLUMNS FROM inventory_sessions LIKE 'completed_at'");
+if ($res && $res->num_rows === 0) {
+    $conn->query("ALTER TABLE inventory_sessions ADD COLUMN completed_at DATETIME NULL");
+}
+
 try {
     // بررسی وجود جلسه انبارگردانی
     if (!isset($_SESSION['inventory_session'])) {
@@ -35,13 +53,21 @@ try {
     $result = $checkStmt->get_result();
     
     if ($result->num_rows === 0) {
-        throw new Exception('جلسه انبارگردانی یافت نشد.');
+        // اگر جلسه وجود ندارد، آن را ایجاد کنیم
+        $createStmt = $conn->prepare("INSERT INTO inventory_sessions (session_id, status) VALUES (?, 'draft')");
+        $createStmt->bind_param("s", $session_id);
+        if (!$createStmt->execute()) {
+            throw new Exception('خطا در ایجاد جلسه انبارگردانی: ' . $createStmt->error);
+        }
+        $createStmt->close();
+        $session_status = 'draft';
+    } else {
+        $session = $result->fetch_assoc();
+        $session_status = $session['status'];
     }
-    
-    $session = $result->fetch_assoc();
     $checkStmt->close();
 
-    if ($session['status'] === 'completed') {
+    if ($session_status === 'completed') {
         throw new Exception('این جلسه قبلاً نهایی شده است.');
     }
 

@@ -21,6 +21,24 @@ if ($res && $res->num_rows === 0) {
     }
 }
 
+// اطمینان از وجود جدول inventory_sessions
+$conn->query("CREATE TABLE IF NOT EXISTS inventory_sessions (
+    session_id VARCHAR(64) PRIMARY KEY,
+    status VARCHAR(20) DEFAULT 'draft',
+    completed_by VARCHAR(100) NULL,
+    completed_at DATETIME NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+// اطمینان از وجود ستون‌های completed_by و completed_at
+$res = $conn->query("SHOW COLUMNS FROM inventory_sessions LIKE 'completed_by'");
+if ($res && $res->num_rows === 0) {
+    $conn->query("ALTER TABLE inventory_sessions ADD COLUMN completed_by VARCHAR(100) NULL");
+}
+$res = $conn->query("SHOW COLUMNS FROM inventory_sessions LIKE 'completed_at'");
+if ($res && $res->num_rows === 0) {
+    $conn->query("ALTER TABLE inventory_sessions ADD COLUMN completed_at DATETIME NULL");
+}
+
 header('Content-Type: application/json');
 
 // Log برای دیباگ

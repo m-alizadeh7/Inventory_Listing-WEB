@@ -1,42 +1,10 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('max_execution_time', 30);
+ini_set('memory_limit', '128M');
 require_once 'config.php';
 require_once 'includes/functions.php';
-
-// بررسی و ایجاد جدول inventory اگر وجود ندارد
-$res = $conn->query("SHOW TABLES LIKE 'inventory'");
-if ($res && $res->num_rows === 0) {
-    $createTable = "CREATE TABLE inventory (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        row_number INT NOT NULL,
-        inventory_code VARCHAR(50) NOT NULL,
-        item_name VARCHAR(255) NOT NULL,
-        unit VARCHAR(50),
-        min_inventory INT,
-        supplier VARCHAR(255),
-        current_inventory FLOAT,
-        required FLOAT,
-        notes TEXT,
-        last_updated DATETIME
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
-    if (!$conn->query($createTable)) {
-        die('خطا در ایجاد جدول inventory: ' . $conn->error);
-    }
-}
-
-// بررسی و ایجاد جدول devices اگر وجود ندارد
-$res = $conn->query("SHOW TABLES LIKE 'devices'");
-if ($res && $res->num_rows === 0) {
-    $createTable = "CREATE TABLE devices (
-        device_id INT AUTO_INCREMENT PRIMARY KEY,
-        device_name VARCHAR(255) NOT NULL,
-        device_code VARCHAR(100),
-        description TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
-    if (!$conn->query($createTable)) {
-        die('خطا در ایجاد جدول devices: ' . $conn->error);
-    }
-}
 
 // بررسی و ایجاد جدول device_bom اگر وجود ندارد
 $res = $conn->query("SHOW TABLES LIKE 'device_bom'");
@@ -46,27 +14,28 @@ if ($res && $res->num_rows === 0) {
         device_id INT NOT NULL,
         item_code VARCHAR(100) NOT NULL,
         item_name VARCHAR(255),
-        quantity_needed INT,
+        quantity_needed INT DEFAULT 1,
         supplier_id INT,
-        notes TEXT
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+        notes TEXT,
+        INDEX idx_device_id (device_id),
+        INDEX idx_item_code (item_code)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
     if (!$conn->query($createTable)) {
         die('خطا در ایجاد جدول device_bom: ' . $conn->error);
     }
 }
 
-// اطمینان از وجود ستون‌های مورد نیاز در جدول device_bom با بررسی وجود قبلی
-$columns_to_add = ['item_name', 'quantity_needed', 'supplier_id'];
-foreach ($columns_to_add as $column) {
+// اطمینان از وجود ستون‌های مورد نیاز
+$columns_check = [
+    'item_name' => "ALTER TABLE device_bom ADD COLUMN item_name VARCHAR(255) NULL",
+    'quantity_needed' => "ALTER TABLE device_bom ADD COLUMN quantity_needed INT DEFAULT 1",
+    'supplier_id' => "ALTER TABLE device_bom ADD COLUMN supplier_id INT NULL"
+];
+
+foreach ($columns_check as $column => $sql) {
     $res = $conn->query("SHOW COLUMNS FROM device_bom LIKE '$column'");
     if ($res && $res->num_rows === 0) {
-        if ($column === 'item_name') {
-            $conn->query("ALTER TABLE device_bom ADD COLUMN $column VARCHAR(255) NULL");
-        } elseif ($column === 'quantity_needed') {
-            $conn->query("ALTER TABLE device_bom ADD COLUMN $column INT NULL");
-        } elseif ($column === 'supplier_id') {
-            $conn->query("ALTER TABLE device_bom ADD COLUMN $column INT NULL");
-        }
+        $conn->query($sql);
     }
 }
 
@@ -77,7 +46,11 @@ if (!$device_id) {
 }
 
 // دریافت اطلاعات دستگاه
-$device = $conn->query("SELECT * FROM devices WHERE device_id = $device_id")->fetch_assoc();
+$stmt = $conn->prepare("SELECT device_name FROM devices WHERE device_id = ? LIMIT 1");
+$stmt->bind_param("i", $device_id);
+$stmt->execute();
+$device = $stmt->get_result()->fetch_assoc();
+$stmt->close();
 if (!$device) {
     header('Location: devices.php');
     exit;
@@ -86,20 +59,30 @@ if (!$device) {
 // افزودن کالا به BOM
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($_POST['action'] === 'add_to_bom') {
-        $inventory_id = clean($_POST['inventory_id']);
-        $inventory_item = $conn->query("SELECT * FROM inventory WHERE id = $inventory_id")->fetch_assoc();
+        $inventory_id = intval(clean($_POST['inventory_id']));
+        $stmt = $conn->prepare("SELECT inventory_code, item_name FROM inventory WHERE id = ? LIMIT 1");
+        $stmt->bind_param("i", $inventory_id);
+        $stmt->execute();
+        $inventory_item = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
         
         if ($inventory_item) {
-            $check = $conn->query("SELECT bom_id FROM device_bom WHERE device_id = $device_id AND item_code = '" . $inventory_item['inventory_code'] . "'");
+            $check = $conn->prepare("SELECT 1 FROM device_bom WHERE device_id = ? AND CONVERT(item_code USING utf8mb4) = CONVERT(? USING utf8mb4) LIMIT 1");
+            $check->bind_param("is", $device_id, $inventory_item['inventory_code']);
+            $check->execute();
+            $check->store_result();
             if ($check->num_rows === 0) {
-                $stmt = $conn->prepare("INSERT INTO device_bom (device_id, item_code, item_name, quantity_needed) VALUES (?, ?, ?, 1)");
-                $stmt->bind_param("iss", $device_id, $inventory_item['inventory_code'], $inventory_item['item_name']);
-                $stmt->execute();
-                $stmt->close();
-                header("Location: device_bom.php?id=$device_id&msg=added");
-                exit;
+                $insert = $conn->prepare("INSERT INTO device_bom (device_id, item_code, item_name, quantity_needed) VALUES (?, ?, ?, 1)");
+                $insert->bind_param("iss", $device_id, $inventory_item['inventory_code'], $inventory_item['item_name']);
+                if (!$insert->execute()) {
+                    die('خطا در افزودن به BOM: ' . $insert->error);
+                }
+                $insert->close();
             }
+            $check->close();
         }
+        header("Location: device_bom.php?id=$device_id&msg=added");
+        exit;
     } elseif ($_POST['action'] === 'update_bom') {
         $quantities = $_POST['quantities'] ?? [];
         $stmt = $conn->prepare("UPDATE device_bom SET quantity_needed = ? WHERE bom_id = ? AND device_id = ?");
@@ -124,16 +107,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
 // دریافت لیست قطعات دستگاه
 $bom_items = [];
-$result = $conn->query("
-    SELECT b.*, s.supplier_name 
+$stmt = $conn->prepare("
+    SELECT b.bom_id, b.item_code, b.item_name, b.quantity_needed, s.supplier_name 
     FROM device_bom b 
     LEFT JOIN suppliers s ON b.supplier_id = s.supplier_id 
-    WHERE b.device_id = $device_id 
+    WHERE b.device_id = ? 
     ORDER BY b.item_code
 ");
+$stmt->bind_param("i", $device_id);
+$stmt->execute();
+$result = $stmt->get_result();
 while ($row = $result->fetch_assoc()) {
     $bom_items[] = $row;
 }
+$stmt->close();
 ?>
 
 <!DOCTYPE html>

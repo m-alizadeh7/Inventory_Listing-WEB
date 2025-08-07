@@ -6,39 +6,6 @@ ini_set('memory_limit', '128M');
 require_once 'config.php';
 require_once 'includes/functions.php';
 
-// بررسی و ایجاد جدول device_bom اگر وجود ندارد
-$res = $conn->query("SHOW TABLES LIKE 'device_bom'");
-if ($res && $res->num_rows === 0) {
-    $createTable = "CREATE TABLE device_bom (
-        bom_id INT AUTO_INCREMENT PRIMARY KEY,
-        device_id INT NOT NULL,
-        item_code VARCHAR(100) NOT NULL,
-        item_name VARCHAR(255),
-        quantity_needed INT DEFAULT 1,
-        supplier_id INT,
-        notes TEXT,
-        INDEX idx_device_id (device_id),
-        INDEX idx_item_code (item_code)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
-    if (!$conn->query($createTable)) {
-        die('خطا در ایجاد جدول device_bom: ' . $conn->error);
-    }
-}
-
-// اطمینان از وجود ستون‌های مورد نیاز
-$columns_check = [
-    'item_name' => "ALTER TABLE device_bom ADD COLUMN item_name VARCHAR(255) NULL",
-    'quantity_needed' => "ALTER TABLE device_bom ADD COLUMN quantity_needed INT DEFAULT 1",
-    'supplier_id' => "ALTER TABLE device_bom ADD COLUMN supplier_id INT NULL"
-];
-
-foreach ($columns_check as $column => $sql) {
-    $res = $conn->query("SHOW COLUMNS FROM device_bom LIKE '$column'");
-    if ($res && $res->num_rows === 0) {
-        $conn->query($sql);
-    }
-}
-
 $device_id = clean($_GET['id'] ?? '');
 if (!$device_id) {
     header('Location: devices.php');
@@ -67,16 +34,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $stmt->close();
         
         if ($inventory_item) {
-            $check = $conn->prepare("SELECT 1 FROM device_bom WHERE device_id = ? AND CONVERT(item_code USING utf8mb4) = CONVERT(? USING utf8mb4) LIMIT 1");
+            $check = $conn->prepare("SELECT 1 FROM device_bom WHERE device_id = ? AND item_code = ? LIMIT 1");
             $check->bind_param("is", $device_id, $inventory_item['inventory_code']);
             $check->execute();
-            $check->store_result();
-            if ($check->num_rows === 0) {
+            $result = $check->get_result();
+            if ($result->num_rows === 0) {
                 $insert = $conn->prepare("INSERT INTO device_bom (device_id, item_code, item_name, quantity_needed) VALUES (?, ?, ?, 1)");
                 $insert->bind_param("iss", $device_id, $inventory_item['inventory_code'], $inventory_item['item_name']);
-                if (!$insert->execute()) {
-                    die('خطا در افزودن به BOM: ' . $insert->error);
-                }
+                $insert->execute();
                 $insert->close();
             }
             $check->close();
@@ -179,8 +144,8 @@ $stmt->close();
                 $search_query = "%$search_term%";
                 
                 $stmt = $conn->prepare("
-                    SELECT * FROM inventory 
-                    WHERE inventory_code LIKE ? OR item_name LIKE ?
+                    SELECT id, inventory_code, item_name, current_inventory FROM inventory 
+                    WHERE (inventory_code LIKE ? OR item_name LIKE ?)
                     ORDER BY item_name 
                     LIMIT 10
                 ");

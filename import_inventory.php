@@ -44,11 +44,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
             $inventory_code = $row[1];
             $item_name = $row[2];
             $unit = $row[3];
-            $min_inventory = $row[4] ? intval($row[4]) : null;
-            $supplier = $row[5];
-            $current_inventory = $row[7] ? floatval($row[7]) : null;
-            $required = $row[8] ? floatval($row[8]) : null;
-            $notes = $row[6] === 'توقف استفاده' ? 'توقف استفاده' : '';
+            $supplier = isset($row[5]) ? trim($row[5]) : '';
+            // min_inventory واقعی ستون 6 است (در برخی ردیف‌ها ممکن است خالی یا "توقف استفاده" باشد)
+            $min_inventory = (isset($row[6]) && is_numeric($row[6])) ? intval($row[6]) : null;
+            $current_inventory = isset($row[7]) && is_numeric($row[7]) ? floatval($row[7]) : null;
+            $required = isset($row[8]) && is_numeric($row[8]) ? floatval($row[8]) : null;
+            // اگر هر یک از ستون‌های 6، 7 یا 8 مقدار "توقف استفاده" داشت، یادداشت ثبت شود
+            $notes = (isset($row[6]) && trim($row[6]) === 'توقف استفاده') || (isset($row[7]) && trim($row[7]) === 'توقف استفاده') || (isset($row[8]) && trim($row[8]) === 'توقف استفاده') ? 'توقف استفاده' : '';
             $stmt->execute();
         }
         $stmt->close();

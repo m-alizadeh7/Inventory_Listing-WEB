@@ -56,6 +56,16 @@ if ($res && $res->num_rows === 0) {
     }
 }
 
+// اطمینان از وجود ستون‌های completed_by و completed_at
+$res = $conn->query("SHOW COLUMNS FROM inventory_sessions LIKE 'completed_by'");
+if ($res && $res->num_rows === 0) {
+    $conn->query("ALTER TABLE inventory_sessions ADD COLUMN completed_by VARCHAR(100) NULL");
+}
+$res = $conn->query("SHOW COLUMNS FROM inventory_sessions LIKE 'completed_at'");
+if ($res && $res->num_rows === 0) {
+    $conn->query("ALTER TABLE inventory_sessions ADD COLUMN completed_at DATETIME NULL");
+}
+
 // ایجاد یا بازیابی جلسه انبارداری
 if (!isset($_SESSION['inventory_session'])) {
     $_SESSION['inventory_session'] = uniqid('inv_');
@@ -233,8 +243,15 @@ function saveAll(isFinalize = false) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items: data, finalize: isFinalize })
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Save response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(result => {
+        console.log('Save response data:', result);
         if (result.success) {
             if (!isFinalize) {
                 document.querySelectorAll('.modified-row').forEach(row => {
@@ -247,7 +264,10 @@ function saveAll(isFinalize = false) {
             alert('خطا در ذخیره اطلاعات: ' + result.message);
         }
     })
-    .catch(error => alert('خطا در ارتباط با سرور'));
+    .catch(error => {
+        console.error('Save error details:', error);
+        alert('خطا در ارتباط با سرور: ' + error.message);
+    });
 }
 
 function showFinalizeModal() {
@@ -272,8 +292,15 @@ function finalizeInventory() {
             completed_at: completedAt
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(result => {
+        console.log('Response data:', result);
         if (result.success) {
             alert('انبارگردانی با موفقیت نهایی شد.');
             window.location.href = 'index.php';
@@ -281,7 +308,10 @@ function finalizeInventory() {
             alert('خطا در نهایی کردن انبارگردانی: ' + result.message);
         }
     })
-    .catch(error => alert('خطا در ارتباط با سرور'));
+    .catch(error => {
+        console.error('Error details:', error);
+        alert('خطا در ارتباط با سرور: ' + error.message);
+    });
 }
 
 // جستجو در جدول

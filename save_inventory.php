@@ -23,6 +23,9 @@ if ($res && $res->num_rows === 0) {
 
 header('Content-Type: application/json');
 
+// Log برای دیباگ
+error_log("save_inventory.php called");
+
 // دریافت داده‌های ارسالی
 $data = json_decode(file_get_contents('php://input'), true);
 

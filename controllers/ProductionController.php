@@ -19,6 +19,13 @@ class ProductionController {
     }
     
     /**
+     * صفحه اصلی سفارشات تولید (پیش‌فرض)
+     */
+    public function index() {
+        $this->list();
+    }
+    
+    /**
      * نمایش لیست سفارشات تولید
      */
     public function list_orders() {

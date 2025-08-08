@@ -19,6 +19,13 @@ class DeviceController {
     }
     
     /**
+     * صفحه اصلی دستگاه‌ها (پیش‌فرض)
+     */
+    public function index() {
+        $this->list();
+    }
+    
+    /**
      * نمایش لیست دستگاه‌ها
      */
     public function list() {

@@ -19,6 +19,13 @@ class InventoryController {
     }
     
     /**
+     * صفحه اصلی موجودی (پیش‌فرض)
+     */
+    public function index() {
+        $this->list();
+    }
+    
+    /**
      * نمایش لیست موجودی انبار
      */
     public function list() {

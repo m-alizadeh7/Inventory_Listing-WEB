@@ -19,6 +19,13 @@ class SupplierController {
     }
     
     /**
+     * صفحه اصلی تأمین‌کنندگان (پیش‌فرض)
+     */
+    public function index() {
+        $this->list();
+    }
+    
+    /**
      * نمایش لیست تأمین‌کنندگان
      */
     public function list() {

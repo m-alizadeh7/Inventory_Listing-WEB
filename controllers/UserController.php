@@ -27,21 +27,25 @@ class UserController {
         if (!$this->main_controller->checkInstallation()) {
             return;
         }
-        
-        // بررسی ورود کاربر
-        if (!$this->main_controller->isUserLoggedIn()) {
-            $this->main_controller->showLoginPage();
-            return;
-        }
-        
-        // دریافت اطلاعات کاربر فعلی
-        $this->current_user = $_SESSION['user_data'];
+    }
+    
+    /**
+     * صفحه اصلی کاربران (پیش‌فرض)
+     */
+    public function index() {
+        $this->listUsers();
     }
     
     /**
      * نمایش لیست کاربران
      */
     public function listUsers() {
+        // بررسی احراز هویت
+        if (!$this->main_controller->checkAuth()) {
+            header('Location: index.php?controller=user&action=login');
+            exit;
+        }
+        
         // بررسی دسترسی
         if (!$this->main_controller->hasPermission('view_users')) {
             $_SESSION['error'] = 'شما دسترسی به این بخش را ندارید.';
@@ -53,9 +57,9 @@ class UserController {
         $users = $this->user_model->getAllUsers();
         
         // نمایش صفحه لیست کاربران
-        include(TEMPLATES_PATH . '/' . DEFAULT_TEMPLATE . '/header.php');
-        include(TEMPLATES_PATH . '/' . DEFAULT_TEMPLATE . '/users/list.php');
-        include(TEMPLATES_PATH . '/' . DEFAULT_TEMPLATE . '/footer.php');
+        include ROOT_PATH . '/templates/default/header.php';
+        include ROOT_PATH . '/templates/default/user/list.php';
+        include ROOT_PATH . '/templates/default/footer.php';
     }
     
     /**
@@ -281,5 +285,33 @@ class UserController {
         
         header('Location: index.php?controller=user&action=list_users');
         exit;
+    }
+    
+    /**
+     * نمایش صفحه ورود
+     */
+    public function login() {
+        // اگر کاربر قبلاً وارد شده، به داشبورد هدایت شود
+        if ($this->main_controller->checkAuth()) {
+            header('Location: index.php');
+            exit;
+        }
+        
+        $page_title = 'ورود به سیستم';
+        include ROOT_PATH . '/templates/default/login.php';
+    }
+    
+    /**
+     * پردازش ورود کاربر
+     */
+    public function process_login() {
+        return $this->main_controller->processLogin();
+    }
+    
+    /**
+     * خروج از سیستم
+     */
+    public function logout() {
+        return $this->main_controller->logout();
     }
 }

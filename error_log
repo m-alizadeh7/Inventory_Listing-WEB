@@ -1,15 +1,5 @@
-[08-Aug-2025 18:20:37 Asia/Tehran] PHP Fatal error:  Uncaught Error: Class "MainController" not found in /home/h312810/public_html/anbar2/controllers/UserController.php:24
+[08-Aug-2025 18:53:13 Asia/Tehran] PHP Warning:  Undefined array key "user_data" in /home/h312810/public_html/anbar2/controllers/UserController.php on line 38
+[08-Aug-2025 18:53:13 Asia/Tehran] PHP Fatal error:  Uncaught Error: Call to undefined method UserController::index() in /home/h312810/public_html/anbar2/index.php:67
 Stack trace:
-#0 /home/h312810/public_html/anbar2/index.php(51): UserController->__construct()
-#1 {main}
-  thrown in /home/h312810/public_html/anbar2/controllers/UserController.php on line 24
-[08-Aug-2025 18:21:01 Asia/Tehran] PHP Fatal error:  Uncaught Error: Class "MainController" not found in /home/h312810/public_html/anbar2/controllers/UserController.php:24
-Stack trace:
-#0 /home/h312810/public_html/anbar2/index.php(51): UserController->__construct()
-#1 {main}
-  thrown in /home/h312810/public_html/anbar2/controllers/UserController.php on line 24
-[08-Aug-2025 18:22:13 Asia/Tehran] PHP Fatal error:  Uncaught Error: Class "MainController" not found in /home/h312810/public_html/anbar2/controllers/UserController.php:24
-Stack trace:
-#0 /home/h312810/public_html/anbar2/index.php(51): UserController->__construct()
-#1 {main}
-  thrown in /home/h312810/public_html/anbar2/controllers/UserController.php on line 24
+#0 {main}
+  thrown in /home/h312810/public_html/anbar2/index.php on line 67

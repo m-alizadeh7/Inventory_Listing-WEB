@@ -64,6 +64,10 @@ if (method_exists($controller, $action_name)) {
     $controller->$action_name();
 } else {
     // اگر اکشن مورد نظر وجود نداشت، به اکشن پیش‌فرض هدایت می‌کنیم
-    $controller->index();
+    if (method_exists($controller, 'index')) {
+        $controller->index();
+    } else {
+        echo '<div class="alert alert-danger">متد مورد نظر یافت نشد.</div>';
+    }
 }
 ?>

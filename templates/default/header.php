@@ -66,7 +66,7 @@ $page_title = $page_title ?? 'سیستم مدیریت انبار';
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="index.php?controller=production&action=list_orders">
+                    <a class="nav-link" href="index.php?controller=production&action=list">
                         <i class="bi bi-gear"></i> سفارشات تولید
                     </a>
                 </li>
@@ -80,9 +80,9 @@ $page_title = $page_title ?? 'سیستم مدیریت انبار';
                         <i class="bi bi-people"></i> تأمین‌کنندگان
                     </a>
                 </li>
-                <?php if (isset($user) && $user['role'] === 'admin'): ?>
+                <?php if (isset($_SESSION['user_data']) && $_SESSION['user_data']['role'] === 'admin'): ?>
                 <li class="nav-item">
-                    <a class="nav-link" href="index.php?controller=user&action=list_users">
+                    <a class="nav-link" href="index.php?controller=user&action=listUsers">
                         <i class="bi bi-person"></i> کاربران
                     </a>
                 </li>

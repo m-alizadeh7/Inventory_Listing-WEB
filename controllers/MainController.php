@@ -33,6 +33,25 @@ class MainController {
     }
     
     /**
+     * متد پیش‌فرض برای صفحه اصلی
+     */
+    public function index() {
+        // بررسی نصب سیستم
+        if (!$this->checkInstallation()) {
+            return;
+        }
+        
+        // بررسی ورود کاربر
+        if (!$this->isUserLoggedIn()) {
+            $this->showLoginPage();
+            return;
+        }
+        
+        // هدایت به داشبورد
+        $this->showDashboard();
+    }
+    
+    /**
      * بررسی نصب سیستم
      * 
      * @return bool
@@ -112,7 +131,7 @@ class MainController {
      */
     public function showInstallPage() {
         // بررسی وضعیت نصب
-        $config_exists = $this->database_model->isConfigFileExists();
+        $db_config_exists = $this->database_model->isConfigFileExists();
         $db_installed = $this->database_model->isDatabaseInstalled();
         $admin_created = $this->database_model->isAdminUserExists();
         
@@ -274,6 +293,13 @@ class MainController {
     }
     
     /**
+     * نصب دیتابیس (متد کمکی برای سازگاری با URL)
+     */
+    public function install_db() {
+        return $this->installDb();
+    }
+    
+    /**
      * ایجاد کاربر مدیر
      */
     public function createAdmin() {
@@ -303,6 +329,13 @@ class MainController {
         $success = 'کاربر مدیر با موفقیت ایجاد شد.';
         header('Location: index.php');
         exit;
+    }
+    
+    /**
+     * ایجاد کاربر مدیر (متد کمکی برای سازگاری با URL)
+     */
+    public function create_admin() {
+        return $this->createAdmin();
     }
     
     /**
@@ -409,7 +442,7 @@ class MainController {
         // بررسی خالی نبودن فیلدها
         if (empty($current_password) || empty($new_password) || empty($confirm_password)) {
             $_SESSION['error'] = 'لطفاً تمام فیلدها را پر کنید.';
-            header('Location: index.php?controller=main&action=show_profile');
+            header('Location: index.php?controller=main&action=showberry');
             exit;
         }
         
@@ -429,5 +462,12 @@ class MainController {
         
         header('Location: index.php?controller=main&action=show_profile');
         exit;
+    }
+    
+    /**
+     * پردازش پیکربندی دیتابیس (متد کمکی برای سازگاری با URL)
+     */
+    public function process_db_config() {
+        return $this->processDbConfig();
     }
 }

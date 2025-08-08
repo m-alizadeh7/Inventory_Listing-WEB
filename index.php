@@ -11,32 +11,15 @@
 // شروع session
 session_start();
 
-// تعریف مسیر ریشه
-define('ROOT_PATH', __DIR__);
+// تعریف مسیر ریشه (اگر قبلاً تعریف نشده باشد)
+if (!defined('ROOT_PATH')) {
+    define('ROOT_PATH', __DIR__);
+}
 
 // بررسی وجود فایل کانفیگ
 if (file_exists(ROOT_PATH . '/config.php')) {
     require_once ROOT_PATH . '/config.php';
-    
-    // اتصال به دیتابیس
-    try {
-        if (defined('DB_PORT') && DB_PORT) {
-            $db = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
-        } else {
-            $db = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-        }
-        
-        // تنظیم کاراکتر ست اتصال
-        $db->set_charset('utf8mb4');
-        
-        // بررسی خطای اتصال
-        if ($db->connect_error) {
-            throw new Exception('خطا در اتصال به دیتابیس: ' . $db->connect_error);
-        }
-    } catch (Exception $e) {
-        die('<div style="color: red; direction: rtl; font-family: Tahoma; padding: 20px;">
-             خطا در اتصال به دیتابیس: ' . htmlspecialchars($e->getMessage()) . '</div>');
-    }
+    // متغیر $db از config.php آماده است
 } else {
     // اگر فایل کانفیگ وجود نداشت، به صفحه نصب هدایت
     $db = null;

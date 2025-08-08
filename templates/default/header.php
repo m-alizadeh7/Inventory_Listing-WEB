@@ -7,8 +7,7 @@
  */
 
 // دریافت عنوان صفحه
-$page_title = $page_title ?? getOption('site_title', 'سیستم مدیریت انبار');
-$business_info = getBusinessInfo();
+$page_title = $page_title ?? 'سیستم مدیریت انبار';
 ?>
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -25,8 +24,6 @@ $business_info = getBusinessInfo();
     <?php if (isset($custom_css)): ?>
     <link href="<?php echo ASSETS_URL; ?>/css/<?php echo $custom_css; ?>.css" rel="stylesheet">
     <?php endif; ?>
-    
-    <style>
         body {
             font-family: 'Vazir', sans-serif;
             min-height: 100vh;

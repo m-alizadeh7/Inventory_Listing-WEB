@@ -72,4 +72,3 @@ if (method_exists($controller, $action_name)) {
     // اگر اکشن مورد نظر وجود نداشت، به اکشن پیش‌فرض هدایت می‌کنیم
     $controller->index();
 }
-}

@@ -11,14 +11,15 @@
 // تنظیمات پایگاه داده
 $db_config = [
     'host'     => 'localhost',
-    'username' => 'h312810_usranb22',  // نام کاربری دیتابیس را تغییر دهید
-    'password' => 'v8xNDnmlOY4e',      // رمز عبور دیتابیس را تغییر دهید
-    'database' => 'h312810_anbar22', // نام دیتابیس را تغییر دهید
+    'username' => 'h312810_usranb22',  // نام کاربری دیتابیس
+    'password' => 'v8xNDnmlOY4e',      // رمز عبور دیتابیس
+    'database' => 'h312810_anbar22',   // نام دیتابیس
     'charset'  => 'utf8mb4',
     'collate'  => 'utf8mb4_general_ci'
 ];
 
-// تعریف ثابت‌های دیتابیس برای سازگاری با index.php
+
+// تعریف ثابت‌های دیتابیس
 define('DB_HOST', $db_config['host']);
 define('DB_USER', $db_config['username']);
 define('DB_PASS', $db_config['password']);
@@ -39,12 +40,14 @@ $config = [
 ];
 
 // مسیرهای اصلی سیستم
-define('BASE_PATH', dirname(__FILE__));
-define('CORE_PATH', BASE_PATH . '/core');
-define('ASSETS_PATH', BASE_PATH . '/assets');
-define('TEMPLATES_PATH', BASE_PATH . '/templates');
-define('ADMIN_PATH', BASE_PATH . '/admin');
+define('ROOT_PATH', dirname(__FILE__));
+define('CORE_PATH', ROOT_PATH . '/core');
+define('ASSETS_PATH', ROOT_PATH . '/assets');
+define('TEMPLATES_PATH', ROOT_PATH . '/templates');
+define('ADMIN_PATH', ROOT_PATH . '/admin');
 define('INCLUDES_PATH', CORE_PATH . '/includes');
+define('DEFAULT_TEMPLATE', $config['default_theme']);
+define('COOKIE_LIFETIME', 30 * 24 * 60 * 60); // 30 روز
 
 // مسیرهای URL برای دسترسی به فایل‌ها
 $base_url = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
@@ -57,3 +60,4 @@ define('ASSETS_URL', BASE_URL . 'assets');
 // لود کردن فایل‌های مورد نیاز
 require_once(INCLUDES_PATH . '/database.php');
 require_once(INCLUDES_PATH . '/functions.php');
+?>

@@ -1,19 +1,8 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-ini_set('max_execution_time', 300); // افزایش به 5 دقیقه
-ini_set('memory_limit', '512M'); // افزایش به 512 مگابایت
-set_time_limit(300); // تنظیم مجدد محدودیت زمانی
 require_once 'config.php';
 require_once 'includes/functions.php';
-require_once 'includes/locks.php';
-require_once 'includes/db_check.php'; // اضافه کردن بررسی خودکار ساختار پایگاه داده
 
-// Enable detailed error logging
-function logError($message) {
-    error_log("[" . date('Y-m-d H:i:s') . "] device_bom.php: $message", 0);
-}
-
+// بررسی device_id
 $device_id = clean($_GET['id'] ?? '');
 if (!$device_id) {
     header('Location: devices.php');
@@ -21,391 +10,412 @@ if (!$device_id) {
 }
 
 // دریافت اطلاعات دستگاه
-try {
-    $stmt = $conn->prepare("SELECT device_name FROM devices WHERE device_id = ? LIMIT 1");
-    $stmt->bind_param("i", $device_id);
-    $stmt->execute();
-    $device = $stmt->get_result()->fetch_assoc();
-    $stmt->close();
-    if (!$device) {
-        logError("Device not found with ID: $device_id");
-        header('Location: devices.php');
-        exit;
-    }
-} catch (Exception $e) {
-    logError("Error getting device info: " . $e->getMessage());
+$stmt = $conn->prepare("SELECT device_id, device_code, device_name FROM devices WHERE device_id = ? LIMIT 1");
+$stmt->bind_param("i", $device_id);
+$stmt->execute();
+$device = $stmt->get_result()->fetch_assoc();
+$stmt->close();
+
+if (!$device) {
     header('Location: devices.php?error=device_not_found');
     exit;
 }
 
-// افزودن کالا به BOM
+// بررسی و ایجاد جدول device_bom اگر وجود ندارد
+$res = $conn->query("SHOW TABLES LIKE 'device_bom'");
+if ($res && $res->num_rows === 0) {
+    $createTable = "CREATE TABLE device_bom (
+        bom_id INT AUTO_INCREMENT PRIMARY KEY,
+        device_id INT NOT NULL,
+        item_code VARCHAR(50) NOT NULL,
+        item_name VARCHAR(255) NOT NULL,
+        quantity_needed INT NOT NULL DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_device_item (device_id, item_code)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+    
+    $conn->query($createTable);
+}
+
+// پردازش عملیات
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($_POST['action'] === 'add_to_bom') {
-        try {
-            // استفاده از سیستم قفل‌گذاری برای جلوگیری از درخواست‌های همزمان
-            $lockName = "device_bom_add_{$device_id}";
+        $inventory_id = clean($_POST['inventory_id']);
+        
+        // دریافت اطلاعات کالا
+        $stmt = $conn->prepare("SELECT id, inventory_code, item_name FROM inv_inventory WHERE id = ?");
+        $stmt->bind_param("i", $inventory_id);
+        $stmt->execute();
+        $item = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        
+        if ($item) {
+            // بررسی وجود قبلی
+            $check = $conn->prepare("SELECT bom_id FROM device_bom WHERE device_id = ? AND item_code = ?");
+            $check->bind_param("is", $device_id, $item['inventory_code']);
+            $check->execute();
+            $exists = $check->get_result()->num_rows > 0;
+            $check->close();
             
-            if (!acquireLock($lockName, 30)) {
-                // قفل قبلی هنوز فعال است، پس عملیات قبلی هنوز در حال اجراست
-                header("Location: device_bom.php?id=$device_id&msg=error&error=" . urlencode("یک عملیات در حال انجام است. لطفاً چند لحظه صبر کنید."));
-                exit;
+            if (!$exists) {
+                $insert = $conn->prepare("INSERT INTO device_bom (device_id, item_code, item_name, quantity_needed) VALUES (?, ?, ?, 1)");
+                $insert->bind_param("iss", $device_id, $item['inventory_code'], $item['item_name']);
+                $insert->execute();
+                $insert->close();
             }
-            
-            // حذف تاخیر مصنوعی که باعث کندی می‌شود
-            // usleep(100000); // 100ms تاخیر
-            
-            logError("Starting add_to_bom operation");
-            $inventory_id = intval(clean($_POST['inventory_id']));
-            
-            // Optimize this query to select only the needed fields
-            $stmt = $conn->prepare("SELECT id, inventory_code, item_name FROM inventory WHERE id = ? LIMIT 1");
-            $stmt->bind_param("i", $inventory_id);
-            $stmt->execute();
-            $inventory_item = $stmt->get_result()->fetch_assoc();
-            $stmt->close();
-            
-            if ($inventory_item) {
-                logError("Found inventory item: " . $inventory_item['inventory_code']);
-                
-                // Use direct comparison without conversion for performance
-                $check = $conn->prepare("SELECT 1 FROM device_bom WHERE device_id = ? AND item_code = ? LIMIT 1");
-                $check->bind_param("is", $device_id, $inventory_item['inventory_code']);
-                $check->execute();
-                $result = $check->get_result();
-                
-                if ($result->num_rows === 0) {
-                    logError("No duplicate found, proceeding with insert");
-                    
-                    // بررسی وجود ستون‌های مورد نیاز
-                    $cols_check = $conn->query("SHOW COLUMNS FROM device_bom LIKE 'item_name'");
-                    if ($cols_check && $cols_check->num_rows === 0) {
-                        // ستون item_name وجود ندارد - اضافه کردن آن
-                        $conn->query("ALTER TABLE device_bom ADD COLUMN item_name VARCHAR(255) NOT NULL AFTER item_code");
-                        logError("Added missing column 'item_name' to device_bom table");
-                    }
-                    
-                    $cols_check = $conn->query("SHOW COLUMNS FROM device_bom LIKE 'quantity_needed'");
-                    if ($cols_check && $cols_check->num_rows === 0) {
-                        // ستون quantity_needed وجود ندارد - اضافه کردن آن
-                        $conn->query("ALTER TABLE device_bom ADD COLUMN quantity_needed INT NOT NULL DEFAULT 1 AFTER item_name");
-                        logError("Added missing column 'quantity_needed' to device_bom table");
-                    }
-                    
-                    // به جای استفاده از transaction، روش ساده‌تر را امتحان کنیم
-                    $insert = $conn->prepare("INSERT INTO device_bom (device_id, item_code, item_name, quantity_needed) VALUES (?, ?, ?, ?)");
-                    $quantity = 1;
-                    $insert->bind_param("issi", $device_id, $inventory_item['inventory_code'], $inventory_item['item_name'], $quantity);
-                    $success = $insert->execute();
-                    
-                    if (!$success) {
-                        logError("Insert failed: " . $conn->error);
-                        // Redirect to error page instead of continuing
-                        header("Location: device_bom.php?id=$device_id&msg=error&error=" . urlencode($conn->error));
-                        exit;
-                    }
-                    
-                    logError("Insert successful");
-                    $insert->close();
-                } else {
-                    logError("Duplicate item found, skipping insert");
-                }
-                $check->close();
-            } else {
-                logError("Inventory item not found with ID: $inventory_id");
-            }
-        } catch (Exception $e) {
-            logError("Exception: " . $e->getMessage());
-            header("Location: device_bom.php?id=$device_id&msg=error&error=" . urlencode($e->getMessage()));
-            exit;
-        } finally {
-            // آزادسازی قفل در هر صورت
-            releaseLock("device_bom_add_{$device_id}");
         }
         
-        // Redirect regardless of success/failure to avoid resubmission
         header("Location: device_bom.php?id=$device_id&msg=added");
         exit;
-    } elseif ($_POST['action'] === 'update_bom') {
+    } 
+    
+    elseif ($_POST['action'] === 'update_bom') {
         $quantities = $_POST['quantities'] ?? [];
-        $errors = [];
+        
         $stmt = $conn->prepare("UPDATE device_bom SET quantity_needed = ? WHERE bom_id = ? AND device_id = ?");
         foreach ($quantities as $bom_id => $quantity) {
-            $qty = (int)$quantity;
-            if ($qty < 1) {
-                logError("Invalid quantity for BOM ID $bom_id: $qty");
-                $errors[] = "تعداد وارد شده برای قطعه $bom_id نامعتبر است.";
-                continue;
-            }
+            $qty = max(1, (int)$quantity);
             $stmt->bind_param("iii", $qty, $bom_id, $device_id);
-            if (!$stmt->execute()) {
-                logError("Update failed for BOM ID $bom_id: " . $stmt->error);
-                $errors[] = "خطا در به‌روزرسانی قطعه $bom_id: " . $stmt->error;
-            } else {
-                logError("Quantity updated for BOM ID $bom_id to $qty");
-            }
+            $stmt->execute();
         }
         $stmt->close();
-        if (!empty($errors)) {
-            $error_msg = implode('، ', $errors);
-            header("Location: device_bom.php?id=$device_id&msg=error&error=" . urlencode($error_msg));
-        } else {
-            header("Location: device_bom.php?id=$device_id&msg=updated");
-        }
+        
+        header("Location: device_bom.php?id=$device_id&msg=updated");
         exit;
-    } elseif ($_POST['action'] === 'delete_from_bom') {
+    } 
+    
+    elseif ($_POST['action'] === 'delete_from_bom') {
         $bom_id = clean($_POST['bom_id']);
+        
         $stmt = $conn->prepare("DELETE FROM device_bom WHERE bom_id = ? AND device_id = ?");
         $stmt->bind_param("ii", $bom_id, $device_id);
         $stmt->execute();
         $stmt->close();
+        
         header("Location: device_bom.php?id=$device_id&msg=deleted");
         exit;
     }
 }
 
-// دریافت لیست قطعات دستگاه
+// دریافت لیست قطعات
+$stmt = $conn->prepare("
+    SELECT b.bom_id, b.item_code, b.item_name, b.quantity_needed, i.current_inventory 
+    FROM device_bom b 
+    LEFT JOIN inv_inventory i ON b.item_code = i.inventory_code 
+    WHERE b.device_id = ? 
+    ORDER BY b.item_name
+");
+$stmt->bind_param("i", $device_id);
+$stmt->execute();
+$result = $stmt->get_result();
 $bom_items = [];
-try {
-    // بررسی وجود ستون bom_id با روش امن‌تر
-    $cols_check = $conn->query("SHOW COLUMNS FROM device_bom");
-    $has_bom_id = false;
-    $auto_columns = [];
-    
-    while ($col = $cols_check->fetch_assoc()) {
-        if ($col['Field'] === 'bom_id') {
-            $has_bom_id = true;
-        }
-        if (strpos($col['Extra'], 'auto_increment') !== false) {
-            $auto_columns[] = $col['Field'];
-        }
-    }
-    
-    if (!$has_bom_id && empty($auto_columns)) {
-        // اگر هیچ ستون AUTO_INCREMENT وجود ندارد
-        $conn->query("ALTER TABLE device_bom ADD COLUMN bom_id INT AUTO_INCREMENT PRIMARY KEY FIRST");
-        logError("Added missing column 'bom_id' to device_bom table as PRIMARY KEY AUTO_INCREMENT");
-    } elseif (!$has_bom_id && !empty($auto_columns)) {
-        // اگر ستون دیگری AUTO_INCREMENT است، اول آن را به حالت عادی برگردانید
-        foreach ($auto_columns as $col) {
-            $conn->query("ALTER TABLE device_bom MODIFY $col INT NOT NULL");
-            logError("Modified column '$col' to remove AUTO_INCREMENT");
-        }
-        
-        // سپس bom_id را اضافه کنید
-        $conn->query("ALTER TABLE device_bom ADD COLUMN bom_id INT NOT NULL FIRST");
-        $conn->query("ALTER TABLE device_bom DROP PRIMARY KEY");
-        $conn->query("ALTER TABLE device_bom ADD PRIMARY KEY (bom_id)");
-        $conn->query("ALTER TABLE device_bom MODIFY bom_id INT AUTO_INCREMENT");
-        logError("Added and configured 'bom_id' as PRIMARY KEY AUTO_INCREMENT");
-    }
-
-    $stmt = $conn->prepare("
-        SELECT b.bom_id, b.item_code, b.item_name, b.quantity_needed, s.supplier_name 
-        FROM device_bom b 
-        LEFT JOIN suppliers s ON b.supplier_id = s.supplier_id 
-        WHERE b.device_id = ? 
-        ORDER BY b.item_code
-        LIMIT 100
-    ");
-    $stmt->bind_param("i", $device_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) {
-        $bom_items[] = $row;
-    }
-    $stmt->close();
-} catch (Exception $e) {
-    logError("Error retrieving BOM items: " . $e->getMessage());
+while ($row = $result->fetch_assoc()) {
+    $bom_items[] = $row;
 }
+$stmt->close();
+
+// آماده‌سازی پیام‌ها
+$message = '';
+$message_type = '';
+if (isset($_GET['msg'])) {
+    switch ($_GET['msg']) {
+        case 'added':
+            $message = 'قطعه با موفقیت اضافه شد';
+            $message_type = 'success';
+            break;
+        case 'updated':
+            $message = 'تعدادها با موفقیت به‌روزرسانی شد';
+            $message_type = 'success';
+            break;
+        case 'deleted':
+            $message = 'قطعه با موفقیت حذف شد';
+            $message_type = 'success';
+            break;
+        case 'error':
+            $message = 'خطایی رخ داد';
+            $message_type = 'danger';
+            break;
+    }
+}
+
+$business_info = getBusinessInfo();
 ?>
 
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>لیست قطعات دستگاه</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>قطعات دستگاه <?php echo htmlspecialchars($device['device_name']); ?> - <?php echo htmlspecialchars($business_info['business_name']); ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        body { background: #f7f7f7; padding-top: 2rem; }
+        body {
+            font-family: 'Vazirmatn', Tahoma, Arial, sans-serif;
+            background-color: #f8f9fa;
+        }
+        .main-header {
+            background: linear-gradient(135deg, #495057 0%, #343a40 100%);
+            color: white;
+            padding: 1rem 0;
+            margin-bottom: 2rem;
+        }
+        .card {
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+        .btn-primary {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+        .btn-success {
+            background-color: #198754;
+            border-color: #198754;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+        .table th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .status-badge {
+            font-size: 0.875rem;
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="bi bi-card-list"></i> لیست قطعات دستگاه: <?= htmlspecialchars($device['device_name']) ?></h2>
-        <a href="devices.php" class="btn btn-secondary">
-            <i class="bi bi-arrow-right"></i> بازگشت به لیست دستگاه‌ها
-        </a>
-    </div>
 
-    <?php if (isset($_GET['msg'])): ?>
-        <?php 
-        $messages = [
-            'updated' => ['لیست قطعات با موفقیت به‌روزرسانی شد.', 'success'],
-            'added' => ['کالا با موفقیت به BOM اضافه شد.', 'success'],
-            'deleted' => ['کالا با موفقیت از BOM حذف شد.', 'success'],
-            'error' => ['خطا در عملیات: ' . htmlspecialchars($_GET['error'] ?? 'خطای نامشخص'), 'danger']
-        ];
-        $msg_data = $messages[$_GET['msg']] ?? ['عملیات موفق', 'success'];
-        $msg_text = $msg_data[0];
-        $msg_type = $msg_data[1];
-        ?>
-        <div class="alert alert-<?= $msg_type ?>"><?= $msg_text ?></div>
-    <?php endif; ?>
-
-    <!-- Search and Add from Inventory -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="card-title mb-0"><i class="bi bi-search"></i> افزودن کالا از انبار</h5>
-        </div>
-        <div class="card-body">
-            <form method="GET" class="row g-3">
-                <input type="hidden" name="id" value="<?= $device_id ?>">
-                <div class="col-md-5">
-                    <label class="form-label">کد یا نام کالا</label>
-                    <input type="text" name="search_term" class="form-control" value="<?= htmlspecialchars($_GET['search_term'] ?? '') ?>">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">&nbsp;</label>
-                    <button type="submit" class="btn btn-primary d-block w-100">جستجو</button>
-                </div>
-            </form>
-
-            <?php
-            if (isset($_GET['search_term']) && !empty($_GET['search_term'])) {
-                try {
-                    $search_term = clean($_GET['search_term']);
-                    $search_query = "%$search_term%";
-                    
-                    // Optimize query - use LIMIT 5 for faster results
-                    $stmt = $conn->prepare("
-                        SELECT id, inventory_code, item_name, current_inventory 
-                        FROM inventory 
-                        WHERE (inventory_code LIKE ? OR item_name LIKE ?)
-                        ORDER BY item_name 
-                        LIMIT 5
-                    ");
-                    $stmt->bind_param("ss", $search_query, $search_query);
-                    $stmt->execute();
-                    $result = $stmt->get_result();
-                    
-                    if ($result->num_rows > 0) {
-                        echo '<div class="table-responsive mt-3">
-                            <table class="table table-hover table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>کد کالا</th>
-                                        <th>نام کالا</th>
-                                        <th>موجودی</th>
-                                        <th>عملیات</th>
-                                    </tr>
-                                </thead>
-                                <tbody>';
-                        
-                        while ($row = $result->fetch_assoc()) {
-                            echo '<tr>
-                                <td>' . htmlspecialchars($row['inventory_code']) . '</td>
-                                <td>' . htmlspecialchars($row['item_name']) . '</td>
-                                <td>' . ($row['current_inventory'] ?? 0) . '</td>
-                                <td>
-                                    <form method="POST" class="d-inline">
-                                        <input type="hidden" name="inventory_id" value="' . $row['id'] . '">
-                                        <input type="hidden" name="action" value="add_to_bom">
-                                        <button type="submit" class="btn btn-sm btn-success">
-                                            <i class="bi bi-plus-lg"></i> افزودن
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>';
-                        }
-                        
-                        echo '</tbody></table></div>';
-                    } else {
-                        echo '<div class="alert alert-info mt-3">هیچ کالایی یافت نشد.</div>';
-                    }
-                    $stmt->close();
-                } catch (Exception $e) {
-                    logError("Error in search query: " . $e->getMessage());
-                    echo '<div class="alert alert-danger mt-3">خطا در جستجو: لطفا مجددا تلاش کنید.</div>';
-                }
-            }
-            ?>
+<!-- Header -->
+<div class="main-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h3 mb-1">
+                    <i class="bi bi-tools me-2"></i>قطعات دستگاه: <?php echo htmlspecialchars($device['device_name']); ?>
+                </h1>
+                <p class="mb-0 opacity-75">کد دستگاه: <?php echo htmlspecialchars($device['device_code']); ?></p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="devices.php" class="btn btn-light">
+                    <i class="bi bi-arrow-right me-1"></i>بازگشت
+                </a>
+            </div>
         </div>
     </div>
-
-    <!-- BOM Items List -->
-    <form method="POST">
-        <input type="hidden" name="action" value="update_bom">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0"><i class="bi bi-list-check"></i> قطعات تعریف شده</h5>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>کد قطعه</th>
-                            <th>نام قطعه</th>
-                            <th style="width: 150px;">تعداد مورد نیاز</th>
-                            <th>تامین‌کننده</th>
-                            <th style="width: 100px;">عملیات</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($bom_items)): ?>
-                            <tr>
-                                <td colspan="5" class="text-center">هیچ قطعه‌ای برای این دستگاه تعریف نشده است.</td>
-                            </tr>
-                        <?php else: ?>
-                            <?php foreach ($bom_items as $item): ?>
-                                <tr>
-                                    <td><?= htmlspecialchars($item['item_code']) ?></td>
-                                    <td><?= htmlspecialchars($item['item_name']) ?></td>
-                                    <td>
-                                        <input type="number" name="quantities[<?= $item['bom_id'] ?>]" 
-                                               class="form-control form-control-sm" 
-                                               value="<?= htmlspecialchars($item['quantity_needed']) ?>" 
-                                               min="1" required>
-                                    </td>
-                                    <td><?= htmlspecialchars($item['supplier_name'] ?? 'تعیین نشده') ?></td>
-                                    <td>
-                                        <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete(<?= $item['bom_id'] ?>)">
-                                            <i class="bi bi-trash"></i> حذف
-                                        </button>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-            <?php if (!empty($bom_items)): ?>
-            <div class="card-footer text-end">
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-save"></i> ذخیره تغییرات تعداد
-                </button>
-            </div>
-            <?php endif; ?>
-        </div>
-    </form>
-
-    <!-- Hidden Delete Form -->
-    <form method="POST" id="deleteForm" style="display: none;">
-        <input type="hidden" name="action" value="delete_from_bom">
-        <input type="hidden" name="bom_id" id="bom_id_to_delete">
-    </form>
 </div>
 
+<div class="container">
+    <!-- پیام‌ها -->
+    <?php if ($message): ?>
+        <div class="alert alert-<?php echo $message_type; ?> alert-dismissible fade show">
+            <i class="bi bi-<?php echo $message_type === 'success' ? 'check-circle' : 'exclamation-triangle'; ?> me-2"></i>
+            <?php echo $message; ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
+
+    <div class="row">
+        <!-- جستجو و افزودن -->
+        <div class="col-md-5">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-search me-2"></i>افزودن قطعه جدید
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" id="searchForm">
+                        <input type="hidden" name="id" value="<?php echo $device_id; ?>">
+                        <div class="mb-3">
+                            <label class="form-label">جستجوی کالا (کد یا نام)</label>
+                            <div class="input-group">
+                                <input type="text" name="search_term" class="form-control" 
+                                       value="<?php echo htmlspecialchars($_GET['search_term'] ?? ''); ?>"
+                                       placeholder="کد یا نام کالا را وارد کنید...">
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- نتایج جستجو -->
+                    <?php if (isset($_GET['search_term']) && !empty($_GET['search_term'])): ?>
+                        <?php
+                        $search_term = clean($_GET['search_term']);
+                        $search_query = "%$search_term%";
+                        
+                        $stmt = $conn->prepare("
+                            SELECT id, inventory_code, item_name, current_inventory 
+                            FROM inv_inventory 
+                            WHERE (inventory_code LIKE ? OR item_name LIKE ?)
+                            ORDER BY item_name 
+                            LIMIT 10
+                        ");
+                        $stmt->bind_param("ss", $search_query, $search_query);
+                        $stmt->execute();
+                        $search_result = $stmt->get_result();
+                        
+                        if ($search_result->num_rows > 0):
+                        ?>
+                            <div class="mt-3">
+                                <h6>نتایج جستجو:</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>کد</th>
+                                                <th>نام کالا</th>
+                                                <th>موجودی</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php while ($row = $search_result->fetch_assoc()): ?>
+                                                <tr>
+                                                    <td><?php echo htmlspecialchars($row['inventory_code']); ?></td>
+                                                    <td><?php echo htmlspecialchars($row['item_name']); ?></td>
+                                                    <td><?php echo (int)$row['current_inventory']; ?></td>
+                                                    <td>
+                                                        <form method="POST" class="d-inline">
+                                                            <input type="hidden" name="action" value="add_to_bom">
+                                                            <input type="hidden" name="inventory_id" value="<?php echo $row['id']; ?>">
+                                                            <button type="submit" class="btn btn-success btn-sm">
+                                                                <i class="bi bi-plus"></i>
+                                                            </button>
+                                                        </form>
+                                                    </td>
+                                                </tr>
+                                            <?php endwhile; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        <?php else: ?>
+                            <div class="alert alert-info mt-3">
+                                <i class="bi bi-info-circle me-2"></i>کالایی یافت نشد
+                            </div>
+                        <?php endif; ?>
+                        <?php $stmt->close(); ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        <!-- لیست قطعات -->
+        <div class="col-md-7">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-check me-2"></i>لیست قطعات (<?php echo count($bom_items); ?> قطعه)
+                    </h5>
+                    <?php if (!empty($bom_items)): ?>
+                        <button type="submit" form="updateForm" class="btn btn-primary btn-sm">
+                            <i class="bi bi-save me-1"></i>ذخیره تغییرات
+                        </button>
+                    <?php endif; ?>
+                </div>
+                
+                <?php if (empty($bom_items)): ?>
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                        <h5 class="text-muted mt-3">هیچ قطعه‌ای تعریف نشده</h5>
+                        <p class="text-muted">از بخش جستجو، قطعات مورد نیاز را اضافه کنید</p>
+                    </div>
+                <?php else: ?>
+                    <form method="POST" id="updateForm">
+                        <input type="hidden" name="action" value="update_bom">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>کد قطعه</th>
+                                        <th>نام قطعه</th>
+                                        <th style="width: 100px;">تعداد</th>
+                                        <th style="width: 80px;">موجودی</th>
+                                        <th style="width: 80px;">وضعیت</th>
+                                        <th style="width: 60px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($bom_items as $item): 
+                                        $current_stock = (int)($item['current_inventory'] ?? 0);
+                                        $needed = (int)$item['quantity_needed'];
+                                        $sufficient = $current_stock >= $needed;
+                                    ?>
+                                        <tr>
+                                            <td>
+                                                <small class="text-muted"><?php echo htmlspecialchars($item['item_code']); ?></small>
+                                            </td>
+                                            <td><?php echo htmlspecialchars($item['item_name']); ?></td>
+                                            <td>
+                                                <input type="number" 
+                                                       name="quantities[<?php echo $item['bom_id']; ?>]" 
+                                                       class="form-control form-control-sm text-center" 
+                                                       value="<?php echo $item['quantity_needed']; ?>" 
+                                                       min="1" required>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge <?php echo $sufficient ? 'bg-light text-dark' : 'bg-warning text-dark'; ?>">
+                                                    <?php echo $current_stock; ?>
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                <?php if ($sufficient): ?>
+                                                    <span class="badge bg-success status-badge">
+                                                        <i class="bi bi-check"></i>
+                                                    </span>
+                                                <?php else: ?>
+                                                    <span class="badge bg-danger status-badge">
+                                                        <i class="bi bi-x"></i>
+                                                    </span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                        onclick="deleteItem(<?php echo $item['bom_id']; ?>)">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </form>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- فرم حذف مخفی -->
+<form method="POST" id="deleteForm" style="display: none;">
+    <input type="hidden" name="action" value="delete_from_bom">
+    <input type="hidden" name="bom_id" id="bom_id_to_delete">
+</form>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-function confirmDelete(bomId) {
-    if (confirm('آیا از حذف این قطعه از لیست مطمئن هستید؟')) {
+function deleteItem(bomId) {
+    if (confirm('آیا از حذف این قطعه مطمئن هستید؟')) {
         document.getElementById('bom_id_to_delete').value = bomId;
         document.getElementById('deleteForm').submit();
     }
 }
+
+// Auto-hide alerts after 3 seconds
+setTimeout(function() {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(function(alert) {
+        const bsAlert = new bootstrap.Alert(alert);
+        bsAlert.close();
+    });
+}, 3000);
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

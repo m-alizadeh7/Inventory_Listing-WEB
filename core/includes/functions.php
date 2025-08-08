@@ -15,10 +15,25 @@
  */
 function getBusinessInfo() {
     global $conn;
+    
+    // بررسی وجود جدول business_info
+    $table_check = $conn->query("SHOW TABLES LIKE 'business_info'");
+    if (!$table_check || $table_check->num_rows === 0) {
+        return [
+            'business_name' => 'سیستم مدیریت انبار',
+            'business_owner' => 'مهدی علیزاده',
+            'business_address' => '',
+            'business_phone' => '',
+            'business_email' => 'm.alizadeh7@live.com',
+            'business_website' => 'https://alizadehx.ir'
+        ];
+    }
+    
     $result = $conn->query("SELECT * FROM business_info LIMIT 1");
     if ($result && $result->num_rows > 0) {
         return $result->fetch_assoc();
     }
+    
     return [
         'business_name' => 'سیستم مدیریت انبار',
         'business_owner' => 'مهدی علیزاده',
@@ -200,7 +215,9 @@ function checkMigrationsPrompt() {
     $result = $conn->query("SELECT COUNT(*) as count FROM migrations");
     $migrated_count = $result->fetch_assoc()['count'];
     
-    $migration_files = glob(BASE_PATH . '/migrations/*.sql');
+    // استفاده از ROOT_PATH یا تعریف مسیر
+    $base_path = defined('ROOT_PATH') ? ROOT_PATH : dirname(dirname(dirname(__FILE__)));
+    $migration_files = glob($base_path . '/migrations/*.sql');
     $total_migrations = count($migration_files);
     
     if ($total_migrations > $migrated_count) {

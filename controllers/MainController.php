@@ -362,6 +362,53 @@ class MainController {
         $page_title = 'داشبورد';
         $user = $this->current_user;
         
+        // دریافت اطلاعات آماری
+        $stats = [
+            'total_inventory' => 0,
+            'low_stock' => 0,
+            'pending_orders' => 0,
+            'total_devices' => 0
+        ];
+        
+        // محاسبه آمار واقعی در صورت وجود دیتابیس
+        if ($this->db) {
+            try {
+                $prefix = defined('DB_PREFIX') ? DB_PREFIX : 'inv_';
+                
+                // کل اقلام انبار
+                $result = $this->db->query("SELECT COUNT(*) as count FROM {$prefix}inventory");
+                if ($result) {
+                    $stats['total_inventory'] = $result->fetch_assoc()['count'];
+                }
+                
+                // اقلام کم موجود
+                $result = $this->db->query("SELECT COUNT(*) as count FROM {$prefix}inventory WHERE stock < 10");
+                if ($result) {
+                    $stats['low_stock'] = $result->fetch_assoc()['count'];
+                }
+                
+                // سفارشات در انتظار
+                $result = $this->db->query("SELECT COUNT(*) as count FROM {$prefix}production_orders WHERE status = 'pending'");
+                if ($result) {
+                    $stats['pending_orders'] = $result->fetch_assoc()['count'];
+                }
+                
+                // کل دستگاه‌ها
+                $result = $this->db->query("SELECT COUNT(*) as count FROM {$prefix}devices");
+                if ($result) {
+                    $stats['total_devices'] = $result->fetch_assoc()['count'];
+                }
+            } catch (Exception $e) {
+                // در صورت خطا، آمار پیش‌فرض باقی می‌ماند
+            }
+        }
+        
+        // دریافت اطلاعات کسب و کار
+        $business_info = [
+            'business_name' => 'سیستم مدیریت انبار',
+            'business_owner' => 'مهدی علیزاده'
+        ];
+        
         // نمایش صفحه داشبورد
         include(TEMPLATES_PATH . '/' . DEFAULT_TEMPLATE . '/header.php');
         include(TEMPLATES_PATH . '/' . DEFAULT_TEMPLATE . '/dashboard.php');

@@ -1,0 +1,144 @@
+[08-Aug-2025 17:04:26 Asia/Tehran] PHP Parse error:  syntax error, unexpected token "case" in /home/h312810/public_html/anbar2/index.php on line 76
+[08-Aug-2025 17:04:29 Asia/Tehran] PHP Parse error:  syntax error, unexpected token "case" in /home/h312810/public_html/anbar2/index.php on line 76
+[08-Aug-2025 17:07:56 Asia/Tehran] PHP Parse error:  Unmatched '}' in /home/h312810/public_html/anbar2/index.php on line 75
+[08-Aug-2025 17:07:57 Asia/Tehran] PHP Parse error:  Unmatched '}' in /home/h312810/public_html/anbar2/index.php on line 75
+[08-Aug-2025 17:07:59 Asia/Tehran] PHP Parse error:  Unmatched '}' in /home/h312810/public_html/anbar2/index.php on line 75
+[08-Aug-2025 17:09:37 Asia/Tehran] PHP Fatal error:  Uncaught mysqli_sql_exception: Access denied for user 'root'@'localhost' (using password: NO) in /home/h312810/public_html/anbar2/core/includes/database.php:28
+Stack trace:
+#0 /home/h312810/public_html/anbar2/core/includes/database.php(28): mysqli->__construct()
+#1 /home/h312810/public_html/anbar2/core/includes/database.php(49): Database->__construct()
+#2 /home/h312810/public_html/anbar2/core/includes/database.php(131): Database::getInstance()
+#3 /home/h312810/public_html/anbar2/config.php(51): require_once('/home/h312810/p...')
+#4 /home/h312810/public_html/anbar2/index.php(19): require_once('/home/h312810/p...')
+#5 {main}
+  thrown in /home/h312810/public_html/anbar2/core/includes/database.php on line 28
+[08-Aug-2025 17:14:32 Asia/Tehran] PHP Fatal error:  Uncaught mysqli_sql_exception: Access denied for user 'h312810_anbar2'@'localhost' (using password: YES) in /home/h312810/public_html/anbar2/core/includes/database.php:28
+Stack trace:
+#0 /home/h312810/public_html/anbar2/core/includes/database.php(28): mysqli->__construct()
+#1 /home/h312810/public_html/anbar2/core/includes/database.php(49): Database->__construct()
+#2 /home/h312810/public_html/anbar2/core/includes/database.php(131): Database::getInstance()
+#3 /home/h312810/public_html/anbar2/config.php(51): require_once('/home/h312810/p...')
+#4 /home/h312810/public_html/anbar2/index.php(19): require_once('/home/h312810/p...')
+#5 {main}
+  thrown in /home/h312810/public_html/anbar2/core/includes/database.php on line 28
+[08-Aug-2025 17:14:33 Asia/Tehran] PHP Fatal error:  Uncaught mysqli_sql_exception: Access denied for user 'h312810_anbar2'@'localhost' (using password: YES) in /home/h312810/public_html/anbar2/core/includes/database.php:28
+Stack trace:
+#0 /home/h312810/public_html/anbar2/core/includes/database.php(28): mysqli->__construct()
+#1 /home/h312810/public_html/anbar2/core/includes/database.php(49): Database->__construct()
+#2 /home/h312810/public_html/anbar2/core/includes/database.php(131): Database::getInstance()
+#3 /home/h312810/public_html/anbar2/config.php(51): require_once('/home/h312810/p...')
+#4 /home/h312810/public_html/anbar2/index.php(19): require_once('/home/h312810/p...')
+#5 {main}
+  thrown in /home/h312810/public_html/anbar2/core/includes/database.php on line 28
+[08-Aug-2025 17:14:34 Asia/Tehran] PHP Fatal error:  Uncaught mysqli_sql_exception: Access denied for user 'h312810_anbar2'@'localhost' (using password: YES) in /home/h312810/public_html/anbar2/core/includes/database.php:28
+Stack trace:
+#0 /home/h312810/public_html/anbar2/core/includes/database.php(28): mysqli->__construct()
+#1 /home/h312810/public_html/anbar2/core/includes/database.php(49): Database->__construct()
+#2 /home/h312810/public_html/anbar2/core/includes/database.php(131): Database::getInstance()
+#3 /home/h312810/public_html/anbar2/config.php(51): require_once('/home/h312810/p...')
+#4 /home/h312810/public_html/anbar2/index.php(19): require_once('/home/h312810/p...')
+#5 {main}
+  thrown in /home/h312810/public_html/anbar2/core/includes/database.php on line 28
+[08-Aug-2025 17:15:25 Asia/Tehran] PHP Fatal error:  Uncaught Error: Undefined constant "DB_HOST" in /home/h312810/public_html/anbar2/index.php:22
+Stack trace:
+#0 {main}
+  thrown in /home/h312810/public_html/anbar2/index.php on line 22
+[08-Aug-2025 17:17:18 Asia/Tehran] PHP Fatal error:  Uncaught Error: Call to undefined method MainController::index() in /home/h312810/public_html/anbar2/index.php:73
+Stack trace:
+#0 {main}
+  thrown in /home/h312810/public_html/anbar2/index.php on line 73
+[08-Aug-2025 17:18:04 Asia/Tehran] PHP Warning:  Undefined array key "h312810_usranb22" in /home/h312810/public_html/anbar2/config.php on line 23
+[08-Aug-2025 17:18:04 Asia/Tehran] PHP Warning:  Undefined array key "v8xNDnmlOY4e" in /home/h312810/public_html/anbar2/config.php on line 24
+[08-Aug-2025 17:18:04 Asia/Tehran] PHP Warning:  Undefined array key "h312810_anbar22" in /home/h312810/public_html/anbar2/config.php on line 25
+[08-Aug-2025 17:18:04 Asia/Tehran] PHP Fatal error:  Uncaught mysqli_sql_exception: Access denied for user ''@'localhost' (using password: YES) in /home/h312810/public_html/anbar2/index.php:22
+Stack trace:
+#0 /home/h312810/public_html/anbar2/index.php(22): mysqli->__construct()
+#1 {main}
+  thrown in /home/h312810/public_html/anbar2/index.php on line 22
+[08-Aug-2025 17:18:23 Asia/Tehran] PHP Fatal error:  Uncaught Error: Call to undefined method MainController::index() in /home/h312810/public_html/anbar2/index.php:73
+Stack trace:
+#0 {main}
+  thrown in /home/h312810/public_html/anbar2/index.php on line 73
+[08-Aug-2025 17:28:54 Asia/Tehran] PHP Fatal error:  Uncaught Error: Undefined constant "DEFAULT_TEMPLATE" in /home/h312810/public_html/anbar2/controllers/MainController.php:145
+Stack trace:
+#0 /home/h312810/public_html/anbar2/controllers/MainController.php(68): MainController->showInstallPage()
+#1 /home/h312810/public_html/anbar2/controllers/MainController.php(40): MainController->checkInstallation()
+#2 /home/h312810/public_html/anbar2/index.php(70): MainController->index()
+#3 {main}
+  thrown in /home/h312810/public_html/anbar2/controllers/MainController.php on line 145
+[08-Aug-2025 17:30:59 Asia/Tehran] PHP Warning:  Constant ROOT_PATH already defined in /home/h312810/public_html/anbar2/controllers/MainController.php on line 12
+[08-Aug-2025 17:30:59 Asia/Tehran] PHP Warning:  Constant TEMPLATES_PATH already defined in /home/h312810/public_html/anbar2/controllers/MainController.php on line 13
+[08-Aug-2025 17:30:59 Asia/Tehran] PHP Warning:  Undefined variable $db_config_exists in /home/h312810/public_html/anbar2/templates/default/install.php on line 128
+[08-Aug-2025 17:30:59 Asia/Tehran] PHP Warning:  Undefined variable $db_config_exists in /home/h312810/public_html/anbar2/templates/default/install.php on line 161
+[08-Aug-2025 17:39:37 Asia/Tehran] PHP Warning:  Constant ROOT_PATH already defined in /home/h312810/public_html/anbar2/config.php on line 42
+[08-Aug-2025 17:42:55 Asia/Tehran] PHP Fatal error:  Uncaught Error: Undefined constant "ROOT_PATH" in /home/h312810/public_html/anbar2/index.php:34
+Stack trace:
+#0 {main}
+  thrown in /home/h312810/public_html/anbar2/index.php on line 34
+[08-Aug-2025 17:44:05 Asia/Tehran] PHP Parse error:  Unmatched ']' in /home/h312810/public_html/anbar2/config.php on line 20
+[08-Aug-2025 17:44:24 Asia/Tehran] PHP Fatal error:  Uncaught mysqli_sql_exception: Access denied for user 'username'@'localhost' (using password: YES) in /home/h312810/public_html/anbar2/core/includes/database.php:28
+Stack trace:
+#0 /home/h312810/public_html/anbar2/core/includes/database.php(28): mysqli->__construct()
+#1 /home/h312810/public_html/anbar2/core/includes/database.php(49): Database->__construct()
+#2 /home/h312810/public_html/anbar2/core/includes/database.php(131): Database::getInstance()
+#3 /home/h312810/public_html/anbar2/config.php(61): require_once('/home/h312810/p...')
+#4 /home/h312810/public_html/anbar2/index.php(16): require_once('/home/h312810/p...')
+#5 {main}
+  thrown in /home/h312810/public_html/anbar2/core/includes/database.php on line 28
+[08-Aug-2025 17:58:30 Asia/Tehran] PHP Warning:  Undefined variable $business_info in /home/h312810/public_html/anbar2/templates/default/header.php on line 50
+[08-Aug-2025 17:58:30 Asia/Tehran] PHP Warning:  Trying to access array offset on value of type null in /home/h312810/public_html/anbar2/templates/default/header.php on line 50
+[08-Aug-2025 17:58:30 Asia/Tehran] PHP Warning:  Undefined variable $stats in /home/h312810/public_html/anbar2/templates/default/dashboard.php on line 66
+[08-Aug-2025 17:58:30 Asia/Tehran] PHP Warning:  Trying to access array offset on value of type null in /home/h312810/public_html/anbar2/templates/default/dashboard.php on line 66
+[08-Aug-2025 17:58:30 Asia/Tehran] PHP Warning:  Undefined variable $stats in /home/h312810/public_html/anbar2/templates/default/dashboard.php on line 77
+[08-Aug-2025 17:58:30 Asia/Tehran] PHP Warning:  Trying to access array offset on value of type null in /home/h312810/public_html/anbar2/templates/default/dashboard.php on line 77
+[08-Aug-2025 17:58:30 Asia/Tehran] PHP Warning:  Undefined variable $stats in /home/h312810/public_html/anbar2/templates/default/dashboard.php on line 88
+[08-Aug-2025 17:58:30 Asia/Tehran] PHP Warning:  Trying to access array offset on value of type null in /home/h312810/public_html/anbar2/templates/default/dashboard.php on line 88
+[08-Aug-2025 17:58:30 Asia/Tehran] PHP Warning:  Undefined variable $stats in /home/h312810/public_html/anbar2/templates/default/dashboard.php on line 99
+[08-Aug-2025 17:58:30 Asia/Tehran] PHP Warning:  Trying to access array offset on value of type null in /home/h312810/public_html/anbar2/templates/default/dashboard.php on line 99
+[08-Aug-2025 17:58:30 Asia/Tehran] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'h312810_anbar22.business_info' doesn't exist in /home/h312810/public_html/anbar2/core/includes/functions.php:18
+Stack trace:
+#0 /home/h312810/public_html/anbar2/core/includes/functions.php(18): mysqli->query()
+#1 /home/h312810/public_html/anbar2/templates/default/footer.php(10): getBusinessInfo()
+#2 /home/h312810/public_html/anbar2/controllers/MainController.php(368): include('/home/h312810/p...')
+#3 /home/h312810/public_html/anbar2/controllers/MainController.php(51): MainController->showDashboard()
+#4 /home/h312810/public_html/anbar2/index.php(62): MainController->index()
+#5 {main}
+  thrown in /home/h312810/public_html/anbar2/core/includes/functions.php on line 18
+[08-Aug-2025 18:02:08 Asia/Tehran] PHP Fatal error:  Uncaught Error: Call to undefined method Database::multi_query() in /home/h312810/public_html/anbar2/migrate.php:73
+Stack trace:
+#0 {main}
+  thrown in /home/h312810/public_html/anbar2/migrate.php on line 73
+[08-Aug-2025 18:02:10 Asia/Tehran] PHP Fatal error:  Uncaught Error: Call to undefined method Database::multi_query() in /home/h312810/public_html/anbar2/migrate.php:73
+Stack trace:
+#0 {main}
+  thrown in /home/h312810/public_html/anbar2/migrate.php on line 73
+[08-Aug-2025 18:03:27 Asia/Tehran] PHP Warning:  Undefined variable $business_info in /home/h312810/public_html/anbar2/templates/default/header.php on line 50
+[08-Aug-2025 18:03:27 Asia/Tehran] PHP Warning:  Trying to access array offset on value of type null in /home/h312810/public_html/anbar2/templates/default/header.php on line 50
+[08-Aug-2025 18:03:27 Asia/Tehran] PHP Fatal error:  Uncaught Error: Undefined constant "BASE_PATH" in /home/h312810/public_html/anbar2/core/includes/functions.php:203
+Stack trace:
+#0 /home/h312810/public_html/anbar2/templates/default/header.php(83): checkMigrationsPrompt()
+#1 /home/h312810/public_html/anbar2/controllers/MainController.php(366): include('/home/h312810/p...')
+#2 /home/h312810/public_html/anbar2/controllers/MainController.php(51): MainController->showDashboard()
+#3 /home/h312810/public_html/anbar2/index.php(62): MainController->index()
+#4 {main}
+  thrown in /home/h312810/public_html/anbar2/core/includes/functions.php on line 203
+[08-Aug-2025 18:03:32 Asia/Tehran] PHP Warning:  Undefined variable $business_info in /home/h312810/public_html/anbar2/templates/default/header.php on line 50
+[08-Aug-2025 18:03:32 Asia/Tehran] PHP Warning:  Trying to access array offset on value of type null in /home/h312810/public_html/anbar2/templates/default/header.php on line 50
+[08-Aug-2025 18:03:32 Asia/Tehran] PHP Fatal error:  Uncaught Error: Undefined constant "BASE_PATH" in /home/h312810/public_html/anbar2/core/includes/functions.php:203
+Stack trace:
+#0 /home/h312810/public_html/anbar2/templates/default/header.php(83): checkMigrationsPrompt()
+#1 /home/h312810/public_html/anbar2/controllers/MainController.php(366): include('/home/h312810/p...')
+#2 /home/h312810/public_html/anbar2/controllers/MainController.php(51): MainController->showDashboard()
+#3 /home/h312810/public_html/anbar2/index.php(62): MainController->index()
+#4 {main}
+  thrown in /home/h312810/public_html/anbar2/core/includes/functions.php on line 203
+[08-Aug-2025 18:03:47 Asia/Tehran] PHP Warning:  Undefined variable $business_info in /home/h312810/public_html/anbar2/templates/default/header.php on line 50
+[08-Aug-2025 18:03:47 Asia/Tehran] PHP Warning:  Trying to access array offset on value of type null in /home/h312810/public_html/anbar2/templates/default/header.php on line 50
+[08-Aug-2025 18:03:47 Asia/Tehran] PHP Fatal error:  Uncaught Error: Undefined constant "BASE_PATH" in /home/h312810/public_html/anbar2/core/includes/functions.php:203
+Stack trace:
+#0 /home/h312810/public_html/anbar2/templates/default/header.php(83): checkMigrationsPrompt()
+#1 /home/h312810/public_html/anbar2/controllers/MainController.php(366): include('/home/h312810/p...')
+#2 /home/h312810/public_html/anbar2/controllers/MainController.php(51): MainController->showDashboard()
+#3 /home/h312810/public_html/anbar2/index.php(62): MainController->index()
+#4 {main}
+  thrown in /home/h312810/public_html/anbar2/core/includes/functions.php on line 203

@@ -47,7 +47,7 @@ $page_title = $page_title ?? 'سیستم مدیریت انبار';
 <body>
 <nav class="main-menu navbar navbar-expand-lg navbar-light bg-light sticky-top shadow-sm">
     <div class="container">
-        <span class="navbar-brand fw-bold">📦 <?php echo htmlspecialchars($business_info['business_name']); ?></span>
+        <span class="navbar-brand fw-bold">📦 <?php echo htmlspecialchars(isset($business_info['business_name']) ? $business_info['business_name'] : 'سیستم مدیریت انبار'); ?></span>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>

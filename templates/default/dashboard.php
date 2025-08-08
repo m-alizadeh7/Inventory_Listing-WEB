@@ -63,7 +63,7 @@
     <div class="col-md-6 col-lg-3 mb-3">
         <div class="small-box bg-info text-white">
             <div class="inner">
-                <h3><?php echo $stats['total_inventory']; ?></h3>
+                <h3><?php echo isset($stats['total_inventory']) ? $stats['total_inventory'] : 0; ?></h3>
                 <p>کل اقلام انبار</p>
             </div>
             <div class="icon">
@@ -74,7 +74,7 @@
     <div class="col-md-6 col-lg-3 mb-3">
         <div class="small-box bg-warning text-dark">
             <div class="inner">
-                <h3><?php echo $stats['low_stock']; ?></h3>
+                <h3><?php echo isset($stats['low_stock']) ? $stats['low_stock'] : 0; ?></h3>
                 <p>اقلام با موجودی کم</p>
             </div>
             <div class="icon">
@@ -85,7 +85,7 @@
     <div class="col-md-6 col-lg-3 mb-3">
         <div class="small-box bg-success text-white">
             <div class="inner">
-                <h3><?php echo $stats['pending_orders']; ?></h3>
+                <h3><?php echo isset($stats['pending_orders']) ? $stats['pending_orders'] : 0; ?></h3>
                 <p>سفارشات در انتظار</p>
             </div>
             <div class="icon">
@@ -96,7 +96,7 @@
     <div class="col-md-6 col-lg-3 mb-3">
         <div class="small-box bg-danger text-white">
             <div class="inner">
-                <h3><?php echo $stats['total_devices']; ?></h3>
+                <h3><?php echo isset($stats['total_devices']) ? $stats['total_devices'] : 0; ?></h3>
                 <p>تعداد دستگاه‌ها</p>
             </div>
             <div class="icon">

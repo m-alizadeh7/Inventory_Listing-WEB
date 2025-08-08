@@ -213,28 +213,47 @@ function runMigrations() {
     
     foreach ($files as $file) {
         $migrationName = basename($file);
-        
         // بررسی اینکه آیا این migration قبلاً اجرا شده
         $stmt = $conn->prepare("SELECT id FROM migrations WHERE migration = ?");
         $stmt->bind_param("s", $migrationName);
         $stmt->execute();
         $result = $stmt->get_result();
-        
         if ($result->num_rows === 0) {
-            // اجرای migration
             $sql = file_get_contents($file);
-            if ($sql && $conn->multi_query($sql)) {
-                // پردازش تمام نتایج
-                do {
-                    if ($result = $conn->store_result()) {
-                        $result->free();
+            if ($sql) {
+                // اجرای هر دستور جداگانه و نادیده گرفتن خطاهای harmless
+                $queries = array_filter(array_map('trim', preg_split('/;[\r\n]+/', $sql)));
+                $hasFatalError = false;
+                foreach ($queries as $query) {
+                    if ($query === '') continue;
+                    try {
+                        if (!$conn->query($query)) {
+                            $err = strtolower($conn->error);
+                            if (
+                                strpos($err, 'already exists') !== false ||
+                                strpos($err, 'duplicate') !== false ||
+                                strpos($err, 'exists') !== false
+                            ) {
+                                // نادیده گرفتن خطاهای harmless
+                                continue;
+                            } else {
+                                $hasFatalError = true;
+                                throw new Exception("خطا در اجرای migration $migrationName: " . $conn->error);
+                            }
+                        }
+                    } catch (Exception $e) {
+                        // اگر خطا fatal نبود، ادامه بده
+                        if (!$hasFatalError) continue;
+                        else throw $e;
                     }
-                } while ($conn->next_result());
-                
-                // ثبت migration در جدول
-                $stmt = $conn->prepare("INSERT INTO migrations (migration) VALUES (?)");
-                $stmt->bind_param("s", $migrationName);
-                $stmt->execute();
+                }
+                if (!$hasFatalError) {
+                    // ثبت migration
+                    $stmt2 = $conn->prepare("INSERT INTO migrations (migration) VALUES (?)");
+                    $stmt2->bind_param("s", $migrationName);
+                    $stmt2->execute();
+                    $stmt2->close();
+                }
             }
         }
         $stmt->close();

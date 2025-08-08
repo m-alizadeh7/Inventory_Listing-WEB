@@ -4,7 +4,30 @@
  * 
  * این کلاس مسئول مدیریت عملیات اصلی سیستم است
  * 
- * @author Mahdi Alizadeh <m.alizadeh7@live.com>
+ * @author Mahdi Al    /**
+     * بررسی وجود کاربر احراز هویت شده
+     * 
+     * @return bool
+     */
+    public function isUserLoggedIn() {
+        return $this->current_user !== false;
+    }
+    
+    /**
+     * بررسی احراز هویت کاربر
+     * 
+     * @return bool
+     */
+    public function checkAuth() {
+        return $this->isUserLoggedIn();
+    }
+    
+    /**
+     * بررسی دسترسی کاربر
+     * 
+     * @param string $action
+     * @return bool
+     */deh7@live.com>
  * @website https://alizadehx.ir
  */
 

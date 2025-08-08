@@ -54,11 +54,4 @@ class InventoryController {
         include(TEMPLATES_PATH . '/' . DEFAULT_TEMPLATE . '/inventory/list.php');
         include(TEMPLATES_PATH . '/' . DEFAULT_TEMPLATE . '/footer.php');
     }
-    
-    /**
-     * متد پیش‌فرض
-     */
-    public function index() {
-        $this->list();
-    }
 }

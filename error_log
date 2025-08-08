@@ -1,2 +1,8 @@
-[08-Aug-2025 19:02:50 Asia/Tehran] PHP Fatal error:  Cannot redeclare MainController::logout() in /home/h312810/public_html/anbar2/controllers/MainController.php on line 684
-[08-Aug-2025 19:02:52 Asia/Tehran] PHP Fatal error:  Cannot redeclare MainController::logout() in /home/h312810/public_html/anbar2/controllers/MainController.php on line 684
+[08-Aug-2025 19:05:59 Asia/Tehran] PHP Fatal error:  Cannot redeclare InventoryController::index() in /home/h312810/public_html/anbar2/controllers/InventoryController.php on line 61
+[08-Aug-2025 19:06:03 Asia/Tehran] PHP Fatal error:  Cannot redeclare InventoryController::index() in /home/h312810/public_html/anbar2/controllers/InventoryController.php on line 61
+[08-Aug-2025 19:06:06 Asia/Tehran] PHP Fatal error:  Cannot redeclare InventoryController::index() in /home/h312810/public_html/anbar2/controllers/InventoryController.php on line 61
+[08-Aug-2025 19:06:14 Asia/Tehran] PHP Fatal error:  Uncaught Error: Call to undefined method MainController::checkAuth() in /home/h312810/public_html/anbar2/controllers/UserController.php:295
+Stack trace:
+#0 /home/h312810/public_html/anbar2/index.php(64): UserController->login()
+#1 {main}
+  thrown in /home/h312810/public_html/anbar2/controllers/UserController.php on line 295

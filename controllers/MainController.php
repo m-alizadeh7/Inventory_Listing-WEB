@@ -18,18 +18,53 @@ class MainController extends BaseController {
     public function __construct() {
         parent::__construct();
         
+        // بررسی نصب سیستم ابتدا
+        if (!$this->isDatabaseInstalled()) {
+            // اگر دیتابیس نصب نشده، به صفحه نصب هدایت
+            if (!isset($_GET['action']) || $_GET['action'] !== 'install') {
+                header('Location: index.php?controller=main&action=install');
+                exit;
+            }
+        }
+        
         // لود کردن مدل‌های مورد نیاز
         if (class_exists('UserModel')) {
-            $this->user_model = new UserModel();
+            try {
+                $this->user_model = new UserModel();
+            } catch (Exception $e) {
+                // اگر UserModel نتواند بارگذاری شود، احتمالاً دیتابیس مشکل دارد
+                error_log("UserModel loading error: " . $e->getMessage());
+                if (!isset($_GET['action']) || $_GET['action'] !== 'install') {
+                    header('Location: index.php?controller=main&action=install');
+                    exit;
+                }
+            }
         }
         
         if (class_exists('DatabaseModel')) {
             $this->database_model = new DatabaseModel();
         }
         
-        // بررسی remember token
-        if (!$this->isAuthenticated() && isset($_COOKIE['remember_token']) && !empty($_COOKIE['remember_token'])) {
+        // بررسی remember token فقط اگر سیستم نصب باشد
+        if ($this->isDatabaseInstalled() && !$this->isAuthenticated() && isset($_COOKIE['remember_token']) && !empty($_COOKIE['remember_token'])) {
             $this->checkRememberToken();
+        }
+    }
+    
+    /**
+     * بررسی نصب دیتابیس
+     */
+    private function isDatabaseInstalled() {
+        if (!$this->db) {
+            return false;
+        }
+        
+        try {
+            $prefix = defined('DB_PREFIX') ? DB_PREFIX : 'inv_';
+            $result = $this->db->query("SHOW TABLES LIKE '{$prefix}users'");
+            return ($result && $result->num_rows > 0);
+        } catch (Exception $e) {
+            return false;
         }
     }
     
@@ -55,6 +90,12 @@ class MainController extends BaseController {
      * نمایش صفحه اصلی (داشبورد)
      */
     public function index() {
+        // بررسی نصب دیتابیس ابتدا
+        if (!$this->isDatabaseInstalled()) {
+            header('Location: index.php?controller=main&action=install');
+            exit;
+        }
+        
         // بررسی احراز هویت
         if (!$this->isAuthenticated()) {
             header('Location: index.php?controller=main&action=login');
@@ -101,6 +142,12 @@ class MainController extends BaseController {
      * نمایش صفحه لاگین
      */
     public function login() {
+        // بررسی نصب دیتابیس ابتدا
+        if (!$this->isDatabaseInstalled()) {
+            header('Location: index.php?controller=main&action=install');
+            exit;
+        }
+        
         // اگر کاربر قبلاً لاگین کرده، به داشبورد هدایت کن
         if (isset($_SESSION['user_data'])) {
             header('Location: index.php');
@@ -228,7 +275,135 @@ class MainController extends BaseController {
      */
     public function install() {
         $page_title = 'نصب سیستم';
-        include ROOT_PATH . '/templates/default/install/index.php';
+        $db_config_exists = file_exists(ROOT_PATH . '/config.php');
+        $database_installed = false;
+        $admin_exists = false;
+        
+        // بررسی وضعیت نصب
+        if ($db_config_exists && $this->db) {
+            $database_installed = $this->isDatabaseInstalled();
+            if ($database_installed) {
+                // بررسی وجود کاربر مدیر
+                try {
+                    $prefix = defined('DB_PREFIX') ? DB_PREFIX : 'inv_';
+                    $result = $this->db->query("SELECT COUNT(*) as count FROM {$prefix}users WHERE role = 'admin'");
+                    if ($result) {
+                        $row = $result->fetch_assoc();
+                        $admin_exists = $row['count'] > 0;
+                    }
+                } catch (Exception $e) {
+                    // خطا در بررسی کاربر مدیر
+                }
+            }
+        }
+        
+        // اگر همه چیز نصب شده، به داشبورد هدایت
+        if ($db_config_exists && $database_installed && $admin_exists) {
+            header('Location: index.php');
+            exit;
+        }
+        
+        // نمایش صفحه نصب
+        $install_file = ROOT_PATH . '/templates/default/install.php';
+        if (file_exists($install_file)) {
+            include $install_file;
+        } else {
+            $this->showSimpleInstallForm($db_config_exists, $database_installed, $admin_exists);
+        }
+    }
+    
+    /**
+     * نمایش فرم نصب ساده
+     */
+    private function showSimpleInstallForm($db_config_exists, $database_installed, $admin_exists) {
+        echo '<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نصب سیستم مدیریت انبار</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <style>
+        body { background: #f8f9fa; font-family: Tahoma; padding-top: 50px; }
+        .install-card { max-width: 600px; margin: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="install-card">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h4>نصب سیستم مدیریت انبار</h4>
+                    <small>نسخه 1.0.0</small>
+                </div>
+                <div class="card-body">
+                    <h5>وضعیت نصب:</h5>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-' . ($db_config_exists ? 'check text-success' : 'times text-danger') . '"></i> فایل پیکربندی</li>
+                        <li><i class="fas fa-' . ($database_installed ? 'check text-success' : 'times text-danger') . '"></i> جداول دیتابیس</li>
+                        <li><i class="fas fa-' . ($admin_exists ? 'check text-success' : 'times text-danger') . '"></i> کاربر مدیر</li>
+                    </ul>';
+        
+        if (!$db_config_exists || !$database_installed || !$admin_exists) {
+            echo '<form method="POST" action="index.php?controller=main&action=processDbConfig">
+                    <h5>تنظیمات دیتابیس:</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">آدرس سرور</label>
+                            <input type="text" class="form-control" name="db_host" value="localhost" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">نام دیتابیس</label>
+                            <input type="text" class="form-control" name="db_name" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">نام کاربری دیتابیس</label>
+                            <input type="text" class="form-control" name="db_user" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">رمز عبور دیتابیس</label>
+                            <input type="password" class="form-control" name="db_pass">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">پیشوند جداول</label>
+                        <input type="text" class="form-control" name="db_prefix" value="inv_">
+                    </div>
+                    
+                    <h5>اطلاعات مدیر:</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">نام کاربری مدیر</label>
+                            <input type="text" class="form-control" name="admin_username" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">رمز عبور مدیر</label>
+                            <input type="password" class="form-control" name="admin_password" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">ایمیل مدیر</label>
+                            <input type="email" class="form-control" name="admin_email" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">نام شرکت</label>
+                            <input type="text" class="form-control" name="business_name" required>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">شروع نصب</button>
+                </form>';
+        }
+        
+        echo '        </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>';
     }
     
     /**
@@ -249,6 +424,13 @@ class MainController extends BaseController {
      * @return bool
      */
     public function processLogin() {
+        // بررسی نصب دیتابیس ابتدا
+        if (!$this->isDatabaseInstalled()) {
+            $_SESSION['login_error'] = 'سیستم هنوز نصب نشده است.';
+            header('Location: index.php?controller=main&action=install');
+            exit;
+        }
+        
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Location: index.php?controller=main&action=login');
             exit;
@@ -400,13 +582,32 @@ class MainController extends BaseController {
             $pdo->exec("USE `{$config['db_name']}`");
             
             // نصب اسکیما
-            $sql_file = file_get_contents(ROOT_PATH . '/db.sql');
+            $sql_file_path = ROOT_PATH . '/db.sql';
+            if (!file_exists($sql_file_path)) {
+                throw new Exception('فایل دیتابیس (db.sql) یافت نشد.');
+            }
+            
+            $sql_file = file_get_contents($sql_file_path);
+            if ($sql_file === false) {
+                throw new Exception('خطا در خواندن فایل دیتابیس.');
+            }
             
             // جایگزینی پیشوند جداول
             $sql_file = str_replace('inv_', $config['db_prefix'], $sql_file);
             
-            // اجرای کوئری‌ها
-            $pdo->exec($sql_file);
+            // تقسیم و اجرای کوئری‌ها
+            $queries = explode(';', $sql_file);
+            foreach ($queries as $query) {
+                $query = trim($query);
+                if (!empty($query)) {
+                    try {
+                        $pdo->exec($query);
+                    } catch (PDOException $e) {
+                        // ادامه در صورت خطاهای غیر مهم
+                        error_log("SQL Query Error: " . $e->getMessage() . " - Query: " . $query);
+                    }
+                }
+            }
             
             // ایجاد کاربر مدیر
             $hashed_password = password_hash($config['admin_password'], PASSWORD_DEFAULT);
@@ -769,4 +970,4 @@ session_start();
     public function process_login() {
         return $this->processLogin();
     }
-}
+}Fatal error: Uncaught Error: Call to a member function real_escape_string() on null in /home/h312810/public_html/anbar2/models/UserModel.php:39 Stack trace: #0 /home/h312810/public_html/anbar2/models/UserModel.php(72): UserModel->authenticate() #1 /home/h312810/public_html/anbar2/controllers/MainController.php(290): UserModel->validateUser() #2 /home/h312810/public_html/anbar2/controllers/MainController.php(770): MainController->processLogin() #3 /home/h312810/public_html/anbar2/index.php(101): MainController->process_login() #4 {main} thrown in /home/h312810/public_html/anbar2/models/UserModel.php on line 39Fatal error: Uncaught Error: Call to a member function real_escape_string() on null in /home/h312810/public_html/anbar2/models/UserModel.php:39 Stack trace: #0 /home/h312810/public_html/anbar2/models/UserModel.php(72): UserModel->authenticate() #1 /home/h312810/public_html/anbar2/controllers/MainController.php(290): UserModel->validateUser() #2 /home/h312810/public_html/anbar2/controllers/MainController.php(770): MainController->processLogin() #3 /home/h312810/public_html/anbar2/index.php(101): MainController->process_login() #4 {main} thrown in /home/h312810/public_html/anbar2/models/UserModel.php on line 39

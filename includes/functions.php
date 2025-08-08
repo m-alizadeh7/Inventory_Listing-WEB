@@ -88,26 +88,51 @@ function clean($string) {
  */
 function checkMigrationsPrompt() {
     global $conn;
+    
     // اطمینان از وجود جدول migrations
     $conn->query("CREATE TABLE IF NOT EXISTS migrations (
         id INT AUTO_INCREMENT PRIMARY KEY,
         migration VARCHAR(255) NOT NULL UNIQUE,
-        applied_at DATETIME NOT NULL
+        applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+    
     $migrationsDir = __DIR__ . '/../migrations';
+    if (!is_dir($migrationsDir)) {
+        return;
+    }
+    
     $files = glob($migrationsDir . '/*.sql');
+    if (!$files) {
+        return;
+    }
+    
     $pending = [];
     foreach ($files as $file) {
         $name = basename($file);
-        $res = $conn->query("SELECT id FROM migrations WHERE migration='" . $conn->real_escape_string($name) . "'");
-        if ($res && $res->num_rows === 0) {
+        $stmt = $conn->prepare("SELECT id FROM migrations WHERE migration = ?");
+        $stmt->bind_param("s", $name);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($result->num_rows === 0) {
             $pending[] = $name;
         }
+        $stmt->close();
     }
+    
     if (count($pending) > 0) {
-        echo "<div class='alert alert-warning text-center'>";
-        echo "نسخه دیتابیس قدیمی است. برای بروز رسانی جداول <form method='post' style='display:inline;'><button name='run_migrations' class='btn btn-sm btn-primary'>اجرای به‌روزرسانی</button></form> کلیک کنید.";
-        echo "</div>";
+        echo '<div class="alert alert-warning alert-dismissible fade show" role="alert">';
+        echo '<i class="bi bi-exclamation-triangle me-2"></i>';
+        echo '<strong>نسخه دیتابیس قدیمی است!</strong> ';
+        echo 'برای بروز رسانی جداول ';
+        echo '<form method="post" style="display:inline;" onsubmit="return confirm(\'آیا مطمئن هستید که می‌خواهید دیتابیس را به‌روزرسانی کنید؟\')">';
+        echo '<button name="run_migrations" class="btn btn-sm btn-primary mx-1">';
+        echo '<i class="bi bi-arrow-clockwise me-1"></i>اجرای به‌روزرسانی';
+        echo '</button>';
+        echo '</form>';
+        echo ' کلیک کنید.';
+        echo '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+        echo '</div>';
     }
 }
 
@@ -163,4 +188,57 @@ function getBusinessInfo() {
     }
     
     return $business_info;
+}
+
+/**
+ * اجرای فایل‌های migration
+ */
+function runMigrations() {
+    global $conn;
+    
+    // اطمینان از وجود جدول migrations
+    $conn->query("CREATE TABLE IF NOT EXISTS migrations (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        migration VARCHAR(255) NOT NULL UNIQUE,
+        applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+    
+    $migrationsDir = __DIR__ . '/../migrations';
+    if (!is_dir($migrationsDir)) {
+        return false;
+    }
+    
+    $files = glob($migrationsDir . '/*.sql');
+    sort($files); // مرتب‌سازی بر اساس نام فایل
+    
+    foreach ($files as $file) {
+        $migrationName = basename($file);
+        
+        // بررسی اینکه آیا این migration قبلاً اجرا شده
+        $stmt = $conn->prepare("SELECT id FROM migrations WHERE migration = ?");
+        $stmt->bind_param("s", $migrationName);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($result->num_rows === 0) {
+            // اجرای migration
+            $sql = file_get_contents($file);
+            if ($sql && $conn->multi_query($sql)) {
+                // پردازش تمام نتایج
+                do {
+                    if ($result = $conn->store_result()) {
+                        $result->free();
+                    }
+                } while ($conn->next_result());
+                
+                // ثبت migration در جدول
+                $stmt = $conn->prepare("INSERT INTO migrations (migration) VALUES (?)");
+                $stmt->bind_param("s", $migrationName);
+                $stmt->execute();
+            }
+        }
+        $stmt->close();
+    }
+    
+    return true;
 }

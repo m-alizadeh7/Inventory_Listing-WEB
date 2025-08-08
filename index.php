@@ -6,6 +6,14 @@ if (!file_exists('config.php')) {
 }
 require_once 'config.php';
 require_once 'includes/functions.php';
+
+// پردازش درخواست migration
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_migrations'])) {
+    runMigrations();
+    header('Location: index.php?msg=migration_complete');
+    exit;
+}
+
 $business_info = getBusinessInfo();
 ?>
 <!DOCTYPE html>
@@ -108,26 +116,7 @@ $business_info = getBusinessInfo();
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="index.php">
-                        <i class="bi bi-house"></i> صفحه اصلی
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="inventory_records.php">
-                        <i class="bi bi-box-seam"></i> موجودی انبار
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="production_orders.php">
-                        <i class="bi bi-gear"></i> سفارشات تولید
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="settings.php">
-                        <i class="bi bi-sliders"></i> تنظیمات
-                    </a>
-                </li>
+                <!-- منوهای اصلی حذف شده -->
             </ul>
         </div>
     </div>
@@ -135,6 +124,14 @@ $business_info = getBusinessInfo();
 
 <div class="content-wrapper">
     <div class="container">
+        <?php if (isset($_GET['msg']) && $_GET['msg'] === 'migration_complete'): ?>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle me-2"></i>
+                به‌روزرسانی دیتابیس با موفقیت انجام شد!
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
+        
         <?php checkMigrationsPrompt(); ?>
         
         <h2 class="section-title">📦 مدیریت انبار</h2>

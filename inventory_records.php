@@ -2,10 +2,10 @@
 require_once 'config.php';
 require_once 'includes/functions.php';
 
-// بررسی وجود جدول inventory
-$res = $conn->query("SHOW TABLES LIKE 'inventory'");
+// بررسی وجود جدول inv_inventory
+$res = $conn->query("SHOW TABLES LIKE 'inv_inventory'");
 if ($res && $res->num_rows === 0) {
-    $createTable = "CREATE TABLE inventory (
+    $createTable = "CREATE TABLE inv_inventory (
         id INT AUTO_INCREMENT,
         `row_number` INT NULL,
         inventory_code VARCHAR(50) NOT NULL,
@@ -19,7 +19,7 @@ if ($res && $res->num_rows === 0) {
         PRIMARY KEY (id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
     if (!$conn->query($createTable)) {
-        die('خطا در ایجاد جدول inventory: ' . $conn->error);
+        die('خطا در ایجاد جدول inv_inventory: ' . $conn->error);
     }
 }
 
@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_inventory'])) 
     $id = clean($_POST['id']);
     $current_inventory = clean($_POST['current_inventory']);
     
-    $stmt = $conn->prepare("UPDATE inventory SET current_inventory = ? WHERE id = ?");
+    $stmt = $conn->prepare("UPDATE inv_inventory SET current_inventory = ? WHERE id = ?");
     $stmt->bind_param("di", $current_inventory, $id);
     $stmt->execute();
     $stmt->close();
@@ -70,7 +70,7 @@ if ($filter === 'out') {
 $where_clause = !empty($where) ? "WHERE " . implode(" AND ", $where) : "";
 
 // تعداد کل رکوردها
-$total_query = "SELECT COUNT(*) as total FROM inventory $where_clause";
+$total_query = "SELECT COUNT(*) as total FROM inv_inventory $where_clause";
 if (!empty($params)) {
     $stmt = $conn->prepare($total_query);
     $stmt->bind_param($types, ...$params);
@@ -88,7 +88,7 @@ $offset = ($page - 1) * $records_per_page;
 $total_pages = ceil($total / $records_per_page);
 
 // دریافت رکوردها
-$query = "SELECT * FROM inventory $where_clause ORDER BY `row_number` LIMIT ? OFFSET ?";
+$query = "SELECT * FROM inv_inventory $where_clause ORDER BY `row_number` LIMIT ? OFFSET ?";
 $params[] = $records_per_page;
 $params[] = $offset;
 $types .= 'ii';

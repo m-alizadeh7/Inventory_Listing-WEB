@@ -2,20 +2,35 @@
 require_once 'config.php';
 require_once 'includes/functions.php';
 
+// حذف سفارش
+if (isset($_POST['delete_order_id'])) {
+    $delete_id = (int)$_POST['delete_order_id'];
+    $conn->query("DELETE FROM production_order_items WHERE order_id = $delete_id");
+    $conn->query("DELETE FROM production_orders WHERE order_id = $delete_id");
+    header('Location: new_production_order.php?msg=deleted');
+    exit;
+}
+
+// دریافت لیست سفارشات قبلی
+$orders = [];
+$result_orders = $conn->query("SELECT order_id, order_code, created_at, status FROM production_orders ORDER BY created_at DESC");
+if ($result_orders) {
+    while ($row = $result_orders->fetch_assoc()) {
+        $orders[] = $row;
+    }
+}
+
 // افزودن سفارش جدید
 if (isset($_POST['save_new_order'])) {
     try {
         $conn->begin_transaction();
         
-        // ایجاد کد سفارش جدید
-        $prefix = 'ORD';
-        $date = date('ymd');
-        $sql = "SELECT MAX(CAST(SUBSTRING(order_code, 10) AS UNSIGNED)) as max_num 
-                FROM production_orders 
-                WHERE order_code LIKE 'ORD{$date}%'";
-        $result = $conn->query($sql)->fetch_assoc();
-        $next_num = ($result['max_num'] ?? 0) + 1;
-        $order_code = $prefix . $date . sprintf('%03d', $next_num);
+    // ایجاد کد سفارش جدید فقط به صورت ORD + شماره سه‌رقمی پشت سر هم
+    $prefix = 'ORD';
+    $sql = "SELECT MAX(CAST(SUBSTRING(order_code, 4) AS UNSIGNED)) as max_num FROM production_orders WHERE order_code LIKE 'ORD%'";
+    $result = $conn->query($sql)->fetch_assoc();
+    $next_num = ($result['max_num'] ?? 0) + 1;
+    $order_code = $prefix . sprintf('%03d', $next_num);
         
         $notes = clean($_POST['notes'] ?? '');
         
@@ -242,10 +257,10 @@ if ($stats_query) {
         <div class="card-header d-flex justify-content-between align-items-center">
             <div>
                 <i class="bi bi-list-ul me-1"></i>
-                لیست سفارشات تولید
+                لیست سفارشات قبلی
             </div>
             <div class="text-muted small">
-                <?= $orders_count['all'] ?> سفارش یافت شد
+                <?= count($orders) ?> سفارش یافت شد
             </div>
         </div>
         <div class="card-body p-0">
@@ -256,21 +271,35 @@ if ($stats_query) {
                             <th>کد سفارش</th>
                             <th>تاریخ ثبت</th>
                             <th>وضعیت</th>
-                            <th>تعداد دستگاه</th>
                             <th>عملیات</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- اینجا لیست سفارشات نمایش داده می‌شود -->
-                        <!-- این بخش به صورت نمونه است -->
+                    <?php if (empty($orders)): ?>
                         <tr>
-                            <td colspan="5" class="text-center py-4">
+                            <td colspan="4" class="text-center py-4">
                                 <div class="text-muted">
                                     <i class="bi bi-info-circle me-1"></i>
-                                    برای ایجاد سفارش جدید، از دکمه "سفارش تولید جدید" استفاده کنید.
+                                    هیچ سفارشی ثبت نشده است.
                                 </div>
                             </td>
                         </tr>
+                    <?php else: ?>
+                        <?php foreach ($orders as $order): ?>
+                            <tr>
+                                <td><?= htmlspecialchars($order['order_code']) ?></td>
+                                <td><?= htmlspecialchars($order['created_at']) ?></td>
+                                <td><?= htmlspecialchars($order['status']) ?></td>
+                                <td>
+                                    <form method="post" style="display:inline;" onsubmit="return confirm('آیا از حذف این سفارش اطمینان دارید؟');">
+                                        <input type="hidden" name="delete_order_id" value="<?= $order['order_id'] ?>">
+                                        <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i> حذف</button>
+                                    </form>
+                                    <a href="production_order.php?id=<?= $order['order_id'] ?>" class="btn btn-sm btn-info"><i class="bi bi-eye"></i> مشاهده</a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                     </tbody>
                 </table>
             </div>

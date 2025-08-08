@@ -2,38 +2,29 @@
 require_once 'config.php';
 require_once 'includes/functions.php';
 
-// حذف سفارش تولی<body>
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>🏭 سفارشات تولید</h2>
-        <div>
-            <a href="new_production_order.php" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> سفارش جدید
-            </a>
-            <a href="index.php" class="btn btn-secondary">بازگشت</a>
-        </div>
-    </div>
 
-    <?php if (isset($_GET['msg']) && $_GET['msg'] === 'deleted'): ?>
-        <div class="alert alert-success">
-            <i class="bi bi-check-circle-fill"></i> سفارش با موفقیت حذف شد.
-        </div>
-    <?php endif; ?>RVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_order'])) {
+// حذف سفارش تولید
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_order'])) {
     $order_id = clean($_POST['order_id']);
-    
     // حذف آیتم‌های سفارش
     $stmt = $conn->prepare("DELETE FROM production_order_items WHERE order_id = ?");
     $stmt->bind_param("i", $order_id);
     $stmt->execute();
     $stmt->close();
-    
     // حذف سفارش
     $stmt = $conn->prepare("DELETE FROM production_orders WHERE order_id = ?");
     $stmt->bind_param("i", $order_id);
     $stmt->execute();
     $stmt->close();
-    
     header("Location: production_orders.php?msg=deleted");
+    exit;
+}
+
+// اگر هیچ سفارشی وجود ندارد، به صفحه ایجاد سفارش جدید هدایت شود یا پیام مناسب نمایش داده شود
+$result_check = $conn->query("SELECT order_id FROM production_orders ORDER BY created_at DESC LIMIT 1");
+if ($result_check && $result_check->num_rows === 0) {
+    // هیچ سفارشی وجود ندارد
+    header('Location: new_production_order.php');
     exit;
 }
 

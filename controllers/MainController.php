@@ -48,6 +48,7 @@ class MainController extends BaseController {
                 // توکن نامعتبر، حذف کوکی
                 setcookie('remember_token', '', time() - 3600, '/');
             }
+        }
     }
     
     /**

@@ -16,7 +16,11 @@ if (file_exists('config.php')) {
     require_once 'config.php';
     
     // اتصال به دیتابیس
-    $db = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
+    if (defined('DB_PORT')) {
+        $db = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
+    } else {
+        $db = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+    }
     
     // تنظیم کاراکتر ست اتصال
     $db->set_charset('utf8mb4');
@@ -30,8 +34,16 @@ if (file_exists('config.php')) {
     $db = null;
 }
 
+// اطمینان از تعریف مسیر ریشه در هر شرایطی (پس از لود config)
+if (!defined('ROOT_PATH')) {
+    define('ROOT_PATH', __DIR__);
+}
+
+// محاسبه مسیر ریشه مطمئن
+$rootPath = ROOT_PATH;
+
 // لود کردن مدل‌های مورد نیاز
-$model_files = glob(ROOT_PATH . '/models/*.php');
+$model_files = glob($rootPath . '/models/*.php');
 if ($model_files) {
     foreach ($model_files as $model_file) {
         require_once $model_file;
@@ -39,7 +51,39 @@ if ($model_files) {
 }
 
 // لود کردن MainController ابتدا (برای استفاده در سایر کنترلرها)
-require_once ROOT_PATH . '/controllers/MainController.php';
+$mainControllerCandidates = [
+    $rootPath . '/controllers/MainController.php',
+    $rootPath . '/core/controllers/MainController.php',
+    __DIR__ . '/controllers/MainController.php',
+    '/home/h312810/public_html/anbar2/controllers/MainController.php',
+    getcwd() . '/controllers/MainController.php',
+];
+
+$mainIncluded = false;
+$debugInfo = [];
+foreach ($mainControllerCandidates as $cand) {
+    $debugInfo[] = $cand . ' => ' . (file_exists($cand) ? 'EXISTS' : 'NOT_FOUND');
+    if (file_exists($cand)) {
+        require_once $cand;
+        $mainIncluded = true;
+        break;
+    }
+}
+
+if (!$mainIncluded) {
+    // پیام خطای دقیق‌تر برای دیباگ
+    header('Content-Type: text/html; charset=utf-8');
+    echo '<div style="direction:rtl;font-family:tahoma,iransans,sans-serif;padding:16px;color:#b71c1c;background:#ffebee;border:1px solid #ffcdd2;">'
+        . '<h3>فایل کنترلر اصلی یافت نشد</h3>'
+        . '<p>ROOT_PATH: ' . htmlspecialchars($rootPath) . '</p>'
+        . '<p>__DIR__: ' . htmlspecialchars(__DIR__) . '</p>'
+        . '<p>getcwd(): ' . htmlspecialchars(getcwd()) . '</p>'
+        . '<p>مسیرهای بررسی‌شده:</p>'
+        . '<pre>' . htmlspecialchars(implode("\n", $debugInfo)) . '</pre>'
+        . '<p>لطفاً فایل MainController.php را در یکی از مسیرهای فوق قرار دهید.</p>'
+        . '</div>';
+    exit;
+}
 
 // تنظیم نوع درخواست و پارامترهای آن
 $controller_name = isset($_GET['controller']) ? $_GET['controller'] : 'main';

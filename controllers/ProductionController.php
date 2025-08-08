@@ -11,11 +11,13 @@
 class ProductionController {
     private $db;
     private $table_prefix;
+    private $main_controller;
     
     public function __construct() {
         global $db;
         $this->db = $db;
         $this->table_prefix = defined('DB_PREFIX') ? DB_PREFIX : 'inv_';
+        $this->main_controller = new MainController();
     }
     
     /**

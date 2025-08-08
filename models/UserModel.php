@@ -62,6 +62,38 @@ class UserModel {
     }
     
     /**
+     * اعتبارسنجی کاربر (Alias برای authenticate)
+     * 
+     * @param string $username
+     * @param string $password
+     * @return array|bool
+     */
+    public function validateUser($username, $password) {
+        return $this->authenticate($username, $password);
+    }
+    
+    /**
+     * دریافت کاربر بر اساس remember token
+     * 
+     * @param string $token
+     * @return array|bool
+     */
+    public function getUserByRememberToken($token) {
+        return $this->authenticateByToken($token);
+    }
+    
+    /**
+     * به‌روزرسانی زمان آخرین ورود
+     * 
+     * @param int $user_id
+     * @return bool
+     */
+    public function updateLastLogin($user_id) {
+        $update_query = "UPDATE {$this->table_prefix}users SET last_login = NOW() WHERE id = $user_id";
+        return $this->db->query($update_query);
+    }
+    
+    /**
      * احراز هویت با توکن "مرا به خاطر بسپار"
      * 
      * @param string $token

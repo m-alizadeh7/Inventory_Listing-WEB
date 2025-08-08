@@ -11,11 +11,13 @@
 class InventoryController {
     private $db;
     private $table_prefix;
+    private $main_controller;
     
     public function __construct() {
         global $db;
         $this->db = $db;
         $this->table_prefix = defined('DB_PREFIX') ? DB_PREFIX : 'inv_';
+        $this->main_controller = new MainController();
     }
     
     /**
@@ -29,6 +31,12 @@ class InventoryController {
      * نمایش لیست موجودی انبار
      */
     public function list() {
+        // بررسی احراز هویت
+        if (!$this->main_controller->checkAuth()) {
+            header('Location: index.php?controller=user&action=login');
+            exit;
+        }
+        
         $page_title = 'موجودی انبار';
         
         // دریافت لیست موجودی

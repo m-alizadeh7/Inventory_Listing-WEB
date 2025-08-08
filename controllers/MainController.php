@@ -4,7 +4,140 @@
  * 
  * این کلاس مسئول مدیریت عملیات اصلی سیستم است
  * 
- * @author Mahdi Al    /**
+ * @author Mahdi Alizadeh <m.alizadeh7@live.com>
+ * @website https://alizadehx.ir
+ */
+
+class MainController {
+    private $db;
+    private $user_model;
+    private $database_model;
+    private $current_user;
+    
+    /**
+     * سازنده کلاس
+     */
+    public function __construct() {
+        global $db, $config;
+        $this->db = $db;
+        
+        // لود کردن مدل‌های مورد نیاز
+        if (class_exists('UserModel')) {
+            $this->user_model = new UserModel();
+        }
+        
+        if (class_exists('DatabaseModel')) {
+            $this->database_model = new DatabaseModel();
+        }
+        
+        // بررسی ورود کاربر
+        $this->current_user = false;
+        
+        if (isset($_SESSION['user_data'])) {
+            $this->current_user = $_SESSION['user_data'];
+        } elseif (isset($_COOKIE['remember_token']) && !empty($_COOKIE['remember_token']) && class_exists('UserModel')) {
+            // احراز هویت با remember token
+            $token = $_COOKIE['remember_token'];
+            $user = $this->user_model->getUserByRememberToken($token);
+            
+            if ($user) {
+                $this->current_user = $user;
+                $_SESSION['user_data'] = $user;
+            }
+        }
+    }
+    
+    /**
+     * نمایش صفحه اصلی (داشبورد)
+     */
+    public function index() {
+        // بررسی احراز هویت
+        if (!isset($_SESSION['user_data'])) {
+            header('Location: index.php?controller=user&action=login');
+            exit;
+        }
+        
+        global $config;
+        $page_title = 'داشبورد';
+        $stats = $this->getStats();
+        
+        // دریافت اطلاعات کسب و کار با fallback
+        $business_info = $this->getBusinessInfoLocal();
+        
+        // بررسی وجود فایل‌های template
+        $header_file = ROOT_PATH . '/templates/default/header.php';
+        $dashboard_file = ROOT_PATH . '/templates/default/dashboard.php';
+        $footer_file = ROOT_PATH . '/templates/default/footer.php';
+        
+        if (file_exists($header_file)) {
+            include $header_file;
+        }
+        
+        if (file_exists($dashboard_file)) {
+            include $dashboard_file;
+        } else {
+            // نمایش داشبورد ساده در صورت عدم وجود template
+            echo '<div class="container mt-4">';
+            echo '<h1>داشبورد سیستم</h1>';
+            echo '<div class="row">';
+            echo '<div class="col-md-3"><div class="card"><div class="card-body"><h5>موجودی انبار</h5><h2>' . $stats['inventory_count'] . '</h2></div></div></div>';
+            echo '<div class="col-md-3"><div class="card"><div class="card-body"><h5>دستگاه‌ها</h5><h2>' . $stats['device_count'] . '</h2></div></div></div>';
+            echo '<div class="col-md-3"><div class="card"><div class="card-body"><h5>تأمین‌کنندگان</h5><h2>' . $stats['supplier_count'] . '</h2></div></div></div>';
+            echo '<div class="col-md-3"><div class="card"><div class="card-body"><h5>سفارشات تولید</h5><h2>' . $stats['production_count'] . '</h2></div></div></div>';
+            echo '</div>';
+            echo '</div>';
+        }
+        
+        if (file_exists($footer_file)) {
+            include $footer_file;
+        }
+    }
+    
+    /**
+     * دریافت اطلاعات کسب و کار (متد محلی)
+     * 
+     * @return array
+     */
+    private function getBusinessInfoLocal() {
+        // اگر تابع عمومی وجود دارد، از آن استفاده کن
+        if (function_exists('getBusinessInfo')) {
+            try {
+                return getBusinessInfo();
+            } catch (Exception $e) {
+                // در صورت خطا، به پیش‌فرض برو
+            }
+        }
+        
+        // مقادیر پیش‌فرض
+        $business_info = [
+            'business_name' => 'سیستم مدیریت انبار',
+            'business_phone' => '',
+            'business_email' => '',
+            'business_address' => '',
+            'business_website' => '',
+            'business_owner' => 'مهدی علیزاده'
+        ];
+        
+        // تلاش برای دریافت از دیتابیس
+        if ($this->db) {
+            try {
+                $prefix = defined('DB_PREFIX') ? DB_PREFIX : 'inv_';
+                $result = $this->db->query("SELECT setting_name, setting_value FROM " . $prefix . "settings WHERE setting_name LIKE 'business_%'");
+                
+                if ($result) {
+                    while ($row = $result->fetch_assoc()) {
+                        $business_info[$row['setting_name']] = $row['setting_value'];
+                    }
+                }
+            } catch (Exception $e) {
+                // در صورت خطا، مقادیر پیش‌فرض باقی می‌ماند
+            }
+        }
+        
+        return $business_info;
+    }
+    
+    /**
      * بررسی وجود کاربر احراز هویت شده
      * 
      * @return bool
@@ -27,212 +160,119 @@
      * 
      * @param string $action
      * @return bool
-     */deh7@live.com>
- * @website https://alizadehx.ir
- */
-
-class MainController {
-    private $db;
-    private $user_model;
-    private $database_model;
-    private $current_user;
-    
-    /**
-     * سازنده کلاس
-     */
-    public function __construct() {
-        global $db;
-        $this->db = $db;
-        $this->user_model = new UserModel();
-        $this->database_model = new DatabaseModel();
-        
-        // بررسی احراز هویت کاربر
-        $this->current_user = $this->checkAuthentication();
-        
-        // ایجاد توکن CSRF
-        if (!isset($_SESSION['csrf_token'])) {
-            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-        }
-    }
-    
-    /**
-     * متد پیش‌فرض برای صفحه اصلی
-     */
-    public function index() {
-        // بررسی نصب سیستم
-        if (!$this->checkInstallation()) {
-            return;
-        }
-        
-        // بررسی ورود کاربر
-        if (!$this->isUserLoggedIn()) {
-            $this->showLoginPage();
-            return;
-        }
-        
-        // هدایت به داشبورد
-        $this->showDashboard();
-    }
-    
-    /**
-     * بررسی نصب سیستم
-     * 
-     * @return bool
-     */
-    public function checkInstallation() {
-        // بررسی وجود فایل کانفیگ
-        if (!$this->database_model->isConfigFileExists()) {
-            $this->showInstallPage();
-            return false;
-        }
-        
-        // بررسی نصب دیتابیس
-        if (!$this->database_model->isDatabaseInstalled()) {
-            $this->showInstallPage();
-            return false;
-        }
-        
-        // بررسی وجود کاربر مدیر
-        if (!$this->database_model->isAdminUserExists()) {
-            $this->showInstallPage();
-            return false;
-        }
-        
-        return true;
-    }
-    
-    /**
-     * بررسی احراز هویت کاربر
-     * 
-     * @return array|bool
-     */
-    private function checkAuthentication() {
-        // بررسی وجود کاربر در سشن
-        if (isset($_SESSION['user_id'])) {
-            return $this->user_model->getUserById($_SESSION['user_id']);
-        }
-        
-        // بررسی وجود کوکی "مرا به خاطر بسپار"
-        if (isset($_COOKIE['remember_token'])) {
-            $user = $this->user_model->authenticateByToken($_COOKIE['remember_token']);
-            
-            if ($user) {
-                // ذخیره اطلاعات کاربر در سشن
-                $_SESSION['user_id'] = $user['id'];
-                return $user;
-            }
-        }
-        
-        return false;
-    }
-    
-    /**
-     * بررسی ورود کاربر
-     * 
-     * @return bool
-     */
-    public function isUserLoggedIn() {
-        return $this->current_user !== false;
-    }
-    
-    /**
-     * بررسی دسترسی کاربر
-     * 
-     * @param string $action
-     * @return bool
      */
     public function hasPermission($action) {
         if (!$this->isUserLoggedIn()) {
             return false;
         }
         
-        return $this->user_model->hasPermission($this->current_user['role'], $action);
+        // بررسی دسترسی‌ها بر اساس نقش کاربر
+        $role = $this->current_user['role'];
+        
+        // تعریف دسترسی‌ها
+        $permissions = [
+            'admin' => ['*'], // مدیر به همه بخش‌ها دسترسی دارد
+            'manager' => [
+                'view_dashboard', 'view_inventory', 'add_inventory', 'edit_inventory', 'delete_inventory',
+                'view_devices', 'add_device', 'edit_device', 'delete_device',
+                'view_suppliers', 'add_supplier', 'edit_supplier', 'delete_supplier',
+                'view_production', 'add_production', 'edit_production', 'delete_production',
+                'view_reports'
+            ],
+            'user' => [
+                'view_dashboard', 'view_inventory', 'add_inventory',
+                'view_devices', 'view_suppliers', 'view_production'
+            ]
+        ];
+        
+        // اگر نقش کاربر تعریف نشده باشد، دسترسی ندارد
+        if (!isset($permissions[$role])) {
+            return false;
+        }
+        
+        // اگر کاربر مدیر است، به همه بخش‌ها دسترسی دارد
+        if ($role === 'admin' || in_array('*', $permissions[$role])) {
+            return true;
+        }
+        
+        // بررسی دسترسی خاص
+        return in_array($action, $permissions[$role]);
     }
     
     /**
      * نمایش صفحه نصب
      */
-    public function showInstallPage() {
-        // بررسی وضعیت نصب
-        $db_config_exists = $this->database_model->isConfigFileExists();
-        $db_installed = $this->database_model->isDatabaseInstalled();
-        $admin_created = $this->database_model->isAdminUserExists();
-        
-        // بررسی پیش‌نیازها
-        $requirements = $this->database_model->checkRequirements();
-        $requirements_met = $requirements['all_met'];
-        
-        $page_title = 'نصب سیستم مدیریت انبار';
-        
-        // نمایش صفحه نصب
-        include(TEMPLATES_PATH . '/' . DEFAULT_TEMPLATE . '/install.php');
-        exit;
+    public function install() {
+        $page_title = 'نصب سیستم';
+        include ROOT_PATH . '/templates/default/install/index.php';
     }
     
     /**
      * نمایش صفحه لاگین
+     * 
+     * @param string $error پیام خطا
+     * @param string $username نام کاربری
      */
-    public function showLoginPage($error = null, $username = '') {
+    public function showLoginPage($error = '', $username = '') {
         $page_title = 'ورود به سیستم';
-        
-        // تولید CSRF توکن در صورت عدم وجود
-        if (!isset($_SESSION['csrf_token'])) {
-            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-        }
-        
-        $csrf_token = $_SESSION['csrf_token'];
-        
-        include(TEMPLATES_PATH . '/' . DEFAULT_TEMPLATE . '/login.php');
+        include ROOT_PATH . '/templates/default/login.php';
         exit;
     }
     
     /**
-     * پردازش فرم لاگین
+     * پردازش لاگین
+     * 
+     * @return bool
      */
     public function processLogin() {
-        // بررسی CSRF توکن
-        if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-            $this->showLoginPage('خطای امنیتی رخ داده است. لطفاً دوباره تلاش کنید.');
-            return;
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            return false;
         }
         
-        // دریافت اطلاعات فرم
         $username = isset($_POST['username']) ? trim($_POST['username']) : '';
         $password = isset($_POST['password']) ? $_POST['password'] : '';
-        $remember = isset($_POST['remember']) && $_POST['remember'] == 1;
+        $remember = isset($_POST['remember']) ? true : false;
         
-        // بررسی خالی نبودن فیلدها
         if (empty($username) || empty($password)) {
-            $this->showLoginPage('لطفاً نام کاربری و رمز عبور را وارد کنید.', $username);
-            return;
+            $this->showLoginPage('لطفا نام کاربری و رمز عبور را وارد کنید.', $username);
+            return false;
         }
         
-        // احراز هویت کاربر
+        // بررسی وجود UserModel
+        if (!$this->user_model) {
+            $this->showLoginPage('خطا در سیستم: مدل کاربر یافت نشد.', $username);
+            return false;
+        }
+        
         try {
-            $user = $this->user_model->authenticate($username, $password);
+            // بررسی اعتبار کاربر
+            $user = $this->user_model->validateUser($username, $password);
             
             if ($user) {
-                // ذخیره اطلاعات کاربر در سشن
-                $_SESSION['user_id'] = $user['id'];
+                // ثبت اطلاعات کاربر در سشن
+                $_SESSION['user_data'] = $user;
                 
-                // ایجاد کوکی "مرا به خاطر بسپار"
-                if ($remember) {
+                // ثبت زمان آخرین ورود
+                if (method_exists($this->user_model, 'updateLastLogin')) {
+                    $this->user_model->updateLastLogin($user['id']);
+                }
+                
+                // ایجاد توکن "مرا به خاطر بسپار" در صورت انتخاب
+                if ($remember && method_exists($this->user_model, 'createRememberToken')) {
                     $token = $this->user_model->createRememberToken($user['id']);
-                    
-                    if ($token) {
-                        setcookie('remember_token', $token, time() + COOKIE_LIFETIME, '/');
-                    }
+                    setcookie('remember_token', $token, time() + 30 * 24 * 60 * 60, '/');
                 }
                 
                 // هدایت به صفحه اصلی
-                $_SESSION['success'] = 'ورود شما با موفقیت انجام شد.';
                 header('Location: index.php');
                 exit;
             } else {
                 $this->showLoginPage('نام کاربری یا رمز عبور اشتباه است.', $username);
+                return false;
             }
         } catch (Exception $e) {
             $this->showLoginPage('خطا در احراز هویت: ' . $e->getMessage(), $username);
+            return false;
         }
     }
     
@@ -243,295 +283,252 @@ class MainController {
         // دریافت اطلاعات فرم
         $config = [
             'db_host' => isset($_POST['db_host']) ? trim($_POST['db_host']) : 'localhost',
-            'db_port' => isset($_POST['db_port']) ? (int)$_POST['db_port'] : 3306,
             'db_name' => isset($_POST['db_name']) ? trim($_POST['db_name']) : '',
             'db_user' => isset($_POST['db_user']) ? trim($_POST['db_user']) : '',
             'db_pass' => isset($_POST['db_pass']) ? $_POST['db_pass'] : '',
-            'db_prefix' => isset($_POST['db_prefix']) ? trim($_POST['db_prefix']) : 'inv_'
-        ];
-        
-        // بررسی خالی نبودن فیلدهای ضروری
-        if (empty($config['db_name']) || empty($config['db_user'])) {
-            $error = 'لطفاً تمام فیلدهای ضروری را پر کنید.';
-            $this->showInstallPage();
-            return;
-        }
-        
-        // تست اتصال به دیتابیس
-        try {
-            $test_db = new mysqli(
-                $config['db_host'], 
-                $config['db_user'], 
-                $config['db_pass'], 
-                $config['db_name'], 
-                $config['db_port']
-            );
-            
-            if ($test_db->connect_error) {
-                $error = 'خطا در اتصال به دیتابیس: ' . $test_db->connect_error;
-                $this->showInstallPage();
-                return;
-            }
-            
-            $test_db->close();
-        } catch (Exception $e) {
-            $error = 'خطا در اتصال به دیتابیس: ' . $e->getMessage();
-            $this->showInstallPage();
-            return;
-        }
-        
-        // ایجاد فایل کانفیگ
-        if (!$this->database_model->createConfigFile($config)) {
-            $error = 'خطا در ایجاد فایل پیکربندی. لطفاً دسترسی نوشتن را بررسی کنید.';
-            $this->showInstallPage();
-            return;
-        }
-        
-        // بارگذاری مجدد صفحه
-        $success = 'فایل پیکربندی با موفقیت ایجاد شد.';
-        header('Location: index.php');
-        exit;
-    }
-    
-    /**
-     * نصب دیتابیس
-     */
-    public function installDb() {
-        if (!$this->database_model->installDatabase()) {
-            $error = 'خطا در نصب دیتابیس. لطفاً دوباره تلاش کنید.';
-            $this->showInstallPage();
-            return;
-        }
-        
-        $success = 'دیتابیس با موفقیت نصب شد.';
-        header('Location: index.php');
-        exit;
-    }
-    
-    /**
-     * نصب دیتابیس (متد کمکی برای سازگاری با URL)
-     */
-    public function install_db() {
-        return $this->installDb();
-    }
-    
-    /**
-     * ایجاد کاربر مدیر
-     */
-    public function createAdmin() {
-        // دریافت اطلاعات فرم
-        $admin_data = [
+            'db_prefix' => isset($_POST['db_prefix']) ? trim($_POST['db_prefix']) : 'inv_',
             'admin_username' => isset($_POST['admin_username']) ? trim($_POST['admin_username']) : '',
             'admin_password' => isset($_POST['admin_password']) ? $_POST['admin_password'] : '',
             'admin_email' => isset($_POST['admin_email']) ? trim($_POST['admin_email']) : '',
-            'admin_name' => isset($_POST['admin_name']) ? trim($_POST['admin_name']) : ''
+            'business_name' => isset($_POST['business_name']) ? trim($_POST['business_name']) : ''
         ];
         
-        // بررسی خالی نبودن فیلدها
-        if (empty($admin_data['admin_username']) || empty($admin_data['admin_password']) || 
-            empty($admin_data['admin_email']) || empty($admin_data['admin_name'])) {
-            $error = 'لطفاً تمام فیلدها را پر کنید.';
-            $this->showInstallPage();
-            return;
+        // بررسی صحت داده‌ها
+        $errors = [];
+        
+        if (empty($config['db_name'])) {
+            $errors[] = 'نام دیتابیس الزامی است.';
         }
         
-        // ایجاد کاربر مدیر
-        if (!$this->database_model->createAdminUser($admin_data)) {
-            $error = 'خطا در ایجاد کاربر مدیر. لطفاً دوباره تلاش کنید.';
-            $this->showInstallPage();
-            return;
+        if (empty($config['db_user'])) {
+            $errors[] = 'نام کاربری دیتابیس الزامی است.';
         }
         
-        $success = 'کاربر مدیر با موفقیت ایجاد شد.';
-        header('Location: index.php');
-        exit;
-    }
-    
-    /**
-     * ایجاد کاربر مدیر (متد کمکی برای سازگاری با URL)
-     */
-    public function create_admin() {
-        return $this->createAdmin();
-    }
-    
-    /**
-     * نمایش صفحه داشبورد
-     */
-    public function showDashboard() {
-        // بررسی ورود کاربر
-        if (!$this->isUserLoggedIn()) {
-            $this->showLoginPage();
-            return;
+        if (empty($config['admin_username'])) {
+            $errors[] = 'نام کاربری مدیر الزامی است.';
         }
         
-        $page_title = 'داشبورد';
-        $user = $this->current_user;
+        if (empty($config['admin_password'])) {
+            $errors[] = 'رمز عبور مدیر الزامی است.';
+        } elseif (strlen($config['admin_password']) < 6) {
+            $errors[] = 'رمز عبور مدیر باید حداقل ۶ کاراکتر باشد.';
+        }
         
-        // دریافت اطلاعات آماری
-        $stats = [
-            'total_inventory' => 0,
-            'low_stock' => 0,
-            'pending_orders' => 0,
-            'total_devices' => 0
-        ];
+        if (empty($config['admin_email'])) {
+            $errors[] = 'ایمیل مدیر الزامی است.';
+        } elseif (!filter_var($config['admin_email'], FILTER_VALIDATE_EMAIL)) {
+            $errors[] = 'فرمت ایمیل مدیر صحیح نیست.';
+        }
         
-        // محاسبه آمار واقعی در صورت وجود دیتابیس
-        if ($this->db) {
-            try {
-                $prefix = defined('DB_PREFIX') ? DB_PREFIX : 'inv_';
-                
-                // کل اقلام انبار
-                $result = $this->db->query("SELECT COUNT(*) as count FROM {$prefix}inventory");
-                if ($result) {
-                    $stats['total_inventory'] = $result->fetch_assoc()['count'];
-                }
-                
-                // اقلام کم موجود
-                $result = $this->db->query("SELECT COUNT(*) as count FROM {$prefix}inventory WHERE stock < 10");
-                if ($result) {
-                    $stats['low_stock'] = $result->fetch_assoc()['count'];
-                }
-                
-                // سفارشات در انتظار
-                $result = $this->db->query("SELECT COUNT(*) as count FROM {$prefix}production_orders WHERE status = 'pending'");
-                if ($result) {
-                    $stats['pending_orders'] = $result->fetch_assoc()['count'];
-                }
-                
-                // کل دستگاه‌ها
-                $result = $this->db->query("SELECT COUNT(*) as count FROM {$prefix}devices");
-                if ($result) {
-                    $stats['total_devices'] = $result->fetch_assoc()['count'];
-                }
-            } catch (Exception $e) {
-                // در صورت خطا، آمار پیش‌فرض باقی می‌ماند
+        if (empty($config['business_name'])) {
+            $errors[] = 'نام شرکت/کسب‌وکار الزامی است.';
+        }
+        
+        if (!empty($errors)) {
+            $_SESSION['install_errors'] = $errors;
+            $_SESSION['install_data'] = $config;
+            header('Location: index.php?controller=main&action=install');
+            exit;
+        }
+        
+        try {
+            // تست اتصال به دیتابیس
+            $pdo = new PDO("mysql:host={$config['db_host']};charset=utf8mb4", $config['db_user'], $config['db_pass']);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            
+            // بررسی وجود دیتابیس
+            $stmt = $pdo->query("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '{$config['db_name']}'");
+            $db_exists = $stmt->rowCount() > 0;
+            
+            if (!$db_exists) {
+                // ایجاد دیتابیس
+                $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$config['db_name']}` CHARACTER SET utf8mb4 COLLATE utf8mb4_persian_ci");
             }
+            
+            // انتخاب دیتابیس
+            $pdo->exec("USE `{$config['db_name']}`");
+            
+            // نصب اسکیما
+            $sql_file = file_get_contents(ROOT_PATH . '/db.sql');
+            
+            // جایگزینی پیشوند جداول
+            $sql_file = str_replace('inv_', $config['db_prefix'], $sql_file);
+            
+            // اجرای کوئری‌ها
+            $pdo->exec($sql_file);
+            
+            // ایجاد کاربر مدیر
+            $hashed_password = password_hash($config['admin_password'], PASSWORD_DEFAULT);
+            $stmt = $pdo->prepare("INSERT INTO `{$config['db_prefix']}users` 
+                                   (username, password, email, full_name, role, is_active, created_at) 
+                                   VALUES (:username, :password, :email, :full_name, 'admin', 1, NOW())");
+                                   
+            $stmt->execute([
+                ':username' => $config['admin_username'],
+                ':password' => $hashed_password,
+                ':email' => $config['admin_email'],
+                ':full_name' => 'مدیر سیستم'
+            ]);
+            
+            // ذخیره اطلاعات شرکت
+            $stmt = $pdo->prepare("INSERT INTO `{$config['db_prefix']}settings` 
+                                   (setting_name, setting_value) 
+                                   VALUES ('business_name', :business_name)");
+                                   
+            $stmt->execute([':business_name' => $config['business_name']]);
+            
+            // ذخیره تنظیمات در فایل کانفیگ
+            $config_file = ROOT_PATH . '/config.php';
+            $config_content = "<?php
+/**
+ * فایل تنظیمات
+ * 
+ * @author Mahdi Alizadeh <m.alizadeh7@live.com>
+ * @website https://alizadehx.ir
+ */
+
+// تنظیمات دیتابیس
+define('DB_HOST', '{$config['db_host']}');
+define('DB_NAME', '{$config['db_name']}');
+define('DB_USER', '{$config['db_user']}');
+define('DB_PASS', '{$config['db_pass']}');
+define('DB_PREFIX', '{$config['db_prefix']}');
+
+// مسیرهای سیستم
+define('ROOT_PATH', __DIR__);
+define('TEMPLATES_PATH', ROOT_PATH . '/templates');
+define('DEFAULT_TEMPLATE', 'default');
+define('ASSETS_URL', 'assets');
+
+// تنظیمات سیستم
+\$config = [
+    'app_name' => 'سیستم مدیریت انبار و تولید',
+    'version' => '1.0.0',
+    'author' => 'مهدی علیزاده',
+    'email' => 'm.alizadeh7@live.com',
+    'website' => 'https://alizadehx.ir',
+    'github' => 'https://github.com/m-alizadeh7',
+    'telegram' => 'https://t.me/mahdializadeh7',
+    'installed' => true
+];
+
+// تنظیم منطقه زمانی
+date_default_timezone_set('Asia/Tehran');
+
+// تنظیمات نشست
+session_start();
+";
+            file_put_contents($config_file, $config_content);
+            
+            // هدایت به صفحه تکمیل نصب
+            header('Location: index.php?controller=main&action=install_complete');
+            exit;
+            
+        } catch (PDOException $e) {
+            $_SESSION['install_errors'] = ['خطا در اتصال به دیتابیس: ' . $e->getMessage()];
+            $_SESSION['install_data'] = $config;
+            header('Location: index.php?controller=main&action=install');
+            exit;
+        }
+    }
+    
+    /**
+     * نمایش صفحه تکمیل نصب
+     */
+    public function install_complete() {
+        $page_title = 'نصب با موفقیت انجام شد';
+        include ROOT_PATH . '/templates/default/install/complete.php';
+    }
+    
+    /**
+     * بررسی نصب سیستم
+     * 
+     * @return bool
+     */
+    public function checkInstallation() {
+        // بررسی وجود فایل config.php
+        if (!file_exists(ROOT_PATH . '/config.php')) {
+            header('Location: index.php?controller=main&action=install');
+            exit;
         }
         
-        // دریافت اطلاعات کسب و کار
-        $business_info = [
-            'business_name' => 'سیستم مدیریت انبار',
-            'business_owner' => 'مهدی علیزاده'
+        // بررسی اتصال به دیتابیس
+        if (!$this->db) {
+            header('Location: index.php?controller=main&action=install');
+            exit;
+        }
+        
+        return true;
+    }
+    
+    /**
+     * دریافت آمار سیستم
+     * 
+     * @return array
+     */
+    public function getStats() {
+        $stats = [
+            'inventory_count' => 0,
+            'device_count' => 0,
+            'supplier_count' => 0,
+            'production_count' => 0,
+            'low_stock_count' => 0,
+            'pending_orders' => 0
         ];
         
-        // نمایش صفحه داشبورد
-        include(TEMPLATES_PATH . '/' . DEFAULT_TEMPLATE . '/header.php');
-        include(TEMPLATES_PATH . '/' . DEFAULT_TEMPLATE . '/dashboard.php');
-        include(TEMPLATES_PATH . '/' . DEFAULT_TEMPLATE . '/footer.php');
-    }
-    
-    /**
-     * نمایش صفحه پروفایل
-     */
-    public function showProfile() {
-        // بررسی ورود کاربر
-        if (!$this->isUserLoggedIn()) {
-            $this->showLoginPage();
-            return;
+        if (!$this->db) {
+            return $stats;
         }
         
-        $page_title = 'پروفایل کاربری';
-        $user = $this->current_user;
-        
-        // نمایش صفحه پروفایل
-        include(TEMPLATES_PATH . '/' . DEFAULT_TEMPLATE . '/header.php');
-        include(TEMPLATES_PATH . '/' . DEFAULT_TEMPLATE . '/profile.php');
-        include(TEMPLATES_PATH . '/' . DEFAULT_TEMPLATE . '/footer.php');
-    }
-    
-    /**
-     * بروزرسانی پروفایل
-     */
-    public function updateProfile() {
-        // بررسی ورود کاربر
-        if (!$this->isUserLoggedIn()) {
-            $this->showLoginPage();
-            return;
+        try {
+            $prefix = defined('DB_PREFIX') ? DB_PREFIX : 'inv_';
+            
+            // تعداد موجودی
+            $result = $this->db->query("SELECT COUNT(*) as count FROM " . $prefix . "inventory");
+            if ($result) {
+                $row = $result->fetch_assoc();
+                $stats['inventory_count'] = $row['count'];
+            }
+            
+            // تعداد دستگاه‌ها
+            $result = $this->db->query("SELECT COUNT(*) as count FROM " . $prefix . "devices");
+            if ($result) {
+                $row = $result->fetch_assoc();
+                $stats['device_count'] = $row['count'];
+            }
+            
+            // تعداد تأمین‌کنندگان
+            $result = $this->db->query("SELECT COUNT(*) as count FROM " . $prefix . "suppliers");
+            if ($result) {
+                $row = $result->fetch_assoc();
+                $stats['supplier_count'] = $row['count'];
+            }
+            
+            // تعداد سفارشات تولید
+            $result = $this->db->query("SELECT COUNT(*) as count FROM " . $prefix . "production_orders");
+            if ($result) {
+                $row = $result->fetch_assoc();
+                $stats['production_count'] = $row['count'];
+            }
+            
+            // تعداد اقلام با موجودی کم
+            $result = $this->db->query("SELECT COUNT(*) as count FROM " . $prefix . "inventory WHERE quantity <= min_quantity");
+            if ($result) {
+                $row = $result->fetch_assoc();
+                $stats['low_stock_count'] = $row['count'];
+            }
+            
+            // تعداد سفارشات در انتظار
+            $result = $this->db->query("SELECT COUNT(*) as count FROM " . $prefix . "production_orders WHERE status = 'pending'");
+            if ($result) {
+                $row = $result->fetch_assoc();
+                $stats['pending_orders'] = $row['count'];
+            }
+        } catch (Exception $e) {
+            // در صورت خطا آمار صفر برگردانده می‌شود
         }
         
-        // بررسی CSRF توکن
-        if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-            $_SESSION['error'] = 'خطای امنیتی رخ داده است. لطفاً دوباره تلاش کنید.';
-            header('Location: index.php?controller=main&action=show_profile');
-            exit;
-        }
-        
-        // دریافت اطلاعات فرم
-        $user_data = [
-            'name' => isset($_POST['name']) ? trim($_POST['name']) : '',
-            'email' => isset($_POST['email']) ? trim($_POST['email']) : ''
-        ];
-        
-        // بررسی خالی نبودن فیلدها
-        if (empty($user_data['name']) || empty($user_data['email'])) {
-            $_SESSION['error'] = 'لطفاً تمام فیلدها را پر کنید.';
-            header('Location: index.php?controller=main&action=show_profile');
-            exit;
-        }
-        
-        // بروزرسانی پروفایل
-        if ($this->user_model->updateUser($this->current_user['id'], $user_data)) {
-            $_SESSION['success'] = 'پروفایل با موفقیت بروزرسانی شد.';
-        } else {
-            $_SESSION['error'] = 'خطا در بروزرسانی پروفایل. لطفاً دوباره تلاش کنید.';
-        }
-        
-        header('Location: index.php?controller=main&action=show_profile');
-        exit;
-    }
-    
-    /**
-     * تغییر رمز عبور
-     */
-    public function changePassword() {
-        // بررسی ورود کاربر
-        if (!$this->isUserLoggedIn()) {
-            $this->showLoginPage();
-            return;
-        }
-        
-        // بررسی CSRF توکن
-        if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-            $_SESSION['error'] = 'خطای امنیتی رخ داده است. لطفاً دوباره تلاش کنید.';
-            header('Location: index.php?controller=main&action=show_profile');
-            exit;
-        }
-        
-        // دریافت اطلاعات فرم
-        $current_password = isset($_POST['current_password']) ? $_POST['current_password'] : '';
-        $new_password = isset($_POST['new_password']) ? $_POST['new_password'] : '';
-        $confirm_password = isset($_POST['confirm_password']) ? $_POST['confirm_password'] : '';
-        
-        // بررسی خالی نبودن فیلدها
-        if (empty($current_password) || empty($new_password) || empty($confirm_password)) {
-            $_SESSION['error'] = 'لطفاً تمام فیلدها را پر کنید.';
-            header('Location: index.php?controller=main&action=showberry');
-            exit;
-        }
-        
-        // بررسی یکسان بودن رمز عبور جدید و تکرار آن
-        if ($new_password !== $confirm_password) {
-            $_SESSION['error'] = 'رمز عبور جدید و تکرار آن یکسان نیستند.';
-            header('Location: index.php?controller=main&action=show_profile');
-            exit;
-        }
-        
-        // تغییر رمز عبور
-        if ($this->user_model->changePassword($this->current_user['id'], $current_password, $new_password)) {
-            $_SESSION['success'] = 'رمز عبور با موفقیت تغییر یافت.';
-        } else {
-            $_SESSION['error'] = 'خطا در تغییر رمز عبور. لطفاً رمز عبور فعلی را بررسی کنید.';
-        }
-        
-        header('Location: index.php?controller=main&action=show_profile');
-        exit;
-    }
-    
-    /**
-     * پردازش پیکربندی دیتابیس (متد کمکی برای سازگاری با URL)
-     */
-    public function process_db_config() {
-        return $this->processDbConfig();
+        return $stats;
     }
     
     /**
@@ -564,8 +561,14 @@ class MainController {
      */
     public function update_settings() {
         // بررسی احراز هویت
-        if (!$this->checkAuth()) {
+        if (!isset($_SESSION['user_data'])) {
             header('Location: index.php?controller=user&action=login');
+            exit;
+        }
+        
+        // بررسی دسترسی مدیر
+        if ($_SESSION['user_data']['role'] !== 'admin') {
+            header('Location: index.php');
             exit;
         }
         
@@ -577,7 +580,7 @@ class MainController {
                 $business_address = $_POST['business_address'] ?? '';
                 $business_website = $_POST['business_website'] ?? '';
                 
-                $stmt = $this->db->prepare("UPDATE settings SET 
+                $stmt = $this->db->prepare("UPDATE " . DB_PREFIX . "settings SET 
                     setting_value = CASE setting_name 
                         WHEN 'business_name' THEN :business_name
                         WHEN 'business_phone' THEN :business_phone
@@ -611,7 +614,7 @@ class MainController {
      */
     public function show_profile() {
         // بررسی احراز هویت
-        if (!$this->checkAuth()) {
+        if (!isset($_SESSION['user_data'])) {
             header('Location: index.php?controller=user&action=login');
             exit;
         }
@@ -629,7 +632,7 @@ class MainController {
      */
     public function update_profile() {
         // بررسی احراز هویت
-        if (!$this->checkAuth()) {
+        if (!isset($_SESSION['user_data'])) {
             header('Location: index.php?controller=user&action=login');
             exit;
         }
@@ -644,7 +647,7 @@ class MainController {
                 $confirm_password = $_POST['confirm_password'] ?? '';
                 
                 // به‌روزرسانی اطلاعات پایه
-                $stmt = $this->db->prepare("UPDATE users SET full_name = :full_name, email = :email WHERE id = :user_id");
+                $stmt = $this->db->prepare("UPDATE " . DB_PREFIX . "users SET full_name = :full_name, email = :email WHERE id = :user_id");
                 $stmt->execute([
                     ':full_name' => $full_name,
                     ':email' => $email,
@@ -658,7 +661,7 @@ class MainController {
                     }
                     
                     // بررسی رمز عبور فعلی
-                    $stmt = $this->db->prepare("SELECT password FROM users WHERE id = :user_id");
+                    $stmt = $this->db->prepare("SELECT password FROM " . DB_PREFIX . "users WHERE id = :user_id");
                     $stmt->execute([':user_id' => $user_id]);
                     $stored_password = $stmt->fetchColumn();
                     
@@ -668,7 +671,7 @@ class MainController {
                     
                     // به‌روزرسانی رمز عبور
                     $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-                    $stmt = $this->db->prepare("UPDATE users SET password = :password WHERE id = :user_id");
+                    $stmt = $this->db->prepare("UPDATE " . DB_PREFIX . "users SET password = :password WHERE id = :user_id");
                     $stmt->execute([
                         ':password' => $hashed_password,
                         ':user_id' => $user_id

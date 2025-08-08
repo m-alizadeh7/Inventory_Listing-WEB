@@ -11,7 +11,6 @@
 class UserController {
     private $db;
     private $user_model;
-    private $main_controller;
     private $current_user;
     
     /**
@@ -20,13 +19,45 @@ class UserController {
     public function __construct() {
         global $db;
         $this->db = $db;
-        $this->user_model = new UserModel();
-        $this->main_controller = new MainController();
         
-        // بررسی نصب سیستم
-        if (!$this->main_controller->checkInstallation()) {
-            return;
+        // بررسی وجود UserModel
+        if (class_exists('UserModel')) {
+            $this->user_model = new UserModel();
         }
+        
+        // بررسی احراز هویت
+        $this->current_user = isset($_SESSION['user_data']) ? $_SESSION['user_data'] : false;
+    }
+    
+    /**
+     * بررسی احراز هویت
+     */
+    private function isAuthenticated() {
+        return $this->current_user !== false;
+    }
+    
+    /**
+     * بررسی دسترسی
+     */
+    private function hasPermission($action) {
+        if (!$this->isAuthenticated()) {
+            return false;
+        }
+        
+        $role = $this->current_user['role'];
+        
+        // تعریف دسترسی‌ها
+        $permissions = [
+            'admin' => ['*'], // مدیر به همه دسترسی دارد
+            'manager' => ['view_users', 'add_user', 'edit_user'],
+            'user' => ['view_profile', 'edit_profile']
+        ];
+        
+        if (!isset($permissions[$role])) {
+            return false;
+        }
+        
+        return $role === 'admin' || in_array($action, $permissions[$role]);
     }
     
     /**
@@ -41,13 +72,16 @@ class UserController {
      */
     public function listUsers() {
         // بررسی احراز هویت
-        if (!$this->main_controller->checkAuth()) {
-            header('Location: index.php?controller=user&action=login');
+        if (!$this->isAuthenticated()) {
+            header('Location: index.php?controller=main&action=login');
             exit;
         }
         
         // بررسی دسترسی
-        if (!$this->main_controller->hasPermission('view_users')) {
+        if (!$this->hasPermission('view_users')) {
+            echo '<div class="alert alert-danger">شما دسترسی لازم برای مشاهده این بخش را ندارید.</div>';
+            return;
+        }
             $_SESSION['error'] = 'شما دسترسی به این بخش را ندارید.';
             header('Location: index.php');
             exit;

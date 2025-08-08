@@ -153,6 +153,25 @@ class UserModel {
     }
     
     /**
+     * تنظیم توکن "مرا به خاطر بسپار" (متد کمکی)
+     * 
+     * @param int $user_id
+     * @param string $token
+     * @return bool
+     */
+    public function setRememberToken($user_id, $token) {
+        // تاریخ انقضا (30 روز)
+        $expiry = date('Y-m-d H:i:s', time() + (30 * 24 * 60 * 60));
+        
+        // ذخیره توکن در دیتابیس
+        $query = "UPDATE {$this->table_prefix}users 
+                 SET remember_token = '$token', remember_expiry = '$expiry' 
+                 WHERE id = $user_id";
+        
+        return $this->db->query($query);
+    }
+    
+    /**
      * حذف توکن "مرا به خاطر بسپار"
      * 
      * @param int $user_id

@@ -8,18 +8,15 @@
  * @website https://alizadehx.ir
  */
 
-class MainController {
-    private $db;
+class MainController extends BaseController {
     private $user_model;
     private $database_model;
-    private $current_user;
     
     /**
      * سازنده کلاس
      */
     public function __construct() {
-        global $db, $config;
-        $this->db = $db;
+        parent::__construct();
         
         // لود کردن مدل‌های مورد نیاز
         if (class_exists('UserModel')) {
@@ -30,21 +27,27 @@ class MainController {
             $this->database_model = new DatabaseModel();
         }
         
-        // بررسی ورود کاربر
-        $this->current_user = false;
-        
-        if (isset($_SESSION['user_data'])) {
-            $this->current_user = $_SESSION['user_data'];
-        } elseif (isset($_COOKIE['remember_token']) && !empty($_COOKIE['remember_token']) && class_exists('UserModel')) {
-            // احراز هویت با remember token
+        // بررسی remember token
+        if (!$this->isAuthenticated() && isset($_COOKIE['remember_token']) && !empty($_COOKIE['remember_token'])) {
+            $this->checkRememberToken();
+        }
+    }
+    
+    /**
+     * بررسی remember token
+     */
+    private function checkRememberToken() {
+        if ($this->user_model) {
             $token = $_COOKIE['remember_token'];
             $user = $this->user_model->getUserByRememberToken($token);
             
             if ($user) {
-                $this->current_user = $user;
                 $_SESSION['user_data'] = $user;
+                $this->current_user = $user;
+            } else {
+                // توکن نامعتبر، حذف کوکی
+                setcookie('remember_token', '', time() - 3600, '/');
             }
-        }
     }
     
     /**
@@ -52,8 +55,8 @@ class MainController {
      */
     public function index() {
         // بررسی احراز هویت
-        if (!isset($_SESSION['user_data'])) {
-            header('Location: index.php?controller=user&action=login');
+        if (!$this->isAuthenticated()) {
+            header('Location: index.php?controller=main&action=login');
             exit;
         }
         
@@ -91,6 +94,88 @@ class MainController {
         if (file_exists($footer_file)) {
             include $footer_file;
         }
+    }
+    
+    /**
+     * نمایش صفحه لاگین
+     */
+    public function login() {
+        // اگر کاربر قبلاً لاگین کرده، به داشبورد هدایت کن
+        if (isset($_SESSION['user_data'])) {
+            header('Location: index.php');
+            exit;
+        }
+        
+        $page_title = 'ورود به سیستم';
+        $error = isset($_SESSION['login_error']) ? $_SESSION['login_error'] : '';
+        $username = '';
+        
+        // پاک کردن خطا بعد از نمایش
+        if (isset($_SESSION['login_error'])) {
+            unset($_SESSION['login_error']);
+        }
+        
+        // بررسی وجود فایل template لاگین
+        $login_file = ROOT_PATH . '/templates/default/login.php';
+        if (file_exists($login_file)) {
+            include $login_file;
+        } else {
+            // نمایش فرم لاگین ساده
+            $this->showSimpleLoginForm($error, $username);
+        }
+    }
+    
+    /**
+     * نمایش فرم لاگین ساده
+     */
+    private function showSimpleLoginForm($error = '', $username = '') {
+        echo '<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ورود به سیستم</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <style>
+        body { background: #f8f9fa; font-family: Tahoma; padding-top: 100px; }
+        .login-card { max-width: 400px; margin: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="login-card">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h4>ورود به سیستم</h4>
+                    <small>سیستم مدیریت انبار</small>
+                </div>
+                <div class="card-body">';
+                
+        if (!empty($error)) {
+            echo '<div class="alert alert-danger">' . htmlspecialchars($error) . '</div>';
+        }
+        
+        echo '<form method="POST" action="index.php?controller=main&action=process_login">
+                        <div class="mb-3">
+                            <label class="form-label">نام کاربری</label>
+                            <input type="text" class="form-control" name="username" value="' . htmlspecialchars($username) . '" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">رمز عبور</label>
+                            <input type="password" class="form-control" name="password" required>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" name="remember" value="1">
+                            <label class="form-check-label">مرا به خاطر بسپار</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">ورود</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>';
     }
     
     /**
@@ -138,68 +223,6 @@ class MainController {
     }
     
     /**
-     * بررسی وجود کاربر احراز هویت شده
-     * 
-     * @return bool
-     */
-    public function isUserLoggedIn() {
-        return $this->current_user !== false;
-    }
-    
-    /**
-     * بررسی احراز هویت کاربر
-     * 
-     * @return bool
-     */
-    public function checkAuth() {
-        return $this->isUserLoggedIn();
-    }
-    
-    /**
-     * بررسی دسترسی کاربر
-     * 
-     * @param string $action
-     * @return bool
-     */
-    public function hasPermission($action) {
-        if (!$this->isUserLoggedIn()) {
-            return false;
-        }
-        
-        // بررسی دسترسی‌ها بر اساس نقش کاربر
-        $role = $this->current_user['role'];
-        
-        // تعریف دسترسی‌ها
-        $permissions = [
-            'admin' => ['*'], // مدیر به همه بخش‌ها دسترسی دارد
-            'manager' => [
-                'view_dashboard', 'view_inventory', 'add_inventory', 'edit_inventory', 'delete_inventory',
-                'view_devices', 'add_device', 'edit_device', 'delete_device',
-                'view_suppliers', 'add_supplier', 'edit_supplier', 'delete_supplier',
-                'view_production', 'add_production', 'edit_production', 'delete_production',
-                'view_reports'
-            ],
-            'user' => [
-                'view_dashboard', 'view_inventory', 'add_inventory',
-                'view_devices', 'view_suppliers', 'view_production'
-            ]
-        ];
-        
-        // اگر نقش کاربر تعریف نشده باشد، دسترسی ندارد
-        if (!isset($permissions[$role])) {
-            return false;
-        }
-        
-        // اگر کاربر مدیر است، به همه بخش‌ها دسترسی دارد
-        if ($role === 'admin' || in_array('*', $permissions[$role])) {
-            return true;
-        }
-        
-        // بررسی دسترسی خاص
-        return in_array($action, $permissions[$role]);
-    }
-    
-    /**
      * نمایش صفحه نصب
      */
     public function install() {
@@ -226,7 +249,8 @@ class MainController {
      */
     public function processLogin() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            return false;
+            header('Location: index.php?controller=main&action=login');
+            exit;
         }
         
         $username = isset($_POST['username']) ? trim($_POST['username']) : '';
@@ -234,14 +258,22 @@ class MainController {
         $remember = isset($_POST['remember']) ? true : false;
         
         if (empty($username) || empty($password)) {
-            $this->showLoginPage('لطفا نام کاربری و رمز عبور را وارد کنید.', $username);
-            return false;
+            $_SESSION['login_error'] = 'لطفا نام کاربری و رمز عبور را وارد کنید.';
+            header('Location: index.php?controller=main&action=login');
+            exit;
         }
         
         // بررسی وجود UserModel
         if (!$this->user_model) {
-            $this->showLoginPage('خطا در سیستم: مدل کاربر یافت نشد.', $username);
-            return false;
+            // تلاش برای بارگذاری مجدد
+            try {
+                require_once ROOT_PATH . '/models/UserModel.php';
+                $this->user_model = new UserModel();
+            } catch (Exception $e) {
+                $_SESSION['login_error'] = 'خطا در سیستم: مدل کاربر یافت نشد.';
+                header('Location: index.php?controller=main&action=login');
+                exit;
+            }
         }
         
         try {
@@ -251,6 +283,9 @@ class MainController {
             if ($user) {
                 // ثبت اطلاعات کاربر در سشن
                 $_SESSION['user_data'] = $user;
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['role'] = $user['role'];
                 
                 // ثبت زمان آخرین ورود
                 if (method_exists($this->user_model, 'updateLastLogin')) {
@@ -258,21 +293,28 @@ class MainController {
                 }
                 
                 // ایجاد توکن "مرا به خاطر بسپار" در صورت انتخاب
-                if ($remember && method_exists($this->user_model, 'createRememberToken')) {
-                    $token = $this->user_model->createRememberToken($user['id']);
+                if ($remember && method_exists($this->user_model, 'setRememberToken')) {
+                    $token = bin2hex(random_bytes(32));
+                    $this->user_model->setRememberToken($user['id'], $token);
                     setcookie('remember_token', $token, time() + 30 * 24 * 60 * 60, '/');
                 }
+                
+                // پاک کردن خطاهای لاگین
+                unset($_SESSION['login_error']);
                 
                 // هدایت به صفحه اصلی
                 header('Location: index.php');
                 exit;
             } else {
-                $this->showLoginPage('نام کاربری یا رمز عبور اشتباه است.', $username);
-                return false;
+                $_SESSION['login_error'] = 'نام کاربری یا رمز عبور اشتباه است.';
+                header('Location: index.php?controller=main&action=login');
+                exit;
             }
         } catch (Exception $e) {
-            $this->showLoginPage('خطا در احراز هویت: ' . $e->getMessage(), $username);
-            return false;
+            error_log("Login error: " . $e->getMessage());
+            $_SESSION['login_error'] = 'خطا در احراز هویت: ' . $e->getMessage();
+            header('Location: index.php?controller=main&action=login');
+            exit;
         }
     }
     
@@ -705,6 +747,26 @@ session_start();
         }
         
         header('Location: index.php?controller=user&action=login');
+        exit;
+    }
+    
+    /**
+     * خروج از سیستم
+     */
+    public function logout() {
+        // پاک کردن remember token
+        if (isset($_COOKIE['remember_token'])) {
+            if ($this->user_model && method_exists($this->user_model, 'clearRememberToken')) {
+                $this->user_model->clearRememberToken($_COOKIE['remember_token']);
+            }
+            setcookie('remember_token', '', time() - 3600, '/');
+        }
+        
+        // پاک کردن session
+        session_destroy();
+        
+        // هدایت به صفحه لاگین
+        header('Location: index.php?controller=main&action=login');
         exit;
     }
     

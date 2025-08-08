@@ -11,107 +11,130 @@
 // شروع session
 session_start();
 
+// تعریف مسیر ریشه
+define('ROOT_PATH', __DIR__);
+
 // بررسی وجود فایل کانفیگ
-if (file_exists('config.php')) {
-    require_once 'config.php';
+if (file_exists(ROOT_PATH . '/config.php')) {
+    require_once ROOT_PATH . '/config.php';
     
     // اتصال به دیتابیس
-    if (defined('DB_PORT')) {
-        $db = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
-    } else {
-        $db = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-    }
-    
-    // تنظیم کاراکتر ست اتصال
-    $db->set_charset('utf8mb4');
-    
-    // بررسی خطای اتصال
-    if ($db->connect_error) {
-        die('خطا در اتصال به دیتابیس: ' . $db->connect_error);
+    try {
+        if (defined('DB_PORT') && DB_PORT) {
+            $db = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
+        } else {
+            $db = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+        }
+        
+        // تنظیم کاراکتر ست اتصال
+        $db->set_charset('utf8mb4');
+        
+        // بررسی خطای اتصال
+        if ($db->connect_error) {
+            throw new Exception('خطا در اتصال به دیتابیس: ' . $db->connect_error);
+        }
+    } catch (Exception $e) {
+        die('<div style="color: red; direction: rtl; font-family: Tahoma; padding: 20px;">
+             خطا در اتصال به دیتابیس: ' . htmlspecialchars($e->getMessage()) . '</div>');
     }
 } else {
-    // اگر فایل کانفیگ وجود نداشت، متغیر دیتابیس را خالی می‌گذاریم
+    // اگر فایل کانفیگ وجود نداشت، به صفحه نصب هدایت
     $db = null;
 }
 
-// اطمینان از تعریف مسیر ریشه در هر شرایطی (پس از لود config)
-if (!defined('ROOT_PATH')) {
-    define('ROOT_PATH', __DIR__);
+// لود کردن توابع کمکی
+if (file_exists(ROOT_PATH . '/includes/functions.php')) {
+    require_once ROOT_PATH . '/includes/functions.php';
 }
 
-// محاسبه مسیر ریشه مطمئن
-$rootPath = ROOT_PATH;
+// لود کردن کلاس پایه کنترلرها
+if (file_exists(ROOT_PATH . '/controllers/BaseController.php')) {
+    require_once ROOT_PATH . '/controllers/BaseController.php';
+}
 
 // لود کردن مدل‌های مورد نیاز
-$model_files = glob($rootPath . '/models/*.php');
-if ($model_files) {
-    foreach ($model_files as $model_file) {
+$model_files = [
+    ROOT_PATH . '/models/DatabaseModel.php',
+    ROOT_PATH . '/models/UserModel.php'
+];
+
+foreach ($model_files as $model_file) {
+    if (file_exists($model_file)) {
         require_once $model_file;
     }
 }
 
-// لود کردن MainController ابتدا (برای استفاده در سایر کنترلرها)
-$mainControllerCandidates = [
-    $rootPath . '/controllers/MainController.php',
-    $rootPath . '/core/controllers/MainController.php',
-    __DIR__ . '/controllers/MainController.php',
-    '/home/h312810/public_html/anbar2/controllers/MainController.php',
-    getcwd() . '/controllers/MainController.php',
-];
-
-$mainIncluded = false;
-$debugInfo = [];
-foreach ($mainControllerCandidates as $cand) {
-    $debugInfo[] = $cand . ' => ' . (file_exists($cand) ? 'EXISTS' : 'NOT_FOUND');
-    if (file_exists($cand)) {
-        require_once $cand;
-        $mainIncluded = true;
-        break;
-    }
-}
-
-if (!$mainIncluded) {
-    // پیام خطای دقیق‌تر برای دیباگ
-    header('Content-Type: text/html; charset=utf-8');
-    echo '<div style="direction:rtl;font-family:tahoma,iransans,sans-serif;padding:16px;color:#b71c1c;background:#ffebee;border:1px solid #ffcdd2;">'
-        . '<h3>فایل کنترلر اصلی یافت نشد</h3>'
-        . '<p>ROOT_PATH: ' . htmlspecialchars($rootPath) . '</p>'
-        . '<p>__DIR__: ' . htmlspecialchars(__DIR__) . '</p>'
-        . '<p>getcwd(): ' . htmlspecialchars(getcwd()) . '</p>'
-        . '<p>مسیرهای بررسی‌شده:</p>'
-        . '<pre>' . htmlspecialchars(implode("\n", $debugInfo)) . '</pre>'
-        . '<p>لطفاً فایل MainController.php را در یکی از مسیرهای فوق قرار دهید.</p>'
-        . '</div>';
-    exit;
+// لود کردن MainController
+$mainControllerPath = ROOT_PATH . '/controllers/MainController.php';
+if (file_exists($mainControllerPath)) {
+    require_once $mainControllerPath;
+} else {
+    die('<div style="color: red; direction: rtl; font-family: Tahoma; padding: 20px;">
+         فایل کنترلر اصلی یافت نشد: ' . htmlspecialchars($mainControllerPath) . '</div>');
 }
 
 // تنظیم نوع درخواست و پارامترهای آن
 $controller_name = isset($_GET['controller']) ? $_GET['controller'] : 'main';
 $action_name = isset($_GET['action']) ? $_GET['action'] : 'index';
 
-// لود کردن کنترلر مناسب
-$controller_path = ROOT_PATH . '/controllers/' . ucfirst($controller_name) . 'Controller.php';
+// لیست کنترلرهای مجاز
+$allowed_controllers = ['main', 'user', 'inventory', 'device', 'supplier', 'production'];
 
-if (file_exists($controller_path) && $controller_name != 'main') {
-    require_once $controller_path;
-    $controller_class = ucfirst($controller_name) . 'Controller';
-    $controller = new $controller_class();
-} else {
-    // اگر کنترلر مورد نظر وجود نداشت، به کنترلر اصلی هدایت می‌کنیم
-    $controller = new MainController();
+// اعتبارسنجی نام کنترلر
+if (!in_array($controller_name, $allowed_controllers)) {
     $controller_name = 'main';
     $action_name = 'index';
 }
 
+// لود کردن کنترلر مناسب
+if ($controller_name === 'main') {
+    $controller = new MainController();
+} else {
+    $controller_class = ucfirst($controller_name) . 'Controller';
+    $controller_path = ROOT_PATH . '/controllers/' . $controller_class . '.php';
+    
+    if (file_exists($controller_path)) {
+        require_once $controller_path;
+        
+        if (class_exists($controller_class)) {
+            $controller = new $controller_class();
+        } else {
+            // اگر کلاس وجود نداشت، به کنترلر اصلی برو
+            $controller = new MainController();
+            $controller_name = 'main';
+            $action_name = 'index';
+        }
+    } else {
+        // اگر فایل کنترلر وجود نداشت، به کنترلر اصلی برو
+        $controller = new MainController();
+        $controller_name = 'main';
+        $action_name = 'index';
+    }
+}
+
 // اجرای اکشن مناسب
 if (method_exists($controller, $action_name)) {
-    $controller->$action_name();
+    try {
+        $controller->$action_name();
+    } catch (Exception $e) {
+        error_log("Controller error: " . $e->getMessage());
+        
+        // نمایش پیام خطا برای admin
+        if (isset($_SESSION['user_data']) && $_SESSION['user_data']['role'] === 'admin') {
+            echo '<div class="alert alert-danger" style="direction: rtl; font-family: Tahoma;">
+                  خطا در اجرای عملیات: ' . htmlspecialchars($e->getMessage()) . '</div>';
+        } else {
+            echo '<div class="alert alert-danger" style="direction: rtl; font-family: Tahoma;">
+                  خطایی در سیستم رخ داده است.</div>';
+        }
+    }
 } else {
-    // اگر اکشن مورد نظر وجود نداشت، به اکشن پیش‌فرض هدایت می‌کنیم
+    // اگر اکشن مورد نظر وجود نداشت، به اکشن پیش‌فرض هدایت
     if (method_exists($controller, 'index')) {
         $controller->index();
     } else {
-        echo '<div class="alert alert-danger">متد مورد نظر یافت نشد.</div>';
+        echo '<div class="alert alert-danger" style="direction: rtl; font-family: Tahoma;">
+              متد مورد نظر یافت نشد.</div>';
     }
 }
 ?>

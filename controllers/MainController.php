@@ -214,24 +214,6 @@ class MainController {
     }
     
     /**
-     * خروج از سیستم
-     */
-    public function logout() {
-        // حذف توکن "مرا به خاطر بسپار"
-        if ($this->isUserLoggedIn()) {
-            $this->user_model->clearRememberToken($this->current_user['id']);
-            setcookie('remember_token', '', time() - 3600, '/');
-        }
-        
-        // حذف سشن
-        session_destroy();
-        
-        // هدایت به صفحه لاگین
-        header('Location: index.php');
-        exit;
-    }
-    
-    /**
      * پردازش تنظیمات دیتابیس
      */
     public function processDbConfig() {

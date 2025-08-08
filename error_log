@@ -1,5 +1,2 @@
-[08-Aug-2025 18:53:13 Asia/Tehran] PHP Warning:  Undefined array key "user_data" in /home/h312810/public_html/anbar2/controllers/UserController.php on line 38
-[08-Aug-2025 18:53:13 Asia/Tehran] PHP Fatal error:  Uncaught Error: Call to undefined method UserController::index() in /home/h312810/public_html/anbar2/index.php:67
-Stack trace:
-#0 {main}
-  thrown in /home/h312810/public_html/anbar2/index.php on line 67
+[08-Aug-2025 19:02:50 Asia/Tehran] PHP Fatal error:  Cannot redeclare MainController::logout() in /home/h312810/public_html/anbar2/controllers/MainController.php on line 684
+[08-Aug-2025 19:02:52 Asia/Tehran] PHP Fatal error:  Cannot redeclare MainController::logout() in /home/h312810/public_html/anbar2/controllers/MainController.php on line 684

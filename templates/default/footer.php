@@ -16,11 +16,11 @@ $business_info = getBusinessInfo();
     <div class="container">
         <div class="row align-items-center">
             <div class="col-md-6 text-center text-md-start">
-                <p class="mb-0">© <?php echo date('Y'); ?> سیستم انبارداری <?php echo htmlspecialchars($business_info['business_name']); ?></p>
+                <p class="mb-0">© <?php echo date('Y'); ?> سیستم مدیریت انبار و تولید <?php echo htmlspecialchars($business_info['business_name']); ?></p>
             </div>
             <div class="col-md-6 text-center text-md-end">
                 <div class="footer-links">
-                    <a href="settings.php">
+                    <a href="index.php?controller=main&action=settings">
                         <i class="bi bi-gear"></i> تنظیمات
                     </a>
                     <a href="<?php echo $config['github']; ?>" target="_blank">

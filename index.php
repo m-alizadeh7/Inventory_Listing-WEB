@@ -38,6 +38,9 @@ if ($model_files) {
     }
 }
 
+// لود کردن MainController ابتدا (برای استفاده در سایر کنترلرها)
+require_once ROOT_PATH . '/controllers/MainController.php';
+
 // تنظیم نوع درخواست و پارامترهای آن
 $controller_name = isset($_GET['controller']) ? $_GET['controller'] : 'main';
 $action_name = isset($_GET['action']) ? $_GET['action'] : 'index';
@@ -45,13 +48,12 @@ $action_name = isset($_GET['action']) ? $_GET['action'] : 'index';
 // لود کردن کنترلر مناسب
 $controller_path = ROOT_PATH . '/controllers/' . ucfirst($controller_name) . 'Controller.php';
 
-if (file_exists($controller_path)) {
+if (file_exists($controller_path) && $controller_name != 'main') {
     require_once $controller_path;
     $controller_class = ucfirst($controller_name) . 'Controller';
     $controller = new $controller_class();
 } else {
     // اگر کنترلر مورد نظر وجود نداشت، به کنترلر اصلی هدایت می‌کنیم
-    require_once ROOT_PATH . '/controllers/MainController.php';
     $controller = new MainController();
     $controller_name = 'main';
     $action_name = 'index';

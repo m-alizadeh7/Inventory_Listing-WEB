@@ -530,6 +530,72 @@ class MainController {
     }
     
     /**
+     * نمایش صفحه تنظیمات
+     */
+    public function settings() {
+        // بررسی احراز هویت
+        if (!$this->checkAuth()) {
+            header('Location: index.php?controller=user&action=login');
+            exit;
+        }
+        
+        global $config;
+        $business_info = getBusinessInfo();
+        
+        $page_title = 'تنظیمات سیستم';
+        include ROOT_PATH . '/templates/default/header.php';
+        include ROOT_PATH . '/templates/default/main/settings.php';
+        include ROOT_PATH . '/templates/default/footer.php';
+    }
+    
+    /**
+     * به‌روزرسانی تنظیمات
+     */
+    public function update_settings() {
+        // بررسی احراز هویت
+        if (!$this->checkAuth()) {
+            header('Location: index.php?controller=user&action=login');
+            exit;
+        }
+        
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            try {
+                $business_name = $_POST['business_name'] ?? '';
+                $business_phone = $_POST['business_phone'] ?? '';
+                $business_email = $_POST['business_email'] ?? '';
+                $business_address = $_POST['business_address'] ?? '';
+                $business_website = $_POST['business_website'] ?? '';
+                
+                $stmt = $this->db->prepare("UPDATE settings SET 
+                    setting_value = CASE setting_name 
+                        WHEN 'business_name' THEN :business_name
+                        WHEN 'business_phone' THEN :business_phone
+                        WHEN 'business_email' THEN :business_email
+                        WHEN 'business_address' THEN :business_address
+                        WHEN 'business_website' THEN :business_website
+                        ELSE setting_value
+                    END
+                    WHERE setting_name IN ('business_name', 'business_phone', 'business_email', 'business_address', 'business_website')");
+                
+                $stmt->execute([
+                    ':business_name' => $business_name,
+                    ':business_phone' => $business_phone,
+                    ':business_email' => $business_email,
+                    ':business_address' => $business_address,
+                    ':business_website' => $business_website
+                ]);
+                
+                $_SESSION['success_message'] = 'تنظیمات با موفقیت به‌روزرسانی شد.';
+            } catch (Exception $e) {
+                $_SESSION['error_message'] = 'خطا در به‌روزرسانی تنظیمات: ' . $e->getMessage();
+            }
+        }
+        
+        header('Location: index.php?controller=main&action=settings');
+        exit;
+    }
+    
+    /**
      * پردازش ورود کاربر (متد کمکی برای سازگاری با URL)
      */
     public function process_login() {

@@ -81,8 +81,6 @@ while ($row = $result->fetch_assoc()) {
 $result = $conn->query("
     SELECT b.item_code, 
            (SELECT i.item_name FROM inventory i WHERE i.inventory_code = b.item_code COLLATE utf8mb4_general_ci LIMIT 1) as item_name,
-           b.supplier_id,
-           s.supplier_name, s.supplier_code,
            SUM(b.quantity_needed * i.quantity) as total_needed,
            (
                SELECT SUM(inv.current_inventory)
@@ -91,9 +89,8 @@ $result = $conn->query("
            ) as current_stock
     FROM production_order_items i
     JOIN device_bom b ON i.device_id = b.device_id
-    LEFT JOIN suppliers s ON b.supplier_id = s.supplier_id
     WHERE i.order_id = $order_id
-    GROUP BY b.item_code, b.supplier_id, s.supplier_name, s.supplier_code
+    GROUP BY b.item_code
     ORDER BY b.item_code
 ");
 
@@ -529,10 +526,10 @@ if (!empty($missing_parts_list)) {
                                     <td><span class="badge bg-secondary"><?= htmlspecialchars($part['item_code']) ?></span></td>
                                     <td class="fw-bold"><?= htmlspecialchars($part['item_name']) ?></td>
                                     <td>
-                                        <?php if ($part['supplier_name']): ?>
+                                        <?php if (isset($part['supplier_name']) && $part['supplier_name']): ?>
                                             <span class="fw-bold"><?= htmlspecialchars($part['supplier_name']) ?></span>
                                             <small class="text-muted d-block">
-                                                <?= htmlspecialchars($part['supplier_code']) ?>
+                                                <?= isset($part['supplier_code']) ? htmlspecialchars($part['supplier_code']) : '' ?>
                                             </small>
                                         <?php else: ?>
                                             <span class="text-warning">

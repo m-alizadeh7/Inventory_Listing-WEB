@@ -257,20 +257,28 @@ class MainController extends BaseController {
         $password = isset($_POST['password']) ? $_POST['password'] : '';
         $remember = isset($_POST['remember']) ? true : false;
         
+        // اعتبارسنجی ورودی‌ها
         if (empty($username) || empty($password)) {
             $_SESSION['login_error'] = 'لطفا نام کاربری و رمز عبور را وارد کنید.';
             header('Location: index.php?controller=main&action=login');
             exit;
         }
         
+        // محدودیت طول ورودی‌ها
+        if (strlen($username) > 50 || strlen($password) > 255) {
+            $_SESSION['login_error'] = 'اطلاعات ورودی نامعتبر است.';
+            header('Location: index.php?controller=main&action=login');
+            exit;
+        }
+        
         // بررسی وجود UserModel
         if (!$this->user_model) {
-            // تلاش برای بارگذاری مجدد
             try {
                 require_once ROOT_PATH . '/models/UserModel.php';
                 $this->user_model = new UserModel();
             } catch (Exception $e) {
-                $_SESSION['login_error'] = 'خطا در سیستم: مدل کاربر یافت نشد.';
+                error_log("UserModel loading error: " . $e->getMessage());
+                $_SESSION['login_error'] = 'خطا در سیستم احراز هویت.';
                 header('Location: index.php?controller=main&action=login');
                 exit;
             }

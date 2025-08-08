@@ -1,0 +1,3 @@
+# جلوگیری از دسترسی مستقیم به فایل‌های مدل
+Order deny,allow
+Deny from all

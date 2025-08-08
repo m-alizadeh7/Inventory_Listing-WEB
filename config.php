@@ -25,6 +25,7 @@ define('DB_USER', $db_config['username']);
 define('DB_PASS', $db_config['password']);
 define('DB_NAME', $db_config['database']);
 define('DB_PORT', 3306); // پورت پیش‌فرض MySQL
+define('DB_PREFIX', 'inv_'); // پیشوند جداول دیتابیس
 
 // تنظیمات کلی سیستم
 $config = [

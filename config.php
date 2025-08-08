@@ -11,12 +11,19 @@
 // تنظیمات پایگاه داده
 $db_config = [
     'host'     => 'localhost',
-    'username' => 'h312810_anbar2',  // نام کاربری دیتابیس را تغییر دهید
-    'password' => '**********',      // رمز عبور دیتابیس را تغییر دهید
-    'database' => 'h312810_anbar2', // نام دیتابیس را تغییر دهید
+    'username' => 'h312810_usranb22',  // نام کاربری دیتابیس را تغییر دهید
+    'password' => 'v8xNDnmlOY4e',      // رمز عبور دیتابیس را تغییر دهید
+    'database' => 'h312810_anbar22', // نام دیتابیس را تغییر دهید
     'charset'  => 'utf8mb4',
     'collate'  => 'utf8mb4_general_ci'
 ];
+
+// تعریف ثابت‌های دیتابیس برای سازگاری با index.php
+define('DB_HOST', $db_config['host']);
+define('DB_USER', $db_config['username']);
+define('DB_PASS', $db_config['password']);
+define('DB_NAME', $db_config['database']);
+define('DB_PORT', 3306); // پورت پیش‌فرض MySQL
 
 // تنظیمات کلی سیستم
 $config = [

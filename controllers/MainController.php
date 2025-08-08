@@ -539,8 +539,14 @@ class MainController {
      */
     public function settings() {
         // بررسی احراز هویت
-        if (!$this->checkAuth()) {
+        if (!isset($_SESSION['user_data'])) {
             header('Location: index.php?controller=user&action=login');
+            exit;
+        }
+        
+        // بررسی دسترسی مدیر
+        if ($_SESSION['user_data']['role'] !== 'admin') {
+            header('Location: index.php');
             exit;
         }
         

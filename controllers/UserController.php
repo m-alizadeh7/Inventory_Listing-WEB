@@ -292,7 +292,7 @@ class UserController {
      */
     public function login() {
         // اگر کاربر قبلاً وارد شده، به داشبورد هدایت شود
-        if ($this->main_controller->checkAuth()) {
+        if (isset($_SESSION['user_data'])) {
             header('Location: index.php');
             exit;
         }

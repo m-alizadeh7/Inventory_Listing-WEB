@@ -20,9 +20,11 @@ $business_info = getBusinessInfo();
             </div>
             <div class="col-md-6 text-center text-md-end">
                 <div class="footer-links">
+                    <?php if (isset($_SESSION['user_data']) && $_SESSION['user_data']['role'] === 'admin'): ?>
                     <a href="index.php?controller=main&action=settings">
                         <i class="bi bi-gear"></i> تنظیمات
                     </a>
+                    <?php endif; ?>
                     <a href="<?php echo $config['github']; ?>" target="_blank">
                         <i class="bi bi-github"></i> GitHub
                     </a>

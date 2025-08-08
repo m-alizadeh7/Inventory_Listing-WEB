@@ -596,6 +596,105 @@ class MainController {
     }
     
     /**
+     * نمایش پروفایل کاربر
+     */
+    public function show_profile() {
+        // بررسی احراز هویت
+        if (!$this->checkAuth()) {
+            header('Location: index.php?controller=user&action=login');
+            exit;
+        }
+        
+        $page_title = 'پروفایل کاربری';
+        $user = $_SESSION['user_data'];
+        
+        include ROOT_PATH . '/templates/default/header.php';
+        include ROOT_PATH . '/templates/default/main/profile.php';
+        include ROOT_PATH . '/templates/default/footer.php';
+    }
+    
+    /**
+     * به‌روزرسانی پروفایل کاربر
+     */
+    public function update_profile() {
+        // بررسی احراز هویت
+        if (!$this->checkAuth()) {
+            header('Location: index.php?controller=user&action=login');
+            exit;
+        }
+        
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            try {
+                $user_id = $_SESSION['user_data']['id'];
+                $full_name = $_POST['full_name'] ?? '';
+                $email = $_POST['email'] ?? '';
+                $current_password = $_POST['current_password'] ?? '';
+                $new_password = $_POST['new_password'] ?? '';
+                $confirm_password = $_POST['confirm_password'] ?? '';
+                
+                // به‌روزرسانی اطلاعات پایه
+                $stmt = $this->db->prepare("UPDATE users SET full_name = :full_name, email = :email WHERE id = :user_id");
+                $stmt->execute([
+                    ':full_name' => $full_name,
+                    ':email' => $email,
+                    ':user_id' => $user_id
+                ]);
+                
+                // تغییر رمز عبور در صورت وارد کردن
+                if (!empty($current_password) && !empty($new_password)) {
+                    if ($new_password !== $confirm_password) {
+                        throw new Exception('رمز عبور جدید و تکرار آن مطابقت ندارند.');
+                    }
+                    
+                    // بررسی رمز عبور فعلی
+                    $stmt = $this->db->prepare("SELECT password FROM users WHERE id = :user_id");
+                    $stmt->execute([':user_id' => $user_id]);
+                    $stored_password = $stmt->fetchColumn();
+                    
+                    if (!password_verify($current_password, $stored_password)) {
+                        throw new Exception('رمز عبور فعلی اشتباه است.');
+                    }
+                    
+                    // به‌روزرسانی رمز عبور
+                    $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+                    $stmt = $this->db->prepare("UPDATE users SET password = :password WHERE id = :user_id");
+                    $stmt->execute([
+                        ':password' => $hashed_password,
+                        ':user_id' => $user_id
+                    ]);
+                }
+                
+                // به‌روزرسانی اطلاعات نشست
+                $_SESSION['user_data']['full_name'] = $full_name;
+                $_SESSION['user_data']['email'] = $email;
+                
+                $_SESSION['success_message'] = 'پروفایل با موفقیت به‌روزرسانی شد.';
+            } catch (Exception $e) {
+                $_SESSION['error_message'] = 'خطا در به‌روزرسانی پروفایل: ' . $e->getMessage();
+            }
+        }
+        
+        header('Location: index.php?controller=main&action=show_profile');
+        exit;
+    }
+    
+    /**
+     * خروج از سیستم
+     */
+    public function logout() {
+        // پاک کردن تمام اطلاعات نشست
+        session_destroy();
+        
+        // حذف کوکی remember me در صورت وجود
+        if (isset($_COOKIE['remember_token'])) {
+            setcookie('remember_token', '', time() - 3600, '/');
+        }
+        
+        header('Location: index.php?controller=user&action=login');
+        exit;
+    }
+    
+    /**
      * پردازش ورود کاربر (متد کمکی برای سازگاری با URL)
      */
     public function process_login() {

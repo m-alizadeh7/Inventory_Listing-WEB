@@ -90,14 +90,14 @@ $page_title = $page_title ?? 'سیستم مدیریت انبار';
                 
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-person-circle"></i> <?php echo isset($user) ? htmlspecialchars($user['name']) : 'کاربر'; ?>
+                        <i class="bi bi-person-circle"></i> <?php echo isset($_SESSION['user_data']) ? htmlspecialchars($_SESSION['user_data']['full_name']) : 'کاربر'; ?>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                         <li><a class="dropdown-item" href="index.php?controller=main&action=show_profile">
                             <i class="bi bi-person"></i> پروفایل
                         </a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="index.php?controller=main&action=logout">
+                        <li><a class="dropdown-item" href="index.php?controller=user&action=logout">
                             <i class="bi bi-box-arrow-right"></i> خروج
                         </a></li>
                     </ul>

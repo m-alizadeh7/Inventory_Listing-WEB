@@ -14,6 +14,15 @@ session_start();
 // بارگذاری تنظیمات
 require_once 'config.php';
 
+// ایجاد اتصال مستقیم به دیتابیس برای مایگریشن
+$db = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
+$db->set_charset('utf8mb4');
+
+// بررسی خطای اتصال
+if ($db->connect_error) {
+    die('خطا در اتصال به دیتابیس: ' . $db->connect_error);
+}
+
 // تعیین عنوان صفحه
 $page_title = 'مایگریشن دیتابیس - سیستم مدیریت انبار';
 $migrations_applied = [];

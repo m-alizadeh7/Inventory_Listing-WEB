@@ -279,6 +279,21 @@ class MainController extends BaseController {
         $database_installed = false;
         $admin_exists = false;
         
+        // بررسی پیش‌نیازها
+        $requirements_met = true; // همه پیش‌نیازها در محیط وب موجود است
+        
+        // متغیرهای خطا و موفقیت
+        $error = isset($_SESSION['install_error']) ? $_SESSION['install_error'] : '';
+        $success = isset($_SESSION['install_success']) ? $_SESSION['install_success'] : '';
+        
+        // پاک کردن پیام‌ها بعد از نمایش
+        if (isset($_SESSION['install_error'])) {
+            unset($_SESSION['install_error']);
+        }
+        if (isset($_SESSION['install_success'])) {
+            unset($_SESSION['install_success']);
+        }
+        
         // بررسی وضعیت نصب
         if ($db_config_exists && $this->db) {
             $database_installed = $this->isDatabaseInstalled();
@@ -296,6 +311,10 @@ class MainController extends BaseController {
                 }
             }
         }
+        
+        // متغیرهای مورد نیاز template
+        $db_installed = $database_installed;
+        $admin_created = $admin_exists;
         
         // اگر همه چیز نصب شده، به داشبورد هدایت
         if ($db_config_exists && $database_installed && $admin_exists) {
@@ -970,4 +989,103 @@ session_start();
     public function process_login() {
         return $this->processLogin();
     }
-}Fatal error: Uncaught Error: Call to a member function real_escape_string() on null in /home/h312810/public_html/anbar2/models/UserModel.php:39 Stack trace: #0 /home/h312810/public_html/anbar2/models/UserModel.php(72): UserModel->authenticate() #1 /home/h312810/public_html/anbar2/controllers/MainController.php(290): UserModel->validateUser() #2 /home/h312810/public_html/anbar2/controllers/MainController.php(770): MainController->processLogin() #3 /home/h312810/public_html/anbar2/index.php(101): MainController->process_login() #4 {main} thrown in /home/h312810/public_html/anbar2/models/UserModel.php on line 39Fatal error: Uncaught Error: Call to a member function real_escape_string() on null in /home/h312810/public_html/anbar2/models/UserModel.php:39 Stack trace: #0 /home/h312810/public_html/anbar2/models/UserModel.php(72): UserModel->authenticate() #1 /home/h312810/public_html/anbar2/controllers/MainController.php(290): UserModel->validateUser() #2 /home/h312810/public_html/anbar2/controllers/MainController.php(770): MainController->processLogin() #3 /home/h312810/public_html/anbar2/index.php(101): MainController->process_login() #4 {main} thrown in /home/h312810/public_html/anbar2/models/UserModel.php on line 39
+    
+    /**
+     * نصب دیتابیس
+     */
+    public function install_db() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: index.php?controller=main&action=install');
+            exit;
+        }
+        
+        try {
+            // اجرای فایل SQL نصب
+            $sql_file = ROOT_PATH . '/db.sql';
+            if (!file_exists($sql_file)) {
+                throw new Exception('فایل SQL پیدا نشد.');
+            }
+            
+            $sql_content = file_get_contents($sql_file);
+            if ($sql_content === false) {
+                throw new Exception('خطا در خواندن فایل SQL.');
+            }
+            
+            // حذف کامنت‌ها و خطوط خالی
+            $sql_content = preg_replace('/--.*$/m', '', $sql_content);
+            $sql_content = preg_replace('/\/\*.*?\*\//s', '', $sql_content);
+            
+            // جداسازی کوئری‌ها
+            $queries = array_filter(array_map('trim', explode(';', $sql_content)));
+            
+            foreach ($queries as $query) {
+                if (!empty($query)) {
+                    $result = $this->db->query($query);
+                    if (!$result) {
+                        throw new Exception('خطا در اجرای کوئری: ' . $this->db->error);
+                    }
+                }
+            }
+            
+            // هدایت به مرحله بعد
+            header('Location: index.php?controller=main&action=install');
+            exit;
+            
+        } catch (Exception $e) {
+            error_log("Database installation error: " . $e->getMessage());
+            $_SESSION['install_error'] = 'خطا در نصب دیتابیس: ' . $e->getMessage();
+            header('Location: index.php?controller=main&action=install');
+            exit;
+        }
+    }
+    
+    /**
+     * ایجاد کاربر مدیر
+     */
+    public function create_admin() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: index.php?controller=main&action=install');
+            exit;
+        }
+        
+        $username = isset($_POST['admin_username']) ? trim($_POST['admin_username']) : '';
+        $password = isset($_POST['admin_password']) ? $_POST['admin_password'] : '';
+        $email = isset($_POST['admin_email']) ? trim($_POST['admin_email']) : '';
+        
+        // اعتبارسنجی
+        if (empty($username) || empty($password) || empty($email)) {
+            $_SESSION['install_error'] = 'لطفا تمام فیلدها را پر کنید.';
+            header('Location: index.php?controller=main&action=install');
+            exit;
+        }
+        
+        try {
+            $prefix = defined('DB_PREFIX') ? DB_PREFIX : 'inv_';
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+            
+            $stmt = $this->db->prepare("INSERT INTO {$prefix}users (username, password, email, role, created_at) VALUES (?, ?, ?, 'admin', NOW())");
+            $stmt->bind_param('sss', $username, $hashed_password, $email);
+            
+            if ($stmt->execute()) {
+                // نصب کامل شد
+                header('Location: index.php?controller=main&action=install_complete');
+                exit;
+            } else {
+                throw new Exception('خطا در ایجاد کاربر مدیر: ' . $this->db->error);
+            }
+            
+        } catch (Exception $e) {
+            error_log("Admin creation error: " . $e->getMessage());
+            $_SESSION['install_error'] = 'خطا در ایجاد کاربر مدیر: ' . $e->getMessage();
+            header('Location: index.php?controller=main&action=install');
+            exit;
+        }
+    }
+    
+    /**
+     * پردازش پیکربندی دیتابیس (متد کمکی برای سازگاری با URL)
+     */
+    public function process_db_config() {
+        return $this->processDbConfig();
+    }
+}

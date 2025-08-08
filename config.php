@@ -11,9 +11,9 @@
 // تنظیمات پایگاه داده
 $db_config = [
     'host'     => 'localhost',
-    'username' => 'root',  // نام کاربری دیتابیس را تغییر دهید
-    'password' => '',      // رمز عبور دیتابیس را تغییر دهید
-    'database' => 'inventory_system', // نام دیتابیس را تغییر دهید
+    'username' => 'h312810_anbar2',  // نام کاربری دیتابیس را تغییر دهید
+    'password' => '**********',      // رمز عبور دیتابیس را تغییر دهید
+    'database' => 'h312810_anbar2', // نام دیتابیس را تغییر دهید
     'charset'  => 'utf8mb4',
     'collate'  => 'utf8mb4_general_ci'
 ];

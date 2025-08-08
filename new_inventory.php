@@ -68,7 +68,24 @@ if ($res && $res->num_rows === 0) {
 
 // ایجاد یا بازیابی جلسه انبارداری
 if (!isset($_SESSION['inventory_session'])) {
-    $_SESSION['inventory_session'] = uniqid('inv_');
+    // تولید شناسه کوتاه‌تر و ترتیبی (inv_001, inv_002, ...)
+    $counter_file = __DIR__ . '/session_counter.txt';
+    $last_number = 0;
+    if (file_exists($counter_file)) {
+        $last_number = intval(trim(file_get_contents($counter_file)));
+    } else {
+        // اگر فایل وجود ندارد، آخرین شماره را از دیتابیس پیدا کن
+        $res = $conn->query("SELECT session_id FROM inventory_sessions WHERE session_id LIKE 'inv_%' ORDER BY session_id DESC LIMIT 1");
+        if ($res && $row = $res->fetch_assoc()) {
+            $sid = $row['session_id'];
+            $num = intval(substr($sid, 4));
+            if ($num > 0) $last_number = $num;
+        }
+    }
+    $new_number = $last_number + 1;
+    $short_id = 'inv_' . str_pad($new_number, 3, '0', STR_PAD_LEFT);
+    file_put_contents($counter_file, $new_number);
+    $_SESSION['inventory_session'] = $short_id;
     // ایجاد جلسه جدید در پایگاه داده
     $stmt = $conn->prepare("INSERT INTO inventory_sessions (session_id, status) VALUES (?, 'draft') ON DUPLICATE KEY UPDATE status = status");
     $stmt->bind_param("s", $_SESSION['inventory_session']);
@@ -327,8 +344,8 @@ $stmt->close();
                         <input type="text" id="completedBy" class="form-control" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">تاریخ</label>
-                        <input type="date" id="completedAt" class="form-control" value="<?= date('Y-m-d') ?>" required>
+                        <label class="form-label">تاریخ و ساعت پایان</label>
+                        <input type="datetime-local" id="completedAt" class="form-control" value="<?= date('Y-m-d\TH:i') ?>" required>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -417,19 +434,19 @@ function showFinalizeModal() {
 
 function finalizeInventory() {
     const completedBy = document.getElementById('completedBy').value;
-    const completedAt = document.getElementById('completedAt').value;
-    
+    let completedAt = document.getElementById('completedAt').value;
     if (!completedBy || !completedAt) {
         showToast('لطفاً تمام فیلدها را پر کنید.', 'warning');
         return;
     }
-
-    // نمایش وضعیت درحال بارگذاری
+    // تبدیل مقدار datetime-local به فرمت مناسب MySQL (YYYY-MM-DD HH:MM:SS)
+    if (completedAt.length === 16) {
+        completedAt = completedAt.replace('T', ' ') + ':00';
+    }
     const finalizeBtn = document.querySelector('#finalizeModal .btn-success');
     const originalText = finalizeBtn.innerHTML;
     finalizeBtn.disabled = true;
     finalizeBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> در حال نهایی‌سازی...';
-
     fetch('finalize_inventory.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -449,7 +466,6 @@ function finalizeInventory() {
         console.log('Response data:', result);
         finalizeBtn.disabled = false;
         finalizeBtn.innerHTML = originalText;
-        
         if (result.success) {
             showToast('انبارگردانی با موفقیت نهایی شد.', 'success');
             setTimeout(() => window.location.href = 'index.php', 1500);
@@ -458,7 +474,7 @@ function finalizeInventory() {
         }
     })
     .catch(error => {
-        console.error('Error details:', error);
+        console.error('Finalize error details:', error);
         finalizeBtn.disabled = false;
         finalizeBtn.innerHTML = originalText;
         showToast('خطا در ارتباط با سرور: ' + error.message, 'danger');

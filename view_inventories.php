@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_session_id'])
         // اگر کاربر انتخاب کرده باشد که مقادیر ثبت نشده صفر شوند
         if ($set_unrecorded_zero) {
             // ابتدا همه اقلام انباری را پیدا می‌کنیم
-            $allItemsStmt = $conn->prepare("SELECT id FROM inventory");
+            $allItemsStmt = $conn->prepare("SELECT id FROM inv_inventory");
             $allItemsStmt->execute();
             $allItems = $allItemsStmt->get_result();
             $allItemsStmt->close();
@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_session_id'])
             }
         }
         
-        // به‌روزرسانی موجودی اصلی از رکوردهای انبارگردانی - حالا همه رکوردها را به‌روز می‌کنیم، حتی آنهایی که به تازگی با مقدار صفر اضافه شده‌اند
+        // به‌روزرسانی موجودی اصلی از رکوردهای انبارگردانی تاییدشده (جدول inventory)
         $updateQuery = "UPDATE inventory i 
                        INNER JOIN inventory_records r ON i.id = r.inventory_id 
                        SET i.current_inventory = r.current_inventory,
@@ -330,12 +330,10 @@ while ($row = $result->fetch_assoc()) {
                                     </div>
                                 <?php endif; ?>
                                 
-                                <?php if (!$session['confirmed']): ?>
-                                    <form method="POST" action="" style="display:inline-block;" onsubmit="return confirm('آیا از حذف این انبارگردانی مطمئن هستید؟');">
-                                        <input type="hidden" name="delete_session_id" value="<?= htmlspecialchars($session['session_id']) ?>">
-                                        <button type="submit" class="btn btn-danger btn-sm">حذف</button>
-                                    </form>
-                                <?php endif; ?>
+                                <form method="POST" action="" style="display:inline-block;" onsubmit="return confirm('آیا از حذف این انبارگردانی مطمئن هستید؟');">
+                                    <input type="hidden" name="delete_session_id" value="<?= htmlspecialchars($session['session_id']) ?>">
+                                    <button type="submit" class="btn btn-danger btn-sm">حذف</button>
+                                </form>
                             </td>
                         </tr>
                     <?php endforeach; ?>

@@ -1,107 +1,145 @@
 <?php
+// تابع ساخت لینک مرتب‌سازی (باید قبل از خروجی HTML باشد)
+function sort_link($col, $label, $sort, $order) {
+    $next_order = ($sort === $col && $order === 'asc') ? 'desc' : 'asc';
+    $icon = '';
+    if ($sort === $col) {
+        $icon = $order === 'asc' ? '▲' : '▼';
+    }
+    $params = $_GET;
+    $params['sort'] = $col;
+    $params['order'] = $next_order;
+    $url = '?' . http_build_query($params);
+    return "<a href='$url' class='text-decoration-none'>$label $icon</a>";
+}
+?>
+<?php
+
 require_once 'config.php';
 require_once 'includes/functions.php';
-
-// بررسی وجود جدول inv_inventory
-$res = $conn->query("SHOW TABLES LIKE 'inv_inventory'");
-if ($res && $res->num_rows === 0) {
-    $createTable = "CREATE TABLE inv_inventory (
-        id INT AUTO_INCREMENT,
-        `row_number` INT NULL,
-        inventory_code VARCHAR(50) NOT NULL,
-        item_name VARCHAR(255) NOT NULL,
-        unit VARCHAR(50) NULL,
-        min_inventory INT NULL,
-        supplier VARCHAR(100) NULL,
-        current_inventory DOUBLE NULL,
-        required DOUBLE NULL,
-        notes VARCHAR(255) NULL,
-        PRIMARY KEY (id)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
-    if (!$conn->query($createTable)) {
-        die('خطا در ایجاد جدول inv_inventory: ' . $conn->error);
-    }
-}
 
 // ویرایش موجودی کالا
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_inventory'])) {
     $id = clean($_POST['id']);
     $current_inventory = clean($_POST['current_inventory']);
-    
-    $stmt = $conn->prepare("UPDATE inv_inventory SET current_inventory = ? WHERE id = ?");
+    $stmt = $conn->prepare("UPDATE inventory SET current_inventory = ? WHERE id = ?");
     $stmt->bind_param("di", $current_inventory, $id);
     $stmt->execute();
     $stmt->close();
-    
     header("Location: inventory_records.php?msg=updated");
     exit;
 }
 
+
+// پیدا کردن آخرین جلسه انبارگردانی تایید شده
+$lastSession = null;
+$lastSessionInfo = null;
+$sql = "SELECT s.session_id, s.confirmed_at
+        FROM inventory_sessions s
+        WHERE s.confirmed = 1
+        ORDER BY s.confirmed_at DESC LIMIT 1";
+$res = $conn->query($sql);
+if ($res && $row = $res->fetch_assoc()) {
+    $lastSession = $row['session_id'];
+    $lastSessionInfo = $row;
+}
+
+// دریافت همه کالاهای انبار، حتی اگر در انبارگردانی نباشند
+$items = [];
+$total = 0;
 // پارامترهای جستجو
 $search_code = clean($_GET['search_code'] ?? '');
 $search_name = clean($_GET['search_name'] ?? '');
 $filter = clean($_GET['filter'] ?? '');
 
-// ساخت شرط جستجو
 $where = [];
 $params = [];
 $types = '';
-
 if ($search_code) {
-    $where[] = "inventory_code LIKE ?";
+    $where[] = "i.inventory_code LIKE ?";
     $params[] = "%$search_code%";
     $types .= 's';
 }
-
 if ($search_name) {
-    $where[] = "item_name LIKE ?";
+    $where[] = "i.item_name LIKE ?";
     $params[] = "%$search_name%";
     $types .= 's';
 }
+$where_clause = !empty($where) ? ("WHERE " . implode(" AND ", $where)) : '';
 
-if ($filter === 'low') {
-    $where[] = "current_inventory < min_inventory";
-}
 
-if ($filter === 'out') {
-    $where[] = "(current_inventory = 0 OR current_inventory IS NULL)";
-}
 
-$where_clause = !empty($where) ? "WHERE " . implode(" AND ", $where) : "";
+// مرتب‌سازی
+$sortable_columns = [
+    'row_number' => 'ردیف',
+    'inventory_code' => 'کد کالا',
+    'item_name' => 'نام کالا',
+    'unit' => 'واحد',
+    'min_inventory' => 'حداقل موجودی',
+    'current_inventory' => 'موجودی فعلی',
+    'stock_status' => 'وضعیت',
+    'supplier' => 'تامین‌کننده',
+    'notes' => 'توضیحات',
+];
+$sort = $_GET['sort'] ?? 'row_number';
+$order = strtolower($_GET['order'] ?? 'asc');
+if (!array_key_exists($sort, $sortable_columns)) $sort = 'row_number';
+if (!in_array($order, ['asc','desc'])) $order = 'asc';
+// اگر مرتب‌سازی بر اساس stock_status باشد، بعد از واکشی داده‌ها مرتب‌سازی می‌شود
+$order_by_sql = ($sort !== 'stock_status') ? "ORDER BY i.$sort $order" : "ORDER BY i.row_number";
 
-// تعداد کل رکوردها
-$total_query = "SELECT COUNT(*) as total FROM inv_inventory $where_clause";
-if (!empty($params)) {
-    $stmt = $conn->prepare($total_query);
-    $stmt->bind_param($types, ...$params);
-    $stmt->execute();
-    $total = $stmt->get_result()->fetch_assoc()['total'];
-    $stmt->close();
-} else {
-    $total = $conn->query($total_query)->fetch_assoc()['total'];
-}
-
-// پارامترهای صفحه‌بندی
-$records_per_page = 20;
-$page = isset($_GET['page']) ? intval($_GET['page']) : 1;
-$offset = ($page - 1) * $records_per_page;
-$total_pages = ceil($total / $records_per_page);
-
-// دریافت رکوردها
-$query = "SELECT * FROM inv_inventory $where_clause ORDER BY `row_number` LIMIT ? OFFSET ?";
-$params[] = $records_per_page;
-$params[] = $offset;
-$types .= 'ii';
-
+$query = "SELECT i.*, IFNULL(r.current_inventory, i.current_inventory) as session_inventory,
+         i.current_inventory as system_inventory
+         FROM inventory i
+         LEFT JOIN inventory_records r ON r.inventory_id = i.id AND r.inventory_session = ?
+         $where_clause
+         $order_by_sql";
+$params_query = array_merge([$lastSession ?? ''], $params);
+$types_query = 's' . $types;
 $stmt = $conn->prepare($query);
-$stmt->bind_param($types, ...$params);
+$stmt->bind_param($types_query, ...$params_query);
 $stmt->execute();
 $result = $stmt->get_result();
+
 $items = [];
+$out_of_stock = 0;
+$equal_min = 0;
+$low_stock = 0;
+$sufficient_stock = 0;
+
 while ($row = $result->fetch_assoc()) {
+    // انتخاب موجودی فعلی بر اساس انبارگردانی تایید شده یا سیستم
+    $row['current_inventory'] = $lastSession ? $row['session_inventory'] : $row['system_inventory'];
+    
+    // تعیین وضعیت موجودی
+    $min_inventory = intval($row['min_inventory'] ?? 0);
+    $current = floatval($row['current_inventory'] ?? 0);
+    
+    if ($current <= 0) {
+        $row['stock_status'] = 'out_of_stock';
+        $out_of_stock++;
+    } elseif ($current == $min_inventory) {
+        $row['stock_status'] = 'equal_min';
+        $equal_min++;
+    } elseif ($current > $min_inventory && $current <= ($min_inventory + 3)) {
+        $row['stock_status'] = 'low_stock';
+        $low_stock++;
+    } else {
+        $row['stock_status'] = 'sufficient';
+        $sufficient_stock++;
+    }
+    
+    // فیلتر بر اساس وضعیت موجودی
+    if ($filter === 'out' && $row['stock_status'] !== 'out_of_stock') continue;
+    if ($filter === 'equal' && $row['stock_status'] !== 'equal_min') continue;
+    if ($filter === 'low' && $row['stock_status'] !== 'low_stock') continue;
+    if ($filter === 'sufficient' && $row['stock_status'] !== 'sufficient') continue;
+    
     $items[] = $row;
 }
 $stmt->close();
+
+$total = count($items);
 ?>
 
 <!DOCTYPE html>
@@ -118,70 +156,52 @@ $stmt->close();
             padding-top: 2rem; 
             font-family: 'Vazir', sans-serif;
         }
-        .low-stock { background-color: #fff3cd; }
         .out-of-stock { background-color: #f8d7da; }
+        .equal-min { background-color: #fff3cd; }
+        .low-stock { background-color: #ffeeba; }
+        .sufficient { background-color: #d4edda; }
+        
         .status-indicator {
             font-size: 1.2rem;
             margin-right: 5px;
         }
+        
         .card {
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             margin-bottom: 1.5rem;
         }
+        
         .card-header {
             border-bottom: 1px solid rgba(0,0,0,0.1);
             font-weight: 600;
         }
         
-        @media print {
-            .no-print {
-                display: none !important;
-            }
-            .table {
-                width: 100%;
-                border-collapse: collapse;
-            }
-            .table th, .table td {
-                border: 1px solid #ddd;
-                padding: 8px;
-            }
-            body {
-                background: white;
-                padding-top: 0;
-            }
-            .container {
-                width: 100%;
-                max-width: 100%;
-            }
-            .card {
-                box-shadow: none;
-                border: none;
-            }
-            .card-header {
-                background: white !important;
-                color: black !important;
-            }
-            .status-indicator {
-                display: none;
-            }
-            .print-header {
-                display: block !important;
-                text-align: center;
-                margin-bottom: 20px;
-            }
-            .print-footer {
-                display: block !important;
-                text-align: center;
-                margin-top: 20px;
-                font-size: 12px;
-                color: #666;
-            }
+        .inventory-status-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
         }
         
-        .print-header, .print-footer {
-            display: none;
+        .legend-item {
+            display: flex;
+            align-items: center;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.9rem;
         }
+        
+        .session-info {
+            background-color: #e2f0fd;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+    @media print { .no-print { display: none !important; } .table { width: 100%; border-collapse: collapse; font-size: 13px; } .table th, .table td { border: 1px solid #222; padding: 8px; } body { background: white; padding-top: 0; } .container { width: 100%; max-width: 100%; } .card { box-shadow: none; border: none; } .card-header { background: white !important; color: black !important; } .print-header { display: block !important; margin-bottom: 20px; text-align: right; } .print-footer { display: block !important; margin-top: 30px; text-align: left; font-size: 13px; color: #222; } .inventory-status-legend { page-break-after: always; } }
+        
+    /* حذف شد: نمایش ندادن print-header و print-footer در حالت عادی */
         
         @media (max-width: 768px) {
             .table-responsive {
@@ -195,6 +215,26 @@ $stmt->close();
 </head>
 <body>
 <div class="container">
+    <!-- Debug Info -->
+    <?php
+    // تعداد کل کالاها در جدول inv_inventory
+    $debug_total_items = 0;
+    $debug_total_records = 0;
+    $debug_last_session = $lastSession ?? '';
+    $res_debug = $conn->query("SELECT COUNT(*) as cnt FROM inv_inventory");
+    if ($res_debug && $row_debug = $res_debug->fetch_assoc()) {
+        $debug_total_items = $row_debug['cnt'];
+    }
+    if ($debug_last_session) {
+        $res_debug2 = $conn->query("SELECT COUNT(*) as cnt FROM inventory_records WHERE inventory_session = '".$conn->real_escape_string($debug_last_session)."'");
+        if ($res_debug2 && $row_debug2 = $res_debug2->fetch_assoc()) {
+            $debug_total_records = $row_debug2['cnt'];
+        }
+    }
+    ?>
+    <div class="alert alert-secondary mb-2">
+        <b>🛠️ دیباگ:</b> تعداد کل کالاها در inv_inventory: <b><?= $debug_total_items ?></b> | تعداد رکوردهای inventory_records برای آخرین انبارگردانی: <b><?= $debug_total_records ?></b> | شناسه آخرین انبارگردانی: <b><?= htmlspecialchars($debug_last_session) ?></b>
+    </div>
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="mb-1">📦 مدیریت موجودی انبار</h2>
@@ -204,23 +244,78 @@ $stmt->close();
             <button onclick="window.print()" class="btn btn-success me-2">
                 <i class="bi bi-printer"></i> چاپ لیست
             </button>
-            <a href="import_inventory.php" class="btn btn-primary me-2">
-                <i class="bi bi-upload"></i> وارد کردن لیست
-            </a>
             <a href="index.php" class="btn btn-secondary">
                 <i class="bi bi-arrow-right"></i> بازگشت
             </a>
         </div>
     </div>
     
-    <div class="print-header">
-        <h2>گزارش موجودی انبار</h2>
-        <p>تاریخ: <?= jdate('Y/m/d') ?></p>
+    <?php if ($lastSessionInfo): ?>
+    <div class="session-info">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-1">آخرین انبارگردانی تایید شده:</h5>
+                <p class="mb-0">
+                    <small>تاریخ تایید: 
+                        <?php if (!empty($lastSessionInfo['completed_at'])): ?>
+                            <?= date('Y/m/d H:i', strtotime($lastSessionInfo['completed_at'])) ?>
+                        <?php else: ?>
+                            <span class="text-danger">ثبت نشده</span>
+                        <?php endif; ?>
+                    </small>
+                </p>
+            </div>
+            <div>
+                <span class="badge bg-info">شناسه: <?= $lastSessionInfo['session_id'] ?></span>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+    
+    <div class="print-header" style="border-bottom:2px solid #333;padding-bottom:10px;margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+                <h2 style="font-weight:bold;letter-spacing:1px;">گزارش مدیریتی موجودی انبار</h2>
+                <p style="margin-bottom:0;">تهیه شده برای مدیریت سازمان</p>
+            </div>
+            <div style="text-align:left;direction:ltr;">
+                <span style="font-size:13px;">alizadehx.ir</span>
+            </div>
+        </div>
+        <p style="margin-top:10px;">تاریخ گزارش: <?= date('Y/m/d') ?></p>
+        <?php if ($lastSessionInfo): ?>
+        <p>بر اساس انبارگردانی تایید شده در تاریخ: 
+            <?php if (!empty($lastSessionInfo['completed_at'])): ?>
+                <?= date('Y/m/d', strtotime($lastSessionInfo['completed_at'])) ?>
+            <?php else: ?>
+                <span class="text-danger">ثبت نشده</span>
+            <?php endif; ?>
+        </p>
+        <?php endif; ?>
     </div>
     
     <?php if (isset($_GET['msg']) && $_GET['msg'] === 'updated'): ?>
         <div class="alert alert-success no-print">موجودی با موفقیت به‌روزرسانی شد.</div>
     <?php endif; ?>
+
+    <div class="inventory-status-legend no-print">
+        <div class="legend-item out-of-stock">
+            <span class="status-indicator">⚠️</span>
+            <span>ناموجود</span>
+        </div>
+        <div class="legend-item equal-min">
+            <span class="status-indicator">⚡</span>
+            <span>موجود مساوی حداقل موجودی</span>
+        </div>
+        <div class="legend-item low-stock">
+            <span class="status-indicator">🔶</span>
+            <span>موجود 1 تا 3 واحد بیشتر از حداقل</span>
+        </div>
+        <div class="legend-item sufficient">
+            <span class="status-indicator">✅</span>
+            <span>موجود بیشتر از 3 واحد از حداقل</span>
+        </div>
+    </div>
 
     <!-- فرم جستجو -->
     <div class="card mb-4 no-print">
@@ -238,11 +333,13 @@ $stmt->close();
                     <input type="text" name="search_name" class="form-control" value="<?= htmlspecialchars($search_name) ?>">
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">فیلتر</label>
+                    <label class="form-label">فیلتر وضعیت</label>
                     <select name="filter" class="form-select">
                         <option value="">همه کالاها</option>
-                        <option value="low" <?= $filter === 'low' ? 'selected' : '' ?>>موجودی کم</option>
-                        <option value="out" <?= $filter === 'out' ? 'selected' : '' ?>>اتمام موجودی</option>
+                        <option value="out" <?= $filter === 'out' ? 'selected' : '' ?>>ناموجود</option>
+                        <option value="equal" <?= $filter === 'equal' ? 'selected' : '' ?>>موجود مساوی حداقل</option>
+                        <option value="low" <?= $filter === 'low' ? 'selected' : '' ?>>1 تا 3 واحد بیشتر از حداقل</option>
+                        <option value="sufficient" <?= $filter === 'sufficient' ? 'selected' : '' ?>>بیشتر از 3 واحد</option>
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -265,61 +362,61 @@ $stmt->close();
                     <strong>تعداد کالاها:</strong> <?= $total ?>
                 </div>
                 <div>
-                    <?php
-                    $low_stock = 0;
-                    $out_of_stock = 0;
-                    foreach ($items as $item) {
-                        if ($item['current_inventory'] == 0) {
-                            $out_of_stock++;
-                        } elseif ($item['current_inventory'] < $item['min_inventory']) {
-                            $low_stock++;
-                        }
-                    }
-                    ?>
-                    <span class="badge bg-warning"><?= $low_stock ?> کالا با موجودی کم</span>
-                    <span class="badge bg-danger"><?= $out_of_stock ?> کالا بدون موجودی</span>
+                    <span class="badge bg-danger"><?= $out_of_stock ?> کالا ناموجود</span>
+                    <span class="badge bg-warning"><?= $equal_min ?> کالا مساوی حداقل موجودی</span>
+                    <span class="badge bg-info"><?= $low_stock ?> کالا 1 تا 3 واحد بیشتر از حداقل</span>
+                    <span class="badge bg-success"><?= $sufficient_stock ?> کالا با موجودی کافی</span>
                 </div>
             </div>
             <div class="table-responsive">
                 <table class="table table-hover table-sm mb-0">
                     <thead>
                         <tr>
-                            <th>ردیف</th>
-                            <th>کد کالا</th>
-                            <th>نام کالا</th>
-                            <th>واحد</th>
-                            <th>حداقل موجودی</th>
-                            <th>موجودی فعلی</th>
-                            <th>تامین‌کننده</th>
-                            <th>توضیحات</th>
-                            <th>عملیات</th>
+                            <th><?= sort_link('row_number','ردیف',$sort,$order) ?></th>
+                            <th><?= sort_link('inventory_code','کد کالا',$sort,$order) ?></th>
+                            <th><?= sort_link('item_name','نام کالا',$sort,$order) ?></th>
+                            <th><?= sort_link('unit','واحد',$sort,$order) ?></th>
+                            <th><?= sort_link('min_inventory','حداقل موجودی',$sort,$order) ?></th>
+                            <th><?= sort_link('current_inventory','موجودی فعلی',$sort,$order) ?></th>
+                            <th><?= sort_link('stock_status','وضعیت',$sort,$order) ?></th>
+                            <th><?= sort_link('supplier','تامین‌کننده',$sort,$order) ?></th>
+                            <th><?= sort_link('notes','توضیحات',$sort,$order) ?></th>
+                            <th class="no-print">عملیات</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($items as $item): 
                             $row_class = '';
-                            if ($item['current_inventory'] == 0) {
-                                $row_class = 'out-of-stock';
-                            } elseif ($item['min_inventory'] && $item['current_inventory'] < $item['min_inventory']) {
-                                $row_class = 'low-stock';
+                            switch ($item['stock_status']) {
+                                case 'out_of_stock':
+                                    $row_class = 'out-of-stock';
+                                    $status_icon = '<span class="status-indicator" title="ناموجود">⚠️</span>';
+                                    $status_text = 'ناموجود';
+                                    break;
+                                case 'equal_min':
+                                    $row_class = 'equal-min';
+                                    $status_icon = '<span class="status-indicator" title="موجود مساوی حداقل موجودی">⚡</span>';
+                                    $status_text = 'مساوی حداقل';
+                                    break;
+                                case 'low_stock':
+                                    $row_class = 'low-stock';
+                                    $status_icon = '<span class="status-indicator" title="موجود 1 تا 3 واحد بیشتر از حداقل">🔶</span>';
+                                    $status_text = '1 تا 3 واحد بیشتر';
+                                    break;
+                                case 'sufficient':
+                                    $row_class = 'sufficient';
+                                    $status_icon = '<span class="status-indicator" title="موجود بیشتر از 3 واحد از حداقل">✅</span>';
+                                    $status_text = 'موجودی کافی';
+                                    break;
+                                default:
+                                    $status_icon = '';
+                                    $status_text = '';
                             }
                         ?>
                             <tr class="<?= $row_class ?>">
                                 <td><?= $item['row_number'] ?></td>
                                 <td><?= htmlspecialchars($item['inventory_code']) ?></td>
-                                <td>
-                                    <?php
-                                    $status_icon = '';
-                                    if ($item['current_inventory'] == 0) {
-                                        $status_icon = '<span class="status-indicator" title="اتمام موجودی">⚠️</span>';
-                                    } elseif ($item['min_inventory'] && $item['current_inventory'] < $item['min_inventory']) {
-                                        $status_icon = '<span class="status-indicator" title="موجودی کم">⚡</span>';
-                                    } elseif ($item['current_inventory'] > ($item['min_inventory'] * 2)) {
-                                        $status_icon = '<span class="status-indicator" title="موجودی کافی">✅</span>';
-                                    }
-                                    echo $status_icon . htmlspecialchars($item['item_name']);
-                                    ?>
-                                </td>
+                                <td><?= htmlspecialchars($item['item_name']) ?></td>
                                 <td><?= htmlspecialchars($item['unit'] ?? '') ?></td>
                                 <td><?= $item['min_inventory'] ?? 0 ?></td>
                                 <td>
@@ -332,56 +429,23 @@ $stmt->close();
                                     </form>
                                     <span class="d-none d-print-inline"><?= $item['current_inventory'] ?? 0 ?></span>
                                 </td>
+                                <td>
+                                    <?= $status_icon ?> <?= $status_text ?>
+                                </td>
                                 <td><?= htmlspecialchars($item['supplier'] ?? '') ?></td>
                                 <td><?= htmlspecialchars($item['notes'] ?? '') ?></td>
                                 <td class="no-print">
-                                    <a href="save_inventory.php?id=<?= $item['id'] ?>" class="btn btn-sm btn-info">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
+                                    <button class="btn btn-sm btn-light" onclick="navigator.clipboard.writeText('<?= htmlspecialchars($item['inventory_code']) ?>');this.innerHTML='کپی شد!';setTimeout(()=>{this.innerHTML='<i class=\'bi bi-clipboard\'></i>'},1200)" title="کپی کد کالا">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- صفحه‌بندی -->
-        <?php if ($total_pages > 1): ?>
-            <nav aria-label="صفحه‌بندی" class="mt-3 no-print">
-                <ul class="pagination justify-content-center">
-                    <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                        <li class="page-item <?= $i === $page ? 'active' : '' ?>">
-                            <a class="page-link" href="?page=<?= $i ?>&search_code=<?= urlencode($search_code) ?>&search_name=<?= urlencode($search_name) ?>&filter=<?= urlencode($filter) ?>">
-                                <?= $i ?>
-                            </a>
-                        </li>
-                    <?php endfor; ?>
-                </ul>
-            </nav>
-        <?php endif; ?>
-    <?php endif; ?>
     
-    <div class="print-footer">
-        <p>این گزارش در تاریخ <?= jdate('Y/m/d') ?> ساعت <?= jdate('H:i') ?> تهیه شده است.</p>
-        <p>سیستم انبارداری - <?= htmlspecialchars(getBusinessInfo()['business_name']) ?></p>
-    </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    // اضافه کردن راهنمای نمادها در هنگام چاپ
-    window.onbeforeprint = function() {
-        const legendHtml = `
-            <div class="mt-3 mb-3 d-none d-print-block">
-                <hr>
-                <p><strong>راهنمای نمادها:</strong></p>
-                <p>⚠️ اتمام موجودی | ⚡ موجودی کم | ✅ موجودی کافی</p>
-                <hr>
-            </div>
-        `;
-        document.querySelector('.print-header').insertAdjacentHTML('afterend', legendHtml);
-    };
-</script>
-</body>
-</html>
+    <div class="print-footer" style="border-top:2px solid #333;margin-top:30px;padding-top:10px;">
+        <p style="font-size:13px;">این گزارش مدیریتی توسط سیستم انبارداری <?= htmlspecialchars(getBusinessInfo()['business_name']) ?> تهیه شده است.</p>
+        <p style="font-size:13px;direction:ltr;text-align:left;">alizadehx.ir</p>
+    </div>
+<?php endif; ?>
+</div>

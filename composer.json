@@ -1,7 +1,7 @@
 {
     "name": "alizadeh/inventory",
     "description": "سیستم مدیریت انبارداری ساده و کاربردی",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "type": "project",
     "require": {
         "php": ">=7.4",
@@ -12,13 +12,14 @@
     },
     "authors": [
         {
-            "name": "Mohammad Alizadeh",
-            "email": "your-email@example.com"
+            "name": "Mahdi Alizadeh",
+            "email": "m.alizadeh7@live.com",
+            "homepage": "https://alizadehx.ir"
         }
     ],
     "autoload": {
         "files": [
-            "includes/functions.php"
+            "core/includes/functions.php"
         ]
     },
     "scripts": {

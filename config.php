@@ -1,21 +1,52 @@
 <?php
+/**
+ * فایل تنظیمات سیستم
+ * 
+ * این فایل شامل تنظیمات پایگاه داده و سایر تنظیمات سیستم است
+ * 
+ * @author Mahdi Alizadeh <m.alizadeh7@live.com>
+ * @website https://alizadehx.ir
+ */
+
 // تنظیمات پایگاه داده
-define('DB_HOST', 'localhost');
-define('DB_USER', 'h312810_usranb22');
-define('DB_PASS', 'v8xNDnmlOY4e');
-define('DB_NAME', 'h312810_anbar22');
+$db_config = [
+    'host'     => 'localhost',
+    'username' => 'root',  // نام کاربری دیتابیس را تغییر دهید
+    'password' => '',      // رمز عبور دیتابیس را تغییر دهید
+    'database' => 'inventory_system', // نام دیتابیس را تغییر دهید
+    'charset'  => 'utf8mb4',
+    'collate'  => 'utf8mb4_general_ci'
+];
 
-// اتصال به پایگاه داده
-$conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-$conn->set_charset("utf8mb4");
+// تنظیمات کلی سیستم
+$config = [
+    'site_title'    => 'سیستم مدیریت انبار',
+    'default_theme' => 'default',
+    'version'       => '1.0.0',
+    'debug'         => false,
+    'author'        => 'Mahdi Alizadeh',
+    'website'       => 'https://alizadehx.ir',
+    'email'         => 'm.alizadeh7@live.com',
+    'github'        => 'https://github.com/m-alizadeh7',
+    'telegram'      => 'https://t.me/alizadeh_channel'
+];
 
-// بررسی اتصال
-if ($conn->connect_error) {
-    die("خطا در اتصال به پایگاه داده: " . $conn->connect_error);
-}
+// مسیرهای اصلی سیستم
+define('BASE_PATH', dirname(__FILE__));
+define('CORE_PATH', BASE_PATH . '/core');
+define('ASSETS_PATH', BASE_PATH . '/assets');
+define('TEMPLATES_PATH', BASE_PATH . '/templates');
+define('ADMIN_PATH', BASE_PATH . '/admin');
+define('INCLUDES_PATH', CORE_PATH . '/includes');
 
-// نسخه سیستم
-define('SYSTEM_VERSION', '1.0.0');
+// مسیرهای URL برای دسترسی به فایل‌ها
+$base_url = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+$base_url .= '://' . $_SERVER['HTTP_HOST'];
+$base_url .= str_replace(basename($_SERVER['SCRIPT_NAME']), '', $_SERVER['SCRIPT_NAME']);
 
-// فراخوانی functions.php برای دسترسی به توابع اطمینان از ساختار دیتابیس
-require_once __DIR__ . '/includes/functions.php';
+define('BASE_URL', $base_url);
+define('ASSETS_URL', BASE_URL . 'assets');
+
+// لود کردن فایل‌های مورد نیاز
+require_once(INCLUDES_PATH . '/database.php');
+require_once(INCLUDES_PATH . '/functions.php');

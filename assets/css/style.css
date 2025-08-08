@@ -118,6 +118,69 @@ body {
     background-color: #f8d7da; 
 }
 
+/* جعبه‌های آماری داشبورد */
+.small-box {
+    position: relative;
+    display: block;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    padding: 20px 15px;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.small-box:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+}
+
+.small-box .inner {
+    position: relative;
+    z-index: 10;
+}
+
+.small-box h3 {
+    font-size: 38px;
+    font-weight: bold;
+    margin: 0 0 10px 0;
+}
+
+.small-box p {
+    font-size: 15px;
+    margin-bottom: 0;
+}
+
+.small-box .icon {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 5;
+    opacity: 0.3;
+    font-size: 70px;
+    transition: all 0.3s ease;
+}
+
+.small-box:hover .icon {
+    font-size: 80px;
+    opacity: 0.5;
+}
+
+.small-box.bg-info {
+    background-color: var(--info-color);
+}
+
+.small-box.bg-warning {
+    background-color: var(--warning-color);
+}
+
+.small-box.bg-success {
+    background-color: var(--success-color);
+}
+
+.small-box.bg-danger {
+    background-color: var(--danger-color);
+}
+
 /* استایل چاپ */
 @media print {
     .no-print {

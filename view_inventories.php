@@ -18,9 +18,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_session_id']))
     exit;
 }
 
+// Ensure the 'last_updated' column exists in the 'inventory' table
+$res = $conn->query("SHOW COLUMNS FROM inventory LIKE 'last_updated'");
+if ($res && $res->num_rows === 0) {
+    $conn->query("ALTER TABLE inventory ADD COLUMN last_updated DATETIME NULL");
+}
+
 // تأیید و اعمال انبارگردانی
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_session_id'])) {
     $session_id = $conn->real_escape_string($_POST['confirm_session_id']);
+    $set_unrecorded_zero = isset($_POST['set_unrecorded_zero']) ? 1 : 0;
+    $unrecorded_note = isset($_POST['unrecorded_note']) ? $conn->real_escape_string($_POST['unrecorded_note']) : '';
     
     try {
         $conn->begin_transaction();
@@ -39,13 +47,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_session_id'])
         if ($sessionData['confirmed'] == 1) {
             throw new Exception('این انبارگردانی قبلاً تأیید شده است.');
         }
+
+        // اگر کاربر انتخاب کرده باشد که مقادیر ثبت نشده صفر شوند
+        if ($set_unrecorded_zero) {
+            // ابتدا همه اقلام انباری را پیدا می‌کنیم
+            $allItemsStmt = $conn->prepare("SELECT id FROM inventory");
+            $allItemsStmt->execute();
+            $allItems = $allItemsStmt->get_result();
+            $allItemsStmt->close();
+            
+            // برای هر قلم انبار چک می‌کنیم آیا در این جلسه انبارگردانی ثبت شده است
+            while ($item = $allItems->fetch_assoc()) {
+                $checkRecordStmt = $conn->prepare("SELECT id FROM inventory_records WHERE inventory_id = ? AND inventory_session = ?");
+                $checkRecordStmt->bind_param("is", $item['id'], $session_id);
+                $checkRecordStmt->execute();
+                $hasRecord = $checkRecordStmt->get_result()->num_rows > 0;
+                $checkRecordStmt->close();
+                
+                // اگر ثبت نشده بود، رکورد جدیدی با مقدار صفر و توضیحات مشخص شده ایجاد می‌کنیم
+                if (!$hasRecord) {
+                    $insertStmt = $conn->prepare("INSERT INTO inventory_records (inventory_id, inventory_session, current_inventory, notes, updated_at) VALUES (?, ?, 0, ?, NOW())");
+                    $insertStmt->bind_param("iss", $item['id'], $session_id, $unrecorded_note);
+                    $insertStmt->execute();
+                    $insertStmt->close();
+                }
+            }
+        }
         
-        // به‌روزرسانی موجودی اصلی از رکوردهای انبارگردانی
+        // به‌روزرسانی موجودی اصلی از رکوردهای انبارگردانی - حالا همه رکوردها را به‌روز می‌کنیم، حتی آنهایی که به تازگی با مقدار صفر اضافه شده‌اند
         $updateQuery = "UPDATE inventory i 
                        INNER JOIN inventory_records r ON i.id = r.inventory_id 
                        SET i.current_inventory = r.current_inventory,
                            i.last_updated = NOW()
-                       WHERE r.inventory_session = ? AND r.current_inventory IS NOT NULL";
+                       WHERE r.inventory_session = ?";
         $updateStmt = $conn->prepare($updateQuery);
         $updateStmt->bind_param("s", $session_id);
         $updateStmt->execute();
@@ -233,12 +267,67 @@ while ($row = $result->fetch_assoc()) {
                                 </a>
                                 
                                 <?php if ($session['status'] == 'completed' && !$session['confirmed']): ?>
-                                    <form method="POST" action="" style="display:inline-block;" onsubmit="return confirm('آیا از تأیید این انبارگردانی و به‌روزرسانی موجودی انبار مطمئن هستید؟');">
-                                        <input type="hidden" name="confirm_session_id" value="<?= htmlspecialchars($session['session_id']) ?>">
-                                        <button type="submit" class="btn btn-primary btn-sm">
-                                            <i class="bi bi-check2-circle"></i> تأیید و اعمال
-                                        </button>
-                                    </form>
+                                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#confirmModal<?= $session['session_id'] ?>">
+                                        <i class="bi bi-check2-circle"></i> تأیید و اعمال
+                                    </button>
+                                    
+                                    <!-- مودال تأیید انبارگردانی -->
+                                    <div class="modal fade" id="confirmModal<?= $session['session_id'] ?>" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">تأیید انبارگردانی</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>آیا از تأیید این انبارگردانی و به‌روزرسانی موجودی انبار مطمئن هستید؟</p>
+                                                    
+                                                    <?php
+                                                    // بررسی وجود اقلام شمارش نشده
+                                                    $countStmt = $conn->prepare("
+                                                        SELECT COUNT(i.id) as total_items,
+                                                               SUM(CASE WHEN r.id IS NULL THEN 1 ELSE 0 END) as unrecorded_items
+                                                        FROM inventory i
+                                                        LEFT JOIN inventory_records r ON i.id = r.inventory_id AND r.inventory_session = ?
+                                                    ");
+                                                    $countStmt->bind_param("s", $session['session_id']);
+                                                    $countStmt->execute();
+                                                    $countData = $countStmt->get_result()->fetch_assoc();
+                                                    $countStmt->close();
+                                                    
+                                                    $unrecorded_count = $countData['unrecorded_items'];
+                                                    $total_count = $countData['total_items'];
+                                                    $unrecorded_percent = $total_count > 0 ? round(($unrecorded_count / $total_count) * 100) : 0;
+                                                    
+                                                    if ($unrecorded_count > 0):
+                                                    ?>
+                                                    <div class="alert alert-warning">
+                                                        <strong>توجه:</strong> <?= $unrecorded_count ?> قلم کالا (<?= $unrecorded_percent ?>٪) شمارش نشده‌اند.
+                                                    </div>
+                                                    
+                                                    <div class="form-check mb-3">
+                                                        <input class="form-check-input" type="checkbox" name="set_unrecorded_zero" id="setZero<?= $session['session_id'] ?>" form="confirmForm<?= $session['session_id'] ?>" checked>
+                                                        <label class="form-check-label" for="setZero<?= $session['session_id'] ?>">
+                                                            موجودی اقلام شمارش نشده صفر در نظر گرفته شود
+                                                        </label>
+                                                    </div>
+                                                    
+                                                    <div class="mb-3">
+                                                        <label class="form-label">توضیحات برای اقلام صفر شده:</label>
+                                                        <input type="text" class="form-control" name="unrecorded_note" form="confirmForm<?= $session['session_id'] ?>" value="صفر شده توسط سیستم - شمارش نشده">
+                                                    </div>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                                                    <form method="POST" action="" id="confirmForm<?= $session['session_id'] ?>">
+                                                        <input type="hidden" name="confirm_session_id" value="<?= htmlspecialchars($session['session_id']) ?>">
+                                                        <button type="submit" class="btn btn-primary">تأیید و اعمال</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 <?php endif; ?>
                                 
                                 <?php if (!$session['confirmed']): ?>
@@ -259,4 +348,3 @@ while ($row = $result->fetch_assoc()) {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-<?php $conn->close(); ?>

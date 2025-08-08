@@ -7,6 +7,7 @@ set_time_limit(300); // تنظیم مجدد محدودیت زمانی
 require_once 'config.php';
 require_once 'includes/functions.php';
 require_once 'includes/locks.php';
+require_once 'includes/db_check.php'; // اضافه کردن بررسی خودکار ساختار پایگاه داده
 
 // Enable detailed error logging
 function logError($message) {
@@ -50,8 +51,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 exit;
             }
             
-            // اضافه کردن تاخیر مصنوعی برای جلوگیری از فشار بیش از حد به دیتابیس
-            usleep(100000); // 100ms تاخیر
+            // حذف تاخیر مصنوعی که باعث کندی می‌شود
+            // usleep(100000); // 100ms تاخیر
             
             logError("Starting add_to_bom operation");
             $inventory_id = intval(clean($_POST['inventory_id']));
@@ -75,9 +76,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 if ($result->num_rows === 0) {
                     logError("No duplicate found, proceeding with insert");
                     
+                    // بررسی وجود ستون‌های مورد نیاز
+                    $cols_check = $conn->query("SHOW COLUMNS FROM device_bom LIKE 'item_name'");
+                    if ($cols_check && $cols_check->num_rows === 0) {
+                        // ستون item_name وجود ندارد - اضافه کردن آن
+                        $conn->query("ALTER TABLE device_bom ADD COLUMN item_name VARCHAR(255) NOT NULL AFTER item_code");
+                        logError("Added missing column 'item_name' to device_bom table");
+                    }
+                    
+                    $cols_check = $conn->query("SHOW COLUMNS FROM device_bom LIKE 'quantity_needed'");
+                    if ($cols_check && $cols_check->num_rows === 0) {
+                        // ستون quantity_needed وجود ندارد - اضافه کردن آن
+                        $conn->query("ALTER TABLE device_bom ADD COLUMN quantity_needed INT NOT NULL DEFAULT 1 AFTER item_name");
+                        logError("Added missing column 'quantity_needed' to device_bom table");
+                    }
+                    
                     // به جای استفاده از transaction، روش ساده‌تر را امتحان کنیم
-                    $insert = $conn->prepare("INSERT INTO device_bom (device_id, item_code, item_name, quantity_needed) VALUES (?, ?, ?, 1)");
-                    $insert->bind_param("iss", $device_id, $inventory_item['inventory_code'], $inventory_item['item_name']);
+                    $insert = $conn->prepare("INSERT INTO device_bom (device_id, item_code, item_name, quantity_needed) VALUES (?, ?, ?, ?)");
+                    $quantity = 1;
+                    $insert->bind_param("issi", $device_id, $inventory_item['inventory_code'], $inventory_item['item_name'], $quantity);
                     $success = $insert->execute();
                     
                     if (!$success) {
@@ -110,14 +127,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         exit;
     } elseif ($_POST['action'] === 'update_bom') {
         $quantities = $_POST['quantities'] ?? [];
+        $errors = [];
         $stmt = $conn->prepare("UPDATE device_bom SET quantity_needed = ? WHERE bom_id = ? AND device_id = ?");
         foreach ($quantities as $bom_id => $quantity) {
             $qty = (int)$quantity;
+            if ($qty < 1) {
+                logError("Invalid quantity for BOM ID $bom_id: $qty");
+                $errors[] = "تعداد وارد شده برای قطعه $bom_id نامعتبر است.";
+                continue;
+            }
             $stmt->bind_param("iii", $qty, $bom_id, $device_id);
-            $stmt->execute();
+            if (!$stmt->execute()) {
+                logError("Update failed for BOM ID $bom_id: " . $stmt->error);
+                $errors[] = "خطا در به‌روزرسانی قطعه $bom_id: " . $stmt->error;
+            } else {
+                logError("Quantity updated for BOM ID $bom_id to $qty");
+            }
         }
         $stmt->close();
-        header("Location: device_bom.php?id=$device_id&msg=updated");
+        if (!empty($errors)) {
+            $error_msg = implode('، ', $errors);
+            header("Location: device_bom.php?id=$device_id&msg=error&error=" . urlencode($error_msg));
+        } else {
+            header("Location: device_bom.php?id=$device_id&msg=updated");
+        }
         exit;
     } elseif ($_POST['action'] === 'delete_from_bom') {
         $bom_id = clean($_POST['bom_id']);
@@ -133,6 +166,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 // دریافت لیست قطعات دستگاه
 $bom_items = [];
 try {
+    // بررسی وجود ستون bom_id با روش امن‌تر
+    $cols_check = $conn->query("SHOW COLUMNS FROM device_bom");
+    $has_bom_id = false;
+    $auto_columns = [];
+    
+    while ($col = $cols_check->fetch_assoc()) {
+        if ($col['Field'] === 'bom_id') {
+            $has_bom_id = true;
+        }
+        if (strpos($col['Extra'], 'auto_increment') !== false) {
+            $auto_columns[] = $col['Field'];
+        }
+    }
+    
+    if (!$has_bom_id && empty($auto_columns)) {
+        // اگر هیچ ستون AUTO_INCREMENT وجود ندارد
+        $conn->query("ALTER TABLE device_bom ADD COLUMN bom_id INT AUTO_INCREMENT PRIMARY KEY FIRST");
+        logError("Added missing column 'bom_id' to device_bom table as PRIMARY KEY AUTO_INCREMENT");
+    } elseif (!$has_bom_id && !empty($auto_columns)) {
+        // اگر ستون دیگری AUTO_INCREMENT است، اول آن را به حالت عادی برگردانید
+        foreach ($auto_columns as $col) {
+            $conn->query("ALTER TABLE device_bom MODIFY $col INT NOT NULL");
+            logError("Modified column '$col' to remove AUTO_INCREMENT");
+        }
+        
+        // سپس bom_id را اضافه کنید
+        $conn->query("ALTER TABLE device_bom ADD COLUMN bom_id INT NOT NULL FIRST");
+        $conn->query("ALTER TABLE device_bom DROP PRIMARY KEY");
+        $conn->query("ALTER TABLE device_bom ADD PRIMARY KEY (bom_id)");
+        $conn->query("ALTER TABLE device_bom MODIFY bom_id INT AUTO_INCREMENT");
+        logError("Added and configured 'bom_id' as PRIMARY KEY AUTO_INCREMENT");
+    }
+
     $stmt = $conn->prepare("
         SELECT b.bom_id, b.item_code, b.item_name, b.quantity_needed, s.supplier_name 
         FROM device_bom b 

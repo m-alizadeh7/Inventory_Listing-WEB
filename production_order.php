@@ -79,7 +79,9 @@ while ($row = $result->fetch_assoc()) {
 
 // محاسبه قطعات مورد نیاز
 $result = $conn->query("
-    SELECT b.item_code, b.item_name, b.supplier_id,
+    SELECT b.item_code, 
+           (SELECT i.item_name FROM inventory i WHERE i.inventory_code = b.item_code LIMIT 1) as item_name,
+           b.supplier_id,
            s.supplier_name, s.supplier_code,
            SUM(b.quantity_needed * i.quantity) as total_needed,
            (
@@ -91,7 +93,7 @@ $result = $conn->query("
     JOIN device_bom b ON i.device_id = b.device_id
     LEFT JOIN suppliers s ON b.supplier_id = s.supplier_id
     WHERE i.order_id = $order_id
-    GROUP BY b.item_code, b.item_name, b.supplier_id, s.supplier_name, s.supplier_code
+    GROUP BY b.item_code, b.supplier_id, s.supplier_name, s.supplier_code
     ORDER BY b.item_code
 ");
 

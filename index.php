@@ -52,15 +52,6 @@ $business_info = getBusinessInfo();
         <div class="col-md-4">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">وارد کردن لیست انبار</h5>
-                    <p class="card-text">آپلود فایل CSV برای به‌روزرسانی لیست کالاها.</p>
-                    <a href="import_inventory.php" class="btn btn-primary">آپلود</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
                     <h5 class="card-title">مدیریت موجودی انبار</h5>
                     <p class="card-text">جستجو، مشاهده و مدیریت موجودی کالاها.</p>
                     <a href="inventory_records.php" class="btn btn-primary">مشاهده</a>

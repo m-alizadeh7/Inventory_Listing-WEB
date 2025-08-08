@@ -747,22 +747,6 @@ session_start();
      * خروج از سیستم
      */
     public function logout() {
-        // پاک کردن تمام اطلاعات نشست
-        session_destroy();
-        
-        // حذف کوکی remember me در صورت وجود
-        if (isset($_COOKIE['remember_token'])) {
-            setcookie('remember_token', '', time() - 3600, '/');
-        }
-        
-        header('Location: index.php?controller=user&action=login');
-        exit;
-    }
-    
-    /**
-     * خروج از سیستم
-     */
-    public function logout() {
         // پاک کردن remember token
         if (isset($_COOKIE['remember_token'])) {
             if ($this->user_model && method_exists($this->user_model, 'clearRememberToken')) {

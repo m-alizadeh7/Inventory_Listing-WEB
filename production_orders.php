@@ -2,6 +2,41 @@
 require_once 'config.php';
 require_once 'includes/functions.php';
 
+// حذف سفارش تولی<body>
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>🏭 سفارشات تولید</h2>
+        <div>
+            <a href="new_production_order.php" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> سفارش جدید
+            </a>
+            <a href="index.php" class="btn btn-secondary">بازگشت</a>
+        </div>
+    </div>
+
+    <?php if (isset($_GET['msg']) && $_GET['msg'] === 'deleted'): ?>
+        <div class="alert alert-success">
+            <i class="bi bi-check-circle-fill"></i> سفارش با موفقیت حذف شد.
+        </div>
+    <?php endif; ?>RVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_order'])) {
+    $order_id = clean($_POST['order_id']);
+    
+    // حذف آیتم‌های سفارش
+    $stmt = $conn->prepare("DELETE FROM production_order_items WHERE order_id = ?");
+    $stmt->bind_param("i", $order_id);
+    $stmt->execute();
+    $stmt->close();
+    
+    // حذف سفارش
+    $stmt = $conn->prepare("DELETE FROM production_orders WHERE order_id = ?");
+    $stmt->bind_param("i", $order_id);
+    $stmt->execute();
+    $stmt->close();
+    
+    header("Location: production_orders.php?msg=deleted");
+    exit;
+}
+
 // بررسی و ایجاد جدول production_orders اگر وجود ندارد
 $res = $conn->query("SHOW TABLES LIKE 'production_orders'");
 if ($res && $res->num_rows === 0) {
@@ -60,16 +95,52 @@ while ($row = $result->fetch_assoc()) {
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>سفارشات تولید</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        body { background: #f7f7f7; padding-top: 2rem; }
+        body { 
+            background: #f7f7f7; 
+            padding-top: 2rem;
+            font-family: 'Vazir', sans-serif;
+        }
         .status-draft { background-color: #fff3cd; }
         .status-confirmed { background-color: #cff4fc; }
         .status-in_progress { background-color: #e2e3e5; }
         .status-completed { background-color: #d1e7dd; }
         .status-cancelled { background-color: #f8d7da; }
+        
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 1.5rem;
+        }
+        
+        .table th, .table td {
+            vertical-align: middle;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 10px;
+            }
+            
+            .table-responsive {
+                font-size: 0.9rem;
+            }
+            
+            .btn-group .btn {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.75rem;
+            }
+            
+            .badge {
+                font-size: 0.65rem;
+                margin-bottom: 2px;
+                display: inline-block;
+            }
+        }
     </style>
 </head>
 <body>
@@ -148,6 +219,12 @@ while ($row = $result->fetch_assoc()) {
                                        class="btn btn-sm btn-info">
                                         <i class="bi bi-eye"></i> مشاهده
                                     </a>
+                                    <form method="POST" class="d-inline ms-1" onsubmit="return confirm('آیا از حذف این سفارش اطمینان دارید؟ این عمل غیرقابل بازگشت است.')">
+                                        <input type="hidden" name="order_id" value="<?= $order['order_id'] ?>">
+                                        <button type="submit" name="delete_order" class="btn btn-sm btn-danger">
+                                            <i class="bi bi-trash"></i> حذف
+                                        </button>
+                                    </form>
                                     <?php if ($order['status'] === 'draft'): ?>
                                         <a href="edit_production_order.php?id=<?= $order['order_id'] ?>" 
                                            class="btn btn-sm btn-primary">

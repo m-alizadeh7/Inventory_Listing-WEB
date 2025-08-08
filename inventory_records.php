@@ -108,13 +108,89 @@ $stmt->close();
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>مدیریت موجودی انبار</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        body { background: #f7f7f7; padding-top: 2rem; }
+        body { 
+            background: #f7f7f7; 
+            padding-top: 2rem; 
+            font-family: 'Vazir', sans-serif;
+        }
         .low-stock { background-color: #fff3cd; }
         .out-of-stock { background-color: #f8d7da; }
+        .status-indicator {
+            font-size: 1.2rem;
+            margin-right: 5px;
+        }
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 1.5rem;
+        }
+        .card-header {
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            font-weight: 600;
+        }
+        
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            .table th, .table td {
+                border: 1px solid #ddd;
+                padding: 8px;
+            }
+            body {
+                background: white;
+                padding-top: 0;
+            }
+            .container {
+                width: 100%;
+                max-width: 100%;
+            }
+            .card {
+                box-shadow: none;
+                border: none;
+            }
+            .card-header {
+                background: white !important;
+                color: black !important;
+            }
+            .status-indicator {
+                display: none;
+            }
+            .print-header {
+                display: block !important;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+            .print-footer {
+                display: block !important;
+                text-align: center;
+                margin-top: 20px;
+                font-size: 12px;
+                color: #666;
+            }
+        }
+        
+        .print-header, .print-footer {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .table-responsive {
+                overflow-x: auto;
+            }
+            .container {
+                padding: 0 10px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -124,20 +200,30 @@ $stmt->close();
             <h2 class="mb-1">📦 مدیریت موجودی انبار</h2>
             <p class="text-muted">مدیریت و جستجوی کالاهای انبار</p>
         </div>
-        <div>
-            <a href="import_inventory.php" class="btn btn-primary">
+        <div class="no-print">
+            <button onclick="window.print()" class="btn btn-success me-2">
+                <i class="bi bi-printer"></i> چاپ لیست
+            </button>
+            <a href="import_inventory.php" class="btn btn-primary me-2">
                 <i class="bi bi-upload"></i> وارد کردن لیست
             </a>
-            <a href="index.php" class="btn btn-secondary">بازگشت</a>
+            <a href="index.php" class="btn btn-secondary">
+                <i class="bi bi-arrow-right"></i> بازگشت
+            </a>
         </div>
     </div>
     
+    <div class="print-header">
+        <h2>گزارش موجودی انبار</h2>
+        <p>تاریخ: <?= jdate('Y/m/d') ?></p>
+    </div>
+    
     <?php if (isset($_GET['msg']) && $_GET['msg'] === 'updated'): ?>
-        <div class="alert alert-success">موجودی با موفقیت به‌روزرسانی شد.</div>
+        <div class="alert alert-success no-print">موجودی با موفقیت به‌روزرسانی شد.</div>
     <?php endif; ?>
 
     <!-- فرم جستجو -->
-    <div class="card mb-4">
+    <div class="card mb-4 no-print">
         <div class="card-header">
             <h5 class="card-title mb-0">🔍 جستجو و فیلتر</h5>
         </div>
@@ -221,21 +307,34 @@ $stmt->close();
                             <tr class="<?= $row_class ?>">
                                 <td><?= $item['row_number'] ?></td>
                                 <td><?= htmlspecialchars($item['inventory_code']) ?></td>
-                                <td><?= htmlspecialchars($item['item_name']) ?></td>
+                                <td>
+                                    <?php
+                                    $status_icon = '';
+                                    if ($item['current_inventory'] == 0) {
+                                        $status_icon = '<span class="status-indicator" title="اتمام موجودی">⚠️</span>';
+                                    } elseif ($item['min_inventory'] && $item['current_inventory'] < $item['min_inventory']) {
+                                        $status_icon = '<span class="status-indicator" title="موجودی کم">⚡</span>';
+                                    } elseif ($item['current_inventory'] > ($item['min_inventory'] * 2)) {
+                                        $status_icon = '<span class="status-indicator" title="موجودی کافی">✅</span>';
+                                    }
+                                    echo $status_icon . htmlspecialchars($item['item_name']);
+                                    ?>
+                                </td>
                                 <td><?= htmlspecialchars($item['unit'] ?? '') ?></td>
                                 <td><?= $item['min_inventory'] ?? 0 ?></td>
                                 <td>
-                                    <form method="POST" class="d-inline" onsubmit="return confirm('آیا از به‌روزرسانی موجودی اطمینان دارید؟')">
+                                    <form method="POST" class="d-inline no-print" onsubmit="return confirm('آیا از به‌روزرسانی موجودی اطمینان دارید؟')">
                                         <input type="hidden" name="id" value="<?= $item['id'] ?>">
                                         <input type="number" name="current_inventory" value="<?= $item['current_inventory'] ?? 0 ?>" class="form-control form-control-sm d-inline-block" style="width: 80px;">
                                         <button type="submit" name="update_inventory" class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-check"></i>
                                         </button>
                                     </form>
+                                    <span class="d-none d-print-inline"><?= $item['current_inventory'] ?? 0 ?></span>
                                 </td>
                                 <td><?= htmlspecialchars($item['supplier'] ?? '') ?></td>
                                 <td><?= htmlspecialchars($item['notes'] ?? '') ?></td>
-                                <td>
+                                <td class="no-print">
                                     <a href="save_inventory.php?id=<?= $item['id'] ?>" class="btn btn-sm btn-info">
                                         <i class="bi bi-pencil"></i>
                                     </a>
@@ -249,7 +348,7 @@ $stmt->close();
 
         <!-- صفحه‌بندی -->
         <?php if ($total_pages > 1): ?>
-            <nav aria-label="صفحه‌بندی" class="mt-3">
+            <nav aria-label="صفحه‌بندی" class="mt-3 no-print">
                 <ul class="pagination justify-content-center">
                     <?php for ($i = 1; $i <= $total_pages; $i++): ?>
                         <li class="page-item <?= $i === $page ? 'active' : '' ?>">
@@ -262,8 +361,27 @@ $stmt->close();
             </nav>
         <?php endif; ?>
     <?php endif; ?>
+    
+    <div class="print-footer">
+        <p>این گزارش در تاریخ <?= jdate('Y/m/d') ?> ساعت <?= jdate('H:i') ?> تهیه شده است.</p>
+        <p>سیستم انبارداری - <?= htmlspecialchars(getBusinessInfo()['business_name']) ?></p>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // اضافه کردن راهنمای نمادها در هنگام چاپ
+    window.onbeforeprint = function() {
+        const legendHtml = `
+            <div class="mt-3 mb-3 d-none d-print-block">
+                <hr>
+                <p><strong>راهنمای نمادها:</strong></p>
+                <p>⚠️ اتمام موجودی | ⚡ موجودی کم | ✅ موجودی کافی</p>
+                <hr>
+            </div>
+        `;
+        document.querySelector('.print-header').insertAdjacentHTML('afterend', legendHtml);
+    };
+</script>
 </body>
 </html>

@@ -80,14 +80,14 @@ while ($row = $result->fetch_assoc()) {
 // محاسبه قطعات مورد نیاز
 $result = $conn->query("
     SELECT b.item_code, 
-           (SELECT i.item_name FROM inventory i WHERE i.inventory_code = b.item_code LIMIT 1) as item_name,
+           (SELECT i.item_name FROM inventory i WHERE i.inventory_code = b.item_code COLLATE utf8mb4_general_ci LIMIT 1) as item_name,
            b.supplier_id,
            s.supplier_name, s.supplier_code,
            SUM(b.quantity_needed * i.quantity) as total_needed,
            (
                SELECT SUM(inv.current_inventory)
                FROM inventory inv
-               WHERE CONVERT(inv.inventory_code USING utf8mb4) = CONVERT(b.item_code USING utf8mb4)
+               WHERE inv.inventory_code COLLATE utf8mb4_general_ci = b.item_code COLLATE utf8mb4_general_ci
            ) as current_stock
     FROM production_order_items i
     JOIN device_bom b ON i.device_id = b.device_id
@@ -155,6 +155,7 @@ if (!empty($missing_parts_list)) {
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>جزئیات سفارش تولید - <?php echo htmlspecialchars($business_info['business_name']); ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
@@ -195,6 +196,25 @@ if (!empty($missing_parts_list)) {
             border-bottom: 1px solid rgba(0,0,0,0.1);
             padding: 1rem 1.5rem;
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 10px;
+            }
+            
+            .table-responsive {
+                font-size: 0.9rem;
+            }
+            
+            .card-title {
+                font-size: 1.2rem;
+            }
+            
+            .btn {
+                padding: 0.375rem 0.5rem;
+                font-size: 0.875rem;
+            }
         }
         
         .card-title {

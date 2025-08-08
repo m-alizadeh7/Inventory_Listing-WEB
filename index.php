@@ -19,101 +19,252 @@ $business_info = getBusinessInfo();
     <style>
         body {
             font-family: 'Vazir', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #f8f9fa;
         }
-        .card { margin-bottom: 1rem; }
+        .content-wrapper {
+            flex: 1 0 auto;
+            padding: 2rem 0;
+        }
+        .card { 
+            margin-bottom: 1.5rem; 
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
         .main-menu {
             margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
         .main-menu .nav-link {
             font-size: 1.1rem;
             font-weight: 500;
         }
+        .section-title {
+            position: relative;
+            padding-right: 15px;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+        .section-title::before {
+            content: "";
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 5px;
+            height: 25px;
+            background-color: #0d6efd;
+            border-radius: 5px;
+        }
+        .card-title {
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: #333;
+        }
+        .card-text {
+            color: #6c757d;
+            margin-bottom: 1.25rem;
+        }
+        .footer {
+            flex-shrink: 0;
+            background-color: #fff;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            padding: 1.5rem 0;
+            margin-top: 2rem;
+        }
+        .footer-links a {
+            color: #6c757d;
+            text-decoration: none;
+            margin: 0 10px;
+            transition: color 0.3s;
+        }
+        .footer-links a:hover {
+            color: #0d6efd;
+        }
+        @media (max-width: 768px) {
+            .content-wrapper {
+                padding: 1rem 0;
+            }
+            .section-title {
+                font-size: 1.5rem;
+            }
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <?php checkMigrationsPrompt(); ?>
-    <nav class="main-menu navbar navbar-expand-lg navbar-light bg-light rounded shadow-sm mb-4">
-        <div class="container-fluid">
-            <span class="navbar-brand fw-bold">📦 <?php echo htmlspecialchars($business_info['business_name']); ?></span>
-        </div>
-    </nav>
-    <h2 class="mb-4">📦 <?php echo htmlspecialchars($business_info['business_name']); ?></h2>
-    <div class="row">
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">انبارداری جدید</h5>
-                    <p class="card-text">شروع یک انبارداری جدید برای ثبت موجودی‌ها.</p>
-                    <a href="new_inventory.php" class="btn btn-primary">شروع</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">مدیریت موجودی انبار</h5>
-                    <p class="card-text">جستجو، مشاهده و مدیریت موجودی کالاها.</p>
-                    <a href="inventory_records.php" class="btn btn-primary">مشاهده</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">مشاهده/ویرایش انبارداری‌ها</h5>
-                    <p class="card-text">مشاهده گزارش‌های انبارداری و دانلود آن‌ها.</p>
-                    <a href="view_inventories.php" class="btn btn-primary">مشاهده</a>
-                </div>
-            </div>
+<nav class="main-menu navbar navbar-expand-lg navbar-light bg-light sticky-top shadow-sm">
+    <div class="container">
+        <span class="navbar-brand fw-bold">📦 <?php echo htmlspecialchars($business_info['business_name']); ?></span>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="index.php">
+                        <i class="bi bi-house"></i> صفحه اصلی
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="inventory_records.php">
+                        <i class="bi bi-box-seam"></i> موجودی انبار
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="production_orders.php">
+                        <i class="bi bi-gear"></i> سفارشات تولید
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="settings.php">
+                        <i class="bi bi-sliders"></i> تنظیمات
+                    </a>
+                </li>
+            </ul>
         </div>
     </div>
-    <h2 class="mb-4">🏭 مدیریت تولید</h2>
-    <div class="row">
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">ثبت سفارش تولید</h5>
-                    <p class="card-text">ایجاد سفارش جدید برای تولید محصول.</p>
-                    <a href="new_production_order.php" class="btn btn-primary">ثبت سفارش</a>
+</nav>
+
+<div class="content-wrapper">
+    <div class="container">
+        <?php checkMigrationsPrompt(); ?>
+        
+        <h2 class="section-title">📦 مدیریت انبار</h2>
+        <div class="row">
+            <div class="col-md-4 col-sm-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-circle me-3">
+                                <i class="bi bi-plus-circle text-primary fs-4"></i>
+                            </div>
+                            <h5 class="card-title mb-0">انبارگردانی جدید</h5>
+                        </div>
+                        <p class="card-text">شروع یک انبارگردانی جدید برای ثبت موجودی‌ها.</p>
+                        <a href="new_inventory.php" class="btn btn-primary w-100">
+                            <i class="bi bi-arrow-right-circle"></i> شروع
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-info bg-opacity-10 p-3 rounded-circle me-3">
+                                <i class="bi bi-box-seam text-info fs-4"></i>
+                            </div>
+                            <h5 class="card-title mb-0">مدیریت موجودی انبار</h5>
+                        </div>
+                        <p class="card-text">جستجو، مشاهده و مدیریت موجودی کالاها.</p>
+                        <a href="inventory_records.php" class="btn btn-info w-100">
+                            <i class="bi bi-arrow-right-circle"></i> مشاهده
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-success bg-opacity-10 p-3 rounded-circle me-3">
+                                <i class="bi bi-clipboard-check text-success fs-4"></i>
+                            </div>
+                            <h5 class="card-title mb-0">گزارش‌های انبارداری</h5>
+                        </div>
+                        <p class="card-text">مشاهده گزارش‌های انبارداری و دانلود آن‌ها.</p>
+                        <a href="view_inventories.php" class="btn btn-success w-100">
+                            <i class="bi bi-arrow-right-circle"></i> مشاهده
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">لیست سفارشات تولید</h5>
-                    <p class="card-text">مشاهده و مدیریت سفارشات تولید.</p>
-                    <a href="production_orders.php" class="btn btn-primary">مشاهده</a>
+        
+        <h2 class="section-title mt-5">🏭 مدیریت تولید</h2>
+        <div class="row">
+            <div class="col-md-4 col-sm-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-warning bg-opacity-10 p-3 rounded-circle me-3">
+                                <i class="bi bi-plus-square text-warning fs-4"></i>
+                            </div>
+                            <h5 class="card-title mb-0">ثبت سفارش تولید</h5>
+                        </div>
+                        <p class="card-text">ایجاد سفارش جدید برای تولید محصول.</p>
+                        <a href="new_production_order.php" class="btn btn-warning w-100">
+                            <i class="bi bi-arrow-right-circle"></i> ثبت سفارش
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-danger bg-opacity-10 p-3 rounded-circle me-3">
+                                <i class="bi bi-list-check text-danger fs-4"></i>
+                            </div>
+                            <h5 class="card-title mb-0">لیست سفارشات تولید</h5>
+                        </div>
+                        <p class="card-text">مشاهده و مدیریت سفارشات تولید.</p>
+                        <a href="production_orders.php" class="btn btn-danger w-100">
+                            <i class="bi bi-arrow-right-circle"></i> مشاهده
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-secondary bg-opacity-10 p-3 rounded-circle me-3">
+                                <i class="bi bi-hdd-stack text-secondary fs-4"></i>
+                            </div>
+                            <h5 class="card-title mb-0">دستگاه‌ها و BOM</h5>
+                        </div>
+                        <p class="card-text">مدیریت لیست دستگاه‌ها و قطعات آن‌ها.</p>
+                        <a href="devices.php" class="btn btn-secondary w-100">
+                            <i class="bi bi-arrow-right-circle"></i> مدیریت
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">دستگاه‌ها و BOM</h5>
-                    <p class="card-text">مدیریت لیست دستگاه‌ها و قطعات آن‌ها.</p>
-                    <a href="devices.php" class="btn btn-primary">مدیریت</a>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<footer class="text-center py-3" style="font-size:0.9rem;color:#6c757d;border-top:1px solid #dee2e6;margin-top:2rem;">
-    <div class="mb-2">
-        <a href="settings.php" class="btn btn-outline-secondary btn-sm me-2">
-            <i class="bi bi-gear"></i> تنظیمات سیستم
-        </a>
-        <a href="other_sections.php" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-grid"></i> سایر بخش‌ها
-        </a>
+
+<footer class="footer mt-auto py-4">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-6 text-center text-md-start">
+                <p class="mb-0">© <?php echo date('Y'); ?> سیستم انبارداری <?php echo htmlspecialchars($business_info['business_name']); ?></p>
+            </div>
+            <div class="col-md-6 text-center text-md-end">
+                <div class="footer-links">
+                    <a href="settings.php">
+                        <i class="bi bi-gear"></i> تنظیمات
+                    </a>
+                    <a href="https://github.com/m-alizadeh7" target="_blank">
+                        <i class="bi bi-github"></i> GitHub
+                    </a>
+                    <a href="https://t.me/alizadeh_channel" target="_blank">
+                        <i class="bi bi-telegram"></i> Telegram
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
-    <small>
-        © <?php echo date('Y'); ?> سیستم انبارداری | سازنده: <a href="https://alizadehx.ir" target="_blank">alizadehx.ir</a> | 
-        <a href="https://github.com/m-alizadeh7" target="_blank">GitHub</a> | 
-        <a href="https://t.me/alizadeh_channel" target="_blank">Telegram</a>
-    </small>
 </footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

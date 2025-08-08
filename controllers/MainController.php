@@ -151,6 +151,12 @@ class MainController {
      */
     public function showLoginPage($error = null, $username = '') {
         $page_title = 'ورود به سیستم';
+        
+        // تولید CSRF توکن در صورت عدم وجود
+        if (!isset($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
+        
         $csrf_token = $_SESSION['csrf_token'];
         
         include(TEMPLATES_PATH . '/' . DEFAULT_TEMPLATE . '/login.php');
@@ -179,26 +185,31 @@ class MainController {
         }
         
         // احراز هویت کاربر
-        $user = $this->user_model->authenticate($username, $password);
-        
-        if ($user) {
-            // ذخیره اطلاعات کاربر در سشن
-            $_SESSION['user_id'] = $user['id'];
+        try {
+            $user = $this->user_model->authenticate($username, $password);
             
-            // ایجاد کوکی "مرا به خاطر بسپار"
-            if ($remember) {
-                $token = $this->user_model->createRememberToken($user['id']);
+            if ($user) {
+                // ذخیره اطلاعات کاربر در سشن
+                $_SESSION['user_id'] = $user['id'];
                 
-                if ($token) {
-                    setcookie('remember_token', $token, time() + COOKIE_LIFETIME, '/');
+                // ایجاد کوکی "مرا به خاطر بسپار"
+                if ($remember) {
+                    $token = $this->user_model->createRememberToken($user['id']);
+                    
+                    if ($token) {
+                        setcookie('remember_token', $token, time() + COOKIE_LIFETIME, '/');
+                    }
                 }
+                
+                // هدایت به صفحه اصلی
+                $_SESSION['success'] = 'ورود شما با موفقیت انجام شد.';
+                header('Location: index.php');
+                exit;
+            } else {
+                $this->showLoginPage('نام کاربری یا رمز عبور اشتباه است.', $username);
             }
-            
-            // هدایت به صفحه اصلی
-            header('Location: index.php');
-            exit;
-        } else {
-            $this->showLoginPage('نام کاربری یا رمز عبور اشتباه است.', $username);
+        } catch (Exception $e) {
+            $this->showLoginPage('خطا در احراز هویت: ' . $e->getMessage(), $username);
         }
     }
     
@@ -469,5 +480,12 @@ class MainController {
      */
     public function process_db_config() {
         return $this->processDbConfig();
+    }
+    
+    /**
+     * پردازش ورود کاربر (متد کمکی برای سازگاری با URL)
+     */
+    public function process_login() {
+        return $this->processLogin();
     }
 }

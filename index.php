@@ -11,9 +11,6 @@
 // شروع session
 session_start();
 
-// تعریف ثابت‌های اولیه
-define('ROOT_PATH', dirname(__FILE__));
-
 // بررسی وجود فایل کانفیگ
 if (file_exists('config.php')) {
     require_once 'config.php';
@@ -31,11 +28,6 @@ if (file_exists('config.php')) {
 } else {
     // اگر فایل کانفیگ وجود نداشت، متغیر دیتابیس را خالی می‌گذاریم
     $db = null;
-    
-    // تعریف ثابت‌های ضروری
-    define('TEMPLATES_PATH', ROOT_PATH . '/templates');
-    define('DEFAULT_TEMPLATE', 'default');
-    define('ASSETS_URL', './assets');
 }
 
 // لود کردن مدل‌های مورد نیاز
@@ -72,3 +64,4 @@ if (method_exists($controller, $action_name)) {
     // اگر اکشن مورد نظر وجود نداشت، به اکشن پیش‌فرض هدایت می‌کنیم
     $controller->index();
 }
+?>

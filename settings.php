@@ -3,11 +3,24 @@ require_once 'config.php';
 require_once 'includes/functions.php';
 
 // بررسی و ایجاد جدول settings
-$conn->query("CREATE TABLE IF NOT EXISTS settings (
+$createSql = "CREATE TABLE IF NOT EXISTS settings (
     setting_name VARCHAR(64) PRIMARY KEY,
     setting_value TEXT NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+
+if (!$conn->query($createSql)) {
+    // اگر ایجاد با ستون updated_at سازگار نبود، یک نسخه ساده‌تر امتحان کن
+    $fallback = "CREATE TABLE IF NOT EXISTS settings (
+        setting_name VARCHAR(64) PRIMARY KEY,
+        setting_value TEXT NOT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+    if (!$conn->query($fallback)) {
+        // اگر هنوز هم خطا دارد، خطا را لاگ کن و ادامه بده (ترجیح می‌دهیم صفحه نمایش داده شود به جای fatal)
+        $error = 'خطا در ایجاد جدول settings: ' . $conn->error;
+        // از اینجا به بعد، به جای توقف برنامه، مقادیر پیش‌فرض خالی استفاده می‌کنیم
+    }
+}
 
 $message = '';
 $error = '';
@@ -78,30 +91,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // ریستور دیتابیس
     if (isset($_POST['restore_db']) && isset($_FILES['backup_file'])) {
-        $pw = $_POST['restore_password'] ?? '';
-        if ($pw === '2581') {
-            try {
-                $uploadedFile = $_FILES['backup_file']['tmp_name'];
-                if (is_uploaded_file($uploadedFile)) {
-                    $sql = file_get_contents($uploadedFile);
-                    $conn->multi_query($sql);
-                    
+        try {
+            $uploadedFile = $_FILES['backup_file']['tmp_name'];
+            if (is_uploaded_file($uploadedFile)) {
+                $sql = file_get_contents($uploadedFile);
+
+                // استخراج نام جداولی که در فایل بک‌آپ ساخته می‌شوند
+                preg_match_all('/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?[`\"]?(?<tbl>[A-Za-z0-9_]+)[`\"]?/i', $sql, $matches);
+                $tablesToDrop = array_unique($matches['tbl']);
+
+                // غیرفعال کردن چک‌های FK و حذف جداول قبل از ریستور تا خطای 'Table already exists' رخ ندهد
+                $conn->query('SET FOREIGN_KEY_CHECKS=0');
+                foreach ($tablesToDrop as $t) {
+                    if (trim($t) === '') continue;
+                    $conn->query("DROP TABLE IF EXISTS `$t`");
+                }
+                $conn->query('SET FOREIGN_KEY_CHECKS=1');
+
+                // اکنون اجرای SQL فایل - اجرای کل بلاک با FOREIGN_KEY_CHECKS=0 و غیرفعال کردن sql_mode strict تا مقادیر خالی تاریخ باعث خطا نشوند
+                $sql_exec = "SET FOREIGN_KEY_CHECKS=0;\n" . $sql . "\nSET FOREIGN_KEY_CHECKS=1;";
+
+                // ذخیره sql_mode قبلی و غیرفعال کردن strict modes موقتاً
+                $oldMode = null;
+                $resMode = $conn->query("SELECT @@SESSION.sql_mode AS m");
+                if ($resMode) {
+                    $rowMode = $resMode->fetch_assoc();
+                    $oldMode = $rowMode['m'];
+                }
+                // تنظیم sql_mode به مقدار خالی (غیرفعال کردن strict) برای عملیات ریستور
+                $conn->query("SET SESSION sql_mode=''");
+
+                if (!$conn->multi_query($sql_exec)) {
+                    $error = 'خطا در اجرای فایل SQL: ' . $conn->error;
+                } else {
                     // منتظر اتمام تمام کوئری‌ها
                     do {
                         if ($result = $conn->store_result()) {
                             $result->free();
                         }
-                    } while ($conn->next_result());
-                    
-                    $message = 'بازیابی دیتابیس با موفقیت انجام شد.';
-                } else {
-                    $error = 'خطا در آپلود فایل.';
+                    } while ($conn->more_results() && $conn->next_result());
+
+                    if ($conn->errno) {
+                        $error = 'خطا پس از اجرای SQL: ' . $conn->error;
+                    } else {
+                        $message = 'بازیابی دیتابیس با موفقیت انجام شد.';
+                    }
                 }
-            } catch (Exception $e) {
-                $error = 'خطا در بازیابی دیتابیس: ' . $e->getMessage();
+
+                // بازیابی sql_mode قبلی (در صورت وجود)
+                if ($oldMode !== null) {
+                    $safeMode = $conn->real_escape_string($oldMode);
+                    $conn->query("SET SESSION sql_mode='" . $safeMode . "'");
+                }
+            } else {
+                $error = 'خطا در آپلود فایل.';
             }
-        } else {
-            $error = 'رمز عبور اشتباه است.';
+        } catch (Exception $e) {
+            $error = 'خطا در بازیابی دیتابیس: ' . $e->getMessage();
         }
     }
     
@@ -139,9 +185,48 @@ if (isset($_GET['reset']) && $_GET['reset'] == 1) {
 // دریافت اطلاعات کسب و کار فعلی
 $business_info = [];
 $business_fields = ['business_name', 'business_address', 'business_phone', 'business_email', 'business_website'];
-foreach ($business_fields as $field) {
-    $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = '$field'");
-    $business_info[$field] = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
+
+// helper to check table existence without throwing
+function table_exists($conn, $table) {
+    $t = $conn->real_escape_string($table);
+    $res = $conn->query("SHOW TABLES LIKE '$t'");
+    return $res && $res->num_rows > 0;
+}
+
+if (table_exists($conn, 'settings')) {
+    // استفاده از prepared statement برای خواندن تنظیمات
+    $stmt = $conn->prepare("SELECT setting_value FROM settings WHERE setting_name = ?");
+    foreach ($business_fields as $field) {
+        $val = '';
+        if ($stmt) {
+            $stmt->bind_param('s', $field);
+            if ($stmt->execute()) {
+                $res = $stmt->get_result();
+                if ($res && $res->num_rows > 0) {
+                    $row = $res->fetch_assoc();
+                    $val = $row['setting_value'];
+                }
+            }
+        } else {
+            // اگر آماده‌سازی statement ممکن نبود، تلاش با query معمولی
+            $r = $conn->query("SELECT setting_value FROM settings WHERE setting_name = '" . $conn->real_escape_string($field) . "'");
+            if ($r && $r->num_rows > 0) {
+                $val = $r->fetch_assoc()['setting_value'];
+            }
+        }
+        $business_info[$field] = $val;
+    }
+    if ($stmt) $stmt->close();
+} else {
+    // جدول وجود ندارد؛ از مقادیر خالی استفاده کن و اگر خطایی در ایجاد داشتیم، آن را نشان بده
+    foreach ($business_fields as $field) {
+        $business_info[$field] = '';
+    }
+    if (!$error) {
+        // اگر خطایی قبلا ثبت نشده است، می‌توانیم تلاش دیگری برای ایجاد جدول انجام دهیم
+        // (این تکرار بی‌خطر است، زیرا CREATE TABLE IF NOT EXISTS استفاده می‌شود)
+        $conn->query($createSql);
+    }
 }
 ?>
 
@@ -341,10 +426,6 @@ foreach ($business_fields as $field) {
                     <div class="mb-3">
                         <label for="backup_file" class="form-label">فایل بک‌آپ (.sql)</label>
                         <input type="file" class="form-control" id="backup_file" name="backup_file" accept=".sql" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="restore_password" class="form-label">رمز عبور تایید</label>
-                        <input type="password" class="form-control" id="restore_password" name="restore_password" required>
                     </div>
                 </div>
                 <div class="modal-footer">

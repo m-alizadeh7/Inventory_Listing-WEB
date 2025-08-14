@@ -180,10 +180,22 @@ function getBusinessInfo() {
     ];
     
     $business_fields = ['business_name', 'business_address', 'business_phone', 'business_email', 'business_website'];
-    foreach ($business_fields as $field) {
-        $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = '$field'");
-        if ($result && $row = $result->fetch_assoc()) {
-            $business_info[$field] = $row['setting_value'];
+
+    // بررسی وجود جدول settings قبل از اجرای SELECT
+    $res = $conn->query("SHOW TABLES LIKE 'settings'");
+    if ($res && $res->num_rows > 0) {
+        foreach ($business_fields as $field) {
+            $stmt = $conn->prepare("SELECT setting_value FROM settings WHERE setting_name = ?");
+            if ($stmt) {
+                $stmt->bind_param('s', $field);
+                if ($stmt->execute()) {
+                    $r = $stmt->get_result();
+                    if ($r && $row = $r->fetch_assoc()) {
+                        $business_info[$field] = $row['setting_value'];
+                    }
+                }
+                $stmt->close();
+            }
         }
     }
     

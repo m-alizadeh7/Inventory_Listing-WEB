@@ -4,7 +4,14 @@ if (!file_exists('config.php')) {
     header('Location: setup.php');
     exit;
 }
-require_once 'bootstrap.php';
+
+// Load config and functions
+require_once 'config.php';
+require_once 'includes/functions.php';
+
+// Initialize theme
+require_once 'core/includes/theme.php';
+init_theme();
 
 // پردازش درخواست migration
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_migrations'])) {
@@ -13,13 +20,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_migrations'])) {
     exit;
 }
 
+// Get business info
 $business_info = getBusinessInfo();
 
-// load theme header and main template
-get_template_part('header');
-get_template_part('templates/home');
-
-// load theme footer
-get_template_part('footer');
-
+// Load complete template using new function
+get_template('home');
 ?>

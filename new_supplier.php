@@ -1,6 +1,5 @@
 <?php
-require_once 'config.php';
-require_once 'includes/functions.php';
+require_once 'bootstrap.php';
 // افزودن ستون supplier_code اگر وجود ندارد
 $res = $conn->query("SHOW COLUMNS FROM suppliers LIKE 'supplier_code'");
 if ($res && $res->num_rows === 0) {
@@ -68,18 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>افزودن تامین‌کننده جدید</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        body { background: #f7f7f7; padding-top: 2rem; }
-    </style>
-</head>
-<body>
+<?php get_template_part('header'); ?>
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-8">
@@ -174,5 +162,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     })
 })()
 </script>
-</body>
-</html>
+
+<?php get_template_part('footer'); ?>

@@ -81,7 +81,7 @@ if ($result) {
 
 // دریافت لیست سفارشات با تعداد آیتم‌ها
 $orders = [];
-$sql = "SELECT po.*, COUNT(poi.order_id) as items_count 
+$sql = "SELECT po.*, COUNT(poi.item_id) as items_count 
         FROM production_orders po 
         LEFT JOIN production_order_items poi ON po.order_id = poi.order_id 
         GROUP BY po.order_id 

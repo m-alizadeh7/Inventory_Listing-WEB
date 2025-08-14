@@ -141,7 +141,12 @@ EOT;
                 if (empty($query)) continue;
                 
                 if (!$this->dbConnection->query($query)) {
-                    throw new Exception($this->dbConnection->error);
+                    $err = $this->dbConnection->error;
+                    // ignore duplicate foreign key name errors (idempotent runs / multiple sources)
+                    if (stripos($err, 'duplicate foreign key') !== false || stripos($err, 'Duplicate foreign key constraint name') !== false) {
+                        continue;
+                    }
+                    throw new Exception($err);
                 }
             }
 

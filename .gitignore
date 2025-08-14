@@ -23,3 +23,8 @@ Thumbs.db
 
 # Ignore Serverlog folder
 Serverlog/
+
+# Developer helper scripts and runtime counters
+tools/
+session_counter.txt
+backups/

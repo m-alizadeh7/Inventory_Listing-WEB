@@ -1,5 +1,5 @@
 <?php
-require_once 'config.php';
+require_once 'bootstrap.php';
 session_start();
 
 // بررسی و ایجاد جدول inventory اگر وجود ندارد
@@ -138,100 +138,7 @@ $session_status = $statusRow ? $statusRow['status'] : 'draft';
 $stmt->close();
 ?>
 
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>انبارگردانی جدید</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <style>
-        body { 
-            background: #f7f7f7; 
-            padding-top: 1rem; 
-            font-family: Tahoma, Arial, sans-serif;
-        }
-        .sticky-header { 
-            position: sticky; 
-            top: 0; 
-            background: #f7f7f7; 
-            z-index: 1000; 
-            padding: 10px 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            border-radius: 10px;
-        }
-        .table-responsive { 
-            max-height: calc(100vh - 270px);
-            overflow-y: auto;
-            border-radius: 10px;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-        }
-        .card {
-            border-radius: 10px;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
-        }
-        .card-header {
-            background-color: #f8f9fa;
-            border-bottom: 1px solid rgba(0,0,0,0.125);
-            font-weight: bold;
-        }
-        .action-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: flex-end;
-        }
-        .btn {
-            border-radius: 5px;
-            font-weight: 500;
-            transition: all 0.3s;
-        }
-        .btn-icon {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .table th {
-            position: sticky;
-            top: 0;
-            background: #f8f9fa;
-            z-index: 10;
-        }
-        .modified-row { background-color: #fff3cd; }
-        .saved-row { background-color: #d1e7dd; }
-        
-        /* تغییرات برای موبایل */
-        @media (max-width: 768px) {
-            .container { 
-                padding: 0 10px; 
-                max-width: 100%; 
-            }
-            .action-buttons {
-                justify-content: space-between;
-                width: 100%;
-            }
-            .action-buttons .btn {
-                flex: 1;
-                padding: 8px 5px;
-                font-size: 0.9rem;
-            }
-            .btn-text {
-                display: none;
-            }
-            .sticky-header h2 {
-                font-size: 1.3rem;
-            }
-            .search-box {
-                width: 100%;
-                margin-bottom: 10px;
-            }
-        }
-    </style>
-</head>
-<body>
-<div class="container">
+<?php get_template_part('header'); ?>
     <div class="sticky-header mb-3 p-3 bg-white">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h2 class="h4 mb-0">
@@ -273,9 +180,7 @@ $stmt->close();
 
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center p-3">
-            <div>
-                <i class="bi bi-list-check"></i> لیست کالاها
-            </div>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
             <div class="small text-muted"><?= count($items) ?> کالا</div>
         </div>
         <div class="card-body p-0">
@@ -357,7 +262,6 @@ $stmt->close();
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 function markModified(input) {
     const row = input.closest('tr');
@@ -517,11 +421,10 @@ function showToast(message, type = 'info') {
             <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
         </div>
     `;
-    
     toastContainer.appendChild(toast);
     const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
     bsToast.show();
-    
+
     // حذف toast پس از مخفی شدن
     toast.addEventListener('hidden.bs.toast', function() {
         toast.remove();
@@ -547,7 +450,5 @@ document.querySelectorAll('.inventory-input, .notes-input').forEach(input => {
         }
     });
 });
-</script>
-</body>
-</html>
+<?php get_template_part('footer'); ?>
 <?php $conn->close(); ?>

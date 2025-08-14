@@ -28,3 +28,6 @@ Serverlog/
 tools/
 session_counter.txt
 backups/
+ 
+# Local environment variables
+.env

@@ -203,6 +203,26 @@ function getBusinessInfo() {
 }
 
 /**
+ * دریافت یک تنظیم از جدول settings
+ */
+function getSetting($name, $default = null) {
+    global $conn;
+    $res = $conn->query("SHOW TABLES LIKE 'settings'");
+    if (!($res && $res->num_rows > 0)) return $default;
+    $stmt = $conn->prepare("SELECT setting_value FROM settings WHERE setting_name = ? LIMIT 1");
+    if (!$stmt) return $default;
+    $stmt->bind_param('s', $name);
+    if (!$stmt->execute()) { $stmt->close(); return $default; }
+    $r = $stmt->get_result();
+    if ($r && $row = $r->fetch_assoc()) {
+        $stmt->close();
+        return $row['setting_value'];
+    }
+    $stmt->close();
+    return $default;
+}
+
+/**
  * اجرای فایل‌های migration
  */
 function runMigrations() {

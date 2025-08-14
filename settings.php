@@ -175,6 +175,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $message = 'اطلاعات کسب و کار با موفقیت ذخیره شد.';
     }
+
+        // ذخیره تم فعال
+        if (isset($_POST['save_theme'])) {
+            $theme = preg_replace('/[^a-zA-Z0-9_\-]/', '', $_POST['active_theme'] ?? 'default');
+            $stmt = $conn->prepare("INSERT INTO settings (setting_name, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+            $key = 'active_theme';
+            $stmt->bind_param('sss', $key, $theme, $theme);
+            $stmt->execute();
+            $message = 'تم فعال با موفقیت ذخیره شد.';
+        }
 }
 
 // نمایش پیام موفقیت ریست دیتابیس
@@ -321,6 +331,41 @@ if (table_exists($conn, 'settings')) {
                     </form>
                 </div>
             </div>
+
+                <!-- انتخاب تم -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0"><i class="bi bi-palette"></i> قالب (تم)</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="active_theme" class="form-label">تم فعال</label>
+                                    <select id="active_theme" name="active_theme" class="form-select">
+                                        <?php
+                                        $themes = [];
+                                        $dirs = glob(__DIR__ . '/themes/*', GLOB_ONLYDIR);
+                                        foreach ($dirs as $d) {
+                                            $t = basename($d);
+                                            $themes[] = $t;
+                                        }
+                                        $currentTheme = '';
+                                        if (table_exists($conn, 'settings')) {
+                                            $currentTheme = $conn->real_escape_string(getSetting('active_theme', 'default'));
+                                        }
+                                        foreach ($themes as $t) {
+                                            $sel = ($t === $currentTheme) ? 'selected' : '';
+                                            echo "<option value=\"$t\" $sel>$t</option>";
+                                        }
+                                        ?>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="submit" name="save_theme" class="btn btn-primary">ذخیره تم</button>
+                        </form>
+                    </div>
+                </div>
 
             <!-- مدیریت دیتابیس -->
             <div class="card mb-4">

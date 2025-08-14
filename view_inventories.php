@@ -3,7 +3,7 @@
 define('ROOT_PATH', dirname(__FILE__));
 
 global $conn;
-require_once ROOT_PATH . '/config.php';
+require_once ROOT_PATH . '/bootstrap.php';
 if (!isset($conn) || !$conn || !($conn instanceof mysqli)) {
     echo '<div style="color:red; font-weight:bold; margin:2rem;">خطا در اتصال به پایگاه داده. لطفاً تنظیمات دیتابیس را بررسی کنید.</div>';
     exit;
@@ -161,26 +161,7 @@ while ($row = $result->fetch_assoc()) {
 }
 ?>
 
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>گزارش‌های انبارداری</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
-    <style>
-        body { background: #f7f7f7; padding-top: 2rem; }
-        .progress { height: 20px; margin-bottom: 0; }
-        .progress-bar { 
-            background-color: #28a745;
-            color: white;
-            font-weight: bold;
-            text-align: center;
-            line-height: 20px;
-        }
-    </style>
-</head>
-<body>
-<div class="container">
+<?php get_template_part('header'); ?>
     <?php if (isset($_GET['deleted']) && $_GET['deleted'] == 1): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="bi bi-check-circle"></i> جلسه انبارگردانی با موفقیت حذف شد.
@@ -341,8 +322,5 @@ while ($row = $result->fetch_assoc()) {
             </table>
         </div>
     <?php endif; ?>
-</div>
-
+<?php get_template_part('footer'); ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>

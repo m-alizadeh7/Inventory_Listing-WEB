@@ -1,6 +1,5 @@
 <?php
-require_once 'config.php';
-require_once 'includes/functions.php';
+require_once 'bootstrap.php';
 
 // Check if device_bom table exists and create it if not
 $res = $conn->query("SHOW TABLES LIKE 'device_bom'");
@@ -64,18 +63,9 @@ if ($devices_result) {
     while ($row = $devices_result->fetch_assoc()) {
         $devices[] = $row;
     }
-}
 ?>
 
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>ورود لیست قطعات (BOM)</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-</head>
-<body>
+<?php get_template_part('header'); ?>
 <div class="container mt-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2><i class="fas fa-file-import"></i> ورود لیست قطعات (BOM) از فایل CSV</h2>

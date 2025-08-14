@@ -15,8 +15,7 @@ function sort_link($col, $label, $sort, $order) {
 ?>
 <?php
 
-require_once 'config.php';
-require_once 'includes/functions.php';
+require_once 'bootstrap.php';
 
 // ویرایش موجودی کالا
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_inventory'])) {
@@ -142,79 +141,7 @@ $stmt->close();
 $total = count($items);
 ?>
 
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مدیریت موجودی انبار</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        body { 
-            background: #f7f7f7; 
-            padding-top: 2rem; 
-            font-family: 'Vazir', sans-serif;
-        }
-        .out-of-stock { background-color: #f8d7da; }
-        .equal-min { background-color: #fff3cd; }
-        .low-stock { background-color: #ffeeba; }
-        .sufficient { background-color: #d4edda; }
-        
-        .status-indicator {
-            font-size: 1.2rem;
-            margin-right: 5px;
-        }
-        
-        .card {
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            margin-bottom: 1.5rem;
-        }
-        
-        .card-header {
-            border-bottom: 1px solid rgba(0,0,0,0.1);
-            font-weight: 600;
-        }
-        
-        .inventory-status-legend {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .legend-item {
-            display: flex;
-            align-items: center;
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 0.9rem;
-        }
-        
-        .session-info {
-            background-color: #e2f0fd;
-            padding: 10px 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-        }
-        
-    @media print { .no-print { display: none !important; } .table { width: 100%; border-collapse: collapse; font-size: 13px; } .table th, .table td { border: 1px solid #222; padding: 8px; } body { background: white; padding-top: 0; } .container { width: 100%; max-width: 100%; } .card { box-shadow: none; border: none; } .card-header { background: white !important; color: black !important; } .print-header { display: block !important; margin-bottom: 20px; text-align: right; } .print-footer { display: block !important; margin-top: 30px; text-align: left; font-size: 13px; color: #222; } .inventory-status-legend { page-break-after: always; } }
-        
-    /* حذف شد: نمایش ندادن print-header و print-footer در حالت عادی */
-        
-        @media (max-width: 768px) {
-            .table-responsive {
-                overflow-x: auto;
-            }
-            .container {
-                padding: 0 10px;
-            }
-        }
-    </style>
-</head>
-<body>
-<div class="container">
+<?php get_template_part('header'); ?>
     <!-- Debug Info -->
     <?php
     // تعداد کل کالاها در جدول inv_inventory

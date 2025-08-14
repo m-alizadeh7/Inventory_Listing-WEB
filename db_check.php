@@ -1,6 +1,5 @@
 <?php
-require_once 'config.php';
-require_once 'includes/functions.php';
+require_once 'bootstrap.php';
 
 // بررسی و اصلاح خودکار جداول
 // این اسکریپت برای اطمینان از وجود تمام ستون‌های مورد نیاز در جداول اصلی استفاده می‌شود
@@ -125,15 +124,7 @@ if (strpos($output, "خطا") === false) {
 // این اسکریپت می‌تواند در فایل index.php یا هر فایل دیگری که به عنوان نقطه ورودی استفاده می‌شود، include شود
 ?>
 
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>بررسی و اصلاح ساختار پایگاه داده</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
-</head>
-<body>
-    <div class="container mt-5">
+<?php get_template_part('header'); ?>
         <div class="card">
             <div class="card-header bg-<?= $status ?>">
                 <h3 class="card-title text-white"><?= $message ?></h3>

@@ -1,6 +1,5 @@
 <?php
-require_once 'config.php';
-require_once 'includes/functions.php';
+require_once 'bootstrap.php';
 
 // بررسی device_id
 $device_id = clean($_GET['id'] ?? '');
@@ -202,9 +201,7 @@ $business_info = getBusinessInfo();
 </head>
 <body>
 
-<!-- Header -->
-<div class="main-header">
-    <div class="container">
+<?php get_template_part('header'); ?>
         <div class="row align-items-center">
             <div class="col-md-8">
                 <h1 class="h3 mb-1">

@@ -249,7 +249,7 @@ function runMigrations() {
                 }
                 if (!$hasFatalError) {
                     // ثبت migration
-                    $stmt2 = $conn->prepare("INSERT INTO migrations (migration) VALUES (?)");
+                    $stmt2 = $conn->prepare("INSERT INTO migrations (migration, applied_at) VALUES (?, NOW())");
                     $stmt2->bind_param("s", $migrationName);
                     $stmt2->execute();
                     $stmt2->close();

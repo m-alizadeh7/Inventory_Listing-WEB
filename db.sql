@@ -1,7 +1,7 @@
 -- Creating table for inventory items
 CREATE TABLE IF NOT EXISTS `inventory` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
-    `row_number` INT NOT NULL,
+    `row_number` INT NULL,
     `inventory_code` VARCHAR(50) NOT NULL,
     `item_name` VARCHAR(255) NOT NULL,
     `unit` VARCHAR(50),
@@ -37,8 +37,7 @@ CREATE TABLE IF NOT EXISTS `inventory_sessions` (
     `notes` TEXT
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- Add foreign key to inventory_records
-ALTER TABLE `inventory_records` 
-ADD FOREIGN KEY (`inventory_session`) 
-REFERENCES `inventory_sessions`(`session_id`) 
-ON DELETE CASCADE;
+-- Add foreign key to inventory_records for session reference
+ALTER TABLE `inventory_records`
+    ADD CONSTRAINT `fk_inventory_records_session`
+    FOREIGN KEY (`inventory_session`) REFERENCES `inventory_sessions`(`session_id`) ON DELETE CASCADE;

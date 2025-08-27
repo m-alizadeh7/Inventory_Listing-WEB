@@ -62,9 +62,100 @@ function div($a, $b) {
     return (int)($a / $b);
 }
 
+/**
+ * Jalali date helper similar to jdate from jdf library (lightweight)
+ * Supports tokens: Y, y, m, n, d, j, H, i, s
+ * $timestamp may be integer or strtotime-compatible string
+ */
+function jdate($format, $timestamp = null) {
+    if ($timestamp === null) {
+        $ts = time();
+    } else {
+        $ts = is_numeric($timestamp) ? (int)$timestamp : strtotime($timestamp);
+        if ($ts === false) $ts = time();
+    }
+
+    $gY = (int)date('Y', $ts);
+    $gM = (int)date('n', $ts);
+    $gD = (int)date('j', $ts);
+    $gH = date('H', $ts);
+    $gI = date('i', $ts);
+    $gS = date('s', $ts);
+
+    $jY = $jM = $jD = 0;
+    convertToJalali($gY, $gM, $gD, $jY, $jM, $jD);
+
+    $replacements = array(
+        'Y' => sprintf('%04d', $jY),
+        'y' => substr(sprintf('%04d', $jY), -2),
+        'm' => sprintf('%02d', $jM),
+        'n' => $jM,
+        'd' => sprintf('%02d', $jD),
+        'j' => $jD,
+        'H' => $gH,
+        'i' => $gI,
+        's' => $gS,
+    );
+
+    // Simple token replacement
+    return strtr($format, $replacements);
+}
+
 // تابع نمایش پیغام
 function showMessage($message, $type = 'success') {
     return "<div class='alert alert-{$type}'>{$message}</div>";
+}
+
+// Fallback flash message helpers (guarded) - theme may provide these, so only define if missing
+if (!function_exists('set_flash_message')) {
+    function set_flash_message($message, $type = 'info') {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            if (!headers_sent()) {
+                session_start();
+            } else {
+                return false;
+            }
+        }
+        $_SESSION['flash_message'] = $message;
+        $_SESSION['flash_type'] = $type;
+        return true;
+    }
+}
+
+if (!function_exists('get_flash_message')) {
+    function get_flash_message() {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            if (!headers_sent()) {
+                session_start();
+            } else {
+                return null;
+            }
+        }
+        if (isset($_SESSION['flash_message'])) {
+            $message = $_SESSION['flash_message'];
+            $type = $_SESSION['flash_type'] ?? 'info';
+            unset($_SESSION['flash_message'], $_SESSION['flash_type']);
+            return array('message' => $message, 'type' => $type);
+        }
+        return null;
+    }
+}
+
+if (!function_exists('display_flash_messages')) {
+    function display_flash_messages() {
+        if (session_status() !== PHP_SESSION_ACTIVE && headers_sent()) {
+            return;
+        }
+        if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+        $fm = get_flash_message();
+        if ($fm && !empty($fm['message'])) {
+            $type = in_array($fm['type'], ['success','danger','warning','info']) ? $fm['type'] : 'info';
+            $msg = htmlspecialchars($fm['message']);
+            echo "<div class=\"alert alert-{$type} alert-dismissible fade show\" role=\"alert\">{$msg}";
+            echo "<button type=\"button\" class=\"btn-close\" data-bs-dismiss=\"alert\"></button>";
+            echo "</div>";
+        }
+    }
 }
 
 // تابع اعتبارسنجی فایل CSV
@@ -88,7 +179,16 @@ function clean($string) {
  */
 function checkMigrationsPrompt() {
     global $conn;
-    
+    // Ensure we have a mysqli connection when called from bootstrap; try to obtain one if not present
+    if (!isset($conn) || !($conn instanceof mysqli)) {
+        if (function_exists('getDbConnection')) {
+            try { $conn = getDbConnection(false); } catch (Exception $e) { $conn = null; }
+        } else { $conn = null; }
+    }
+
+    // If no DB connection, skip migrations prompt
+    if (!isset($conn) || !($conn instanceof mysqli)) return;
+
     // اطمینان از وجود جدول migrations
     $conn->query("CREATE TABLE IF NOT EXISTS migrations (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -143,7 +243,15 @@ function ensureSupplierSchema() {
     global $conn;
     
     // اطمینان از وجود جدول suppliers
-    $conn->query("CREATE TABLE IF NOT EXISTS suppliers (
+        // Ensure DB connection
+        if (!isset($conn) || !($conn instanceof mysqli)) {
+            if (function_exists('getDbConnection')) {
+                try { $conn = getDbConnection(false); } catch (Exception $e) { $conn = null; }
+            } else { $conn = null; }
+        }
+        if (!isset($conn) || !($conn instanceof mysqli)) return;
+
+        $conn->query("CREATE TABLE IF NOT EXISTS suppliers (
         supplier_id INT AUTO_INCREMENT PRIMARY KEY,
         supplier_name VARCHAR(255) NOT NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
@@ -207,19 +315,42 @@ function getBusinessInfo() {
  */
 function getSetting($name, $default = null) {
     global $conn;
-    $res = $conn->query("SHOW TABLES LIKE 'settings'");
-    if (!($res && $res->num_rows > 0)) return $default;
-    $stmt = $conn->prepare("SELECT setting_value FROM settings WHERE setting_name = ? LIMIT 1");
-    if (!$stmt) return $default;
-    $stmt->bind_param('s', $name);
-    if (!$stmt->execute()) { $stmt->close(); return $default; }
-    $r = $stmt->get_result();
-    if ($r && $row = $r->fetch_assoc()) {
-        $stmt->close();
-        return $row['setting_value'];
+    // Ensure we have a mysqli connection; try to obtain one if not present
+    if (!isset($conn) || !($conn instanceof mysqli)) {
+        if (function_exists('getDbConnection')) {
+            try {
+                $conn = getDbConnection(false);
+            } catch (Exception $e) {
+                $conn = null;
+            }
+        } else {
+            $conn = null;
+        }
     }
-    $stmt->close();
-    return $default;
+
+    // If still no connection, return default safely
+    if (!isset($conn) || !($conn instanceof mysqli)) {
+        return $default;
+    }
+
+    try {
+        $res = $conn->query("SHOW TABLES LIKE 'settings'");
+        if (!($res && $res->num_rows > 0)) return $default;
+
+        $stmt = $conn->prepare("SELECT setting_value FROM settings WHERE setting_name = ? LIMIT 1");
+        if (!$stmt) return $default;
+        $stmt->bind_param('s', $name);
+        if (!$stmt->execute()) { $stmt->close(); return $default; }
+        $r = $stmt->get_result();
+        if ($r && $row = $r->fetch_assoc()) {
+            $stmt->close();
+            return $row['setting_value'];
+        }
+        $stmt->close();
+        return $default;
+    } catch (Exception $e) {
+        return $default;
+    }
 }
 
 /**
@@ -292,4 +423,32 @@ function runMigrations() {
     }
     
     return true;
+}
+
+/**
+ * Get database connection
+ */
+function getDbConnection($exitOnError = true) {
+    if (!defined('DB_HOST') || !defined('DB_USER') || !defined('DB_PASS') || !defined('DB_NAME')) {
+        if ($exitOnError) {
+            throw new Exception('Database configuration not found');
+        }
+        return null;
+    }
+    
+    try {
+        $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+        $conn->set_charset('utf8mb4');
+        
+        if ($conn->connect_error) {
+            throw new Exception('Database connection failed: ' . $conn->connect_error);
+        }
+        
+        return $conn;
+    } catch (Exception $e) {
+        if ($exitOnError) {
+            throw $e;
+        }
+        return null;
+    }
 }

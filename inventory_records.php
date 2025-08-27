@@ -33,10 +33,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_inventory'])) 
 // پیدا کردن آخرین جلسه انبارگردانی تایید شده
 $lastSession = null;
 $lastSessionInfo = null;
-$sql = "SELECT s.session_id, s.confirmed_at
-        FROM inventory_sessions s
-        WHERE s.confirmed = 1
-        ORDER BY s.confirmed_at DESC LIMIT 1";
+$sql = "SELECT s.session_id, s.completed_at
+    FROM inventory_sessions s
+    WHERE s.status = 'completed'
+    ORDER BY s.completed_at DESC LIMIT 1";
 $res = $conn->query($sql);
 if ($res && $row = $res->fetch_assoc()) {
     $lastSession = $row['session_id'];

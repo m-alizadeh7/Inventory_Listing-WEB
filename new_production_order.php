@@ -67,11 +67,11 @@ if (isset($_POST['save_new_order'])) {
 // دریافت لیست دستگاه‌ها
 $devices = [];
 $sql = "SELECT d.device_id, d.device_code, d.device_name, 
-               COUNT(db.bom_id) as parts_count
-        FROM devices d 
-        LEFT JOIN device_bom db ON d.device_id = db.device_id 
-        GROUP BY d.device_id 
-        ORDER BY d.device_name";
+         COUNT(db.id) as parts_count
+     FROM devices d 
+     LEFT JOIN device_bom db ON d.device_id = db.device_id 
+     GROUP BY d.device_id 
+     ORDER BY d.device_name";
 $result = $conn->query($sql);
 if ($result) {
     while ($row = $result->fetch_assoc()) {

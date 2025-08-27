@@ -1,5 +1,29 @@
 <?php
-require_once 'config.php';
+// تلاش برای اتصال و ایجاد دیتابیس در صورت نیاز
+try {
+    // اول بدون نام دیتابیس وصل شو
+    $tempConn = new mysqli(
+        $_ENV['DB_HOST'] ?? 'localhost',
+        $_ENV['DB_USER'] ?? 'root', 
+        $_ENV['DB_PASS'] ?? '123'
+    );
+    
+    if ($tempConn->connect_error) {
+        die("خطا در اتصال به سرور: " . $tempConn->connect_error);
+    }
+    
+    $dbName = $_ENV['DB_NAME'] ?? 'php1';
+    
+    // ایجاد دیتابیس در صورت عدم وجود
+    $tempConn->query("CREATE DATABASE IF NOT EXISTS `$dbName` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+    $tempConn->close();
+    
+    // حالا config.php را بارگذاری کن
+    require_once 'config.php';
+    
+} catch (Exception $e) {
+    die("خطا در آماده‌سازی دیتابیس: " . $e->getMessage());
+}
 
 // Check and create 'migrations' table if missing
 $res = $conn->query("SHOW TABLES LIKE 'migrations'");

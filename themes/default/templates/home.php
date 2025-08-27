@@ -75,34 +75,64 @@ get_theme_part('page-header', $header_args);
             // Inventory management cards
             $inventory_cards = array(
                 array(
-                    'title' => 'انبارگردانی جدید',
-                    'icon' => 'bi-plus-circle',
-                    'text' => 'شروع یک انبارگردانی جدید برای ثبت موجودی‌ها و کنترل دقیق انبار.',
-                    'link' => 'new_inventory.php',
-                    'link_text' => 'شروع انبارگردانی',
-                    'icon_bg' => 'bg-primary bg-opacity-10',
-                    'icon_color' => 'text-primary',
-                    'button_class' => 'btn-primary'
-                ),
-                array(
                     'title' => 'مدیریت موجودی انبار',
                     'icon' => 'bi-box-seam',
                     'text' => 'جستجو، مشاهده و مدیریت موجودی کالاها با امکانات پیشرفته.',
                     'link' => 'inventory_records.php',
                     'link_text' => 'مشاهده موجودی',
+                    'icon_bg' => 'bg-primary bg-opacity-10',
+                    'icon_color' => 'text-primary',
+                    'button_class' => 'btn-primary'
+                ),
+                array(
+                    'title' => 'گروه‌های کالا',
+                    'icon' => 'bi-tags',
+                    'text' => 'مدیریت گروه‌بندی کالاها برای سازماندهی بهتر انبار.',
+                    'link' => 'inventory_categories.php',
+                    'link_text' => 'مدیریت گروه‌ها',
                     'icon_bg' => 'bg-info bg-opacity-10',
                     'icon_color' => 'text-info',
                     'button_class' => 'btn-info'
                 ),
                 array(
-                    'title' => 'گزارش‌های انبارداری',
-                    'icon' => 'bi-clipboard-data',
-                    'text' => 'مشاهده گزارش‌های تفصیلی انبارداری و دانلود فایل‌های اکسل.',
-                    'link' => 'view_inventories.php',
-                    'link_text' => 'مشاهده گزارش‌ها',
+                    'title' => 'شمارش فیزیکی',
+                    'icon' => 'bi-clipboard-check',
+                    'text' => 'انجام شمارش فیزیکی انبار با امکان شمارش گروهی یا کامل.',
+                    'link' => 'physical_count.php',
+                    'link_text' => 'شمارش فیزیکی',
                     'icon_bg' => 'bg-success bg-opacity-10',
                     'icon_color' => 'text-success',
                     'button_class' => 'btn-success'
+                ),
+                array(
+                    'title' => 'خروج موردی کالا',
+                    'icon' => 'bi-box-arrow-right',
+                    'text' => 'ثبت خروج موردی کالاها از انبار با ذکر دلیل و مسئول.',
+                    'link' => 'manual_withdrawals.php',
+                    'link_text' => 'خروج موردی',
+                    'icon_bg' => 'bg-warning bg-opacity-10',
+                    'icon_color' => 'text-warning',
+                    'button_class' => 'btn-warning'
+                ),
+                array(
+                    'title' => 'یادداشت‌های اضطراری',
+                    'icon' => 'bi-exclamation-triangle',
+                    'text' => 'ثبت و مدیریت یادداشت‌های اضطراری و هشدارهای انبار.',
+                    'link' => 'emergency_notes.php',
+                    'link_text' => 'یادداشت‌ها',
+                    'icon_bg' => 'bg-danger bg-opacity-10',
+                    'icon_color' => 'text-danger',
+                    'button_class' => 'btn-danger'
+                ),
+                array(
+                    'title' => 'انبارگردانی جدید',
+                    'icon' => 'bi-plus-circle',
+                    'text' => 'شروع یک انبارگردانی جدید برای ثبت موجودی‌ها و کنترل دقیق انبار.',
+                    'link' => 'new_inventory.php',
+                    'link_text' => 'انبارگردانی جدید',
+                    'icon_bg' => 'bg-secondary bg-opacity-10',
+                    'icon_color' => 'text-secondary',
+                    'button_class' => 'btn-secondary'
                 )
             );
             

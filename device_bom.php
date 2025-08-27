@@ -105,7 +105,7 @@ $stmt = $conn->prepare("
                ELSE 'کسری'
            END as status
     FROM device_bom b 
-    LEFT JOIN inventory i ON b.item_code = i.inventory_code 
+    LEFT JOIN inventory i ON b.item_code COLLATE utf8mb4_unicode_ci = i.inventory_code COLLATE utf8mb4_unicode_ci 
     WHERE b.device_id = ? 
     ORDER BY b.item_name
 ");
@@ -202,7 +202,7 @@ $business_info = getBusinessInfo();
 <body>
 
 <?php get_template_part('header'); ?>
-        <div class="row align-items-center">
+    <div class="row align-items-center">
             <div class="col-md-8">
                 <h1 class="h3 mb-1">
                     <i class="bi bi-tools me-2"></i>BOM دستگاه: <?php echo htmlspecialchars($device['device_name']); ?>
@@ -215,10 +215,7 @@ $business_info = getBusinessInfo();
                 </a>
             </div>
         </div>
-    </div>
-</div>
-
-<div class="container">
+        
     <!-- پیام‌ها -->
     <?php if ($message): ?>
         <div class="alert alert-<?php echo $message_type; ?> alert-dismissible fade show">

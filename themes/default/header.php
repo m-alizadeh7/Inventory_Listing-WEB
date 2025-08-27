@@ -7,6 +7,10 @@
 if (!function_exists('theme_enqueue_styles')) {
     require_once __DIR__ . '/functions.php';
 }
+
+// Get current user info
+global $security;
+$current_user = $security ? $security->getCurrentUser() : null;
 ?><!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>

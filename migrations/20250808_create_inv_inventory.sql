@@ -1,7 +1,7 @@
 -- Migration: Create inv_inventory table with sample data
 CREATE TABLE IF NOT EXISTS inv_inventory (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    row_number INT NULL,
+    `row_number` INT NULL,
     inventory_code VARCHAR(50) NOT NULL UNIQUE,
     item_name VARCHAR(255) NOT NULL,
     unit VARCHAR(50) DEFAULT 'عدد',
@@ -11,11 +11,11 @@ CREATE TABLE IF NOT EXISTS inv_inventory (
     required DOUBLE DEFAULT 0,
     notes VARCHAR(255) NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Insert sample data if table is empty
-INSERT IGNORE INTO inv_inventory (row_number, inventory_code, item_name, unit, min_inventory, supplier, current_inventory, required, notes) VALUES
+INSERT IGNORE INTO inv_inventory (`row_number`, inventory_code, item_name, unit, min_inventory, supplier, current_inventory, required, notes) VALUES
 (1, 'IC001', 'مقاومت 1K اهم', 'عدد', 100, 'الکترونیک آریا', 250, 300, 'مقاومت استاندارد'),
 (2, 'IC002', 'خازن 100 میکروفاراد', 'عدد', 50, 'الکترونیک آریا', 75, 100, 'خازن الکترولیتی'),
 (3, 'IC003', 'ترانزیستور BC547', 'عدد', 20, 'قطعات پارس', 15, 50, 'ترانزیستور NPN'),

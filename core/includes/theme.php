@@ -98,27 +98,58 @@ function get_theme_asset_url($path) {
 
 // Flash message functions
 function set_flash_message($message, $type = 'info') {
-    if (!isset($_SESSION)) {
-        session_start();
+    // Try to ensure session is started; if headers already sent we cannot start one here
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        if (!headers_sent()) {
+            session_start();
+        } else {
+            // Unable to start session; skip storing flash to avoid warnings
+            return false;
+        }
     }
     $_SESSION['flash_message'] = $message;
     $_SESSION['flash_type'] = $type;
 }
 
 function get_flash_message() {
-    if (!isset($_SESSION)) {
-        session_start();
+    // If session isn't active and we can't start one (headers sent), return null
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        if (!headers_sent()) {
+            session_start();
+        } else {
+            return null;
+        }
     }
-    
+
     if (isset($_SESSION['flash_message'])) {
         $message = $_SESSION['flash_message'];
         $type = $_SESSION['flash_type'] ?? 'info';
-        
+
         unset($_SESSION['flash_message']);
         unset($_SESSION['flash_type']);
-        
+
         return array('message' => $message, 'type' => $type);
     }
-    
+
     return null;
+}
+
+// Render flash messages in templates (bootstrap alert)
+function display_flash_messages() {
+    // Do not attempt to start a session if headers already sent
+    if (session_status() !== PHP_SESSION_ACTIVE && headers_sent()) {
+        return;
+    }
+    // ensure session is active otherwise get_flash_message will start one
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        session_start();
+    }
+    $fm = get_flash_message();
+    if ($fm && !empty($fm['message'])) {
+        $type = in_array($fm['type'], ['success','danger','warning','info']) ? $fm['type'] : 'info';
+        $msg = htmlspecialchars($fm['message']);
+        echo "<div class=\"alert alert-{$type} alert-dismissible fade show\" role=\"alert\">{$msg}";
+        echo "<button type=\"button\" class=\"btn-close\" data-bs-dismiss=\"alert\"></button>";
+        echo "</div>";
+    }
 }

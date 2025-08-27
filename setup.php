@@ -2,9 +2,16 @@
 session_start();
 
 // تنظیمات اولیه
-define('SYSTEM_VERSION', '1.0.0');
+if (!defined('SYSTEM_VERSION')) {
+    define('SYSTEM_VERSION', '1.0.0');
+}
 define('MIN_PHP_VERSION', '7.4.0');
 define('CONFIG_FILE', __DIR__ . '/config.php');
+
+// If a config.php already exists, include it early so constants (like SYSTEM_VERSION) come from it
+if (file_exists(CONFIG_FILE)) {
+    @include_once CONFIG_FILE;
+}
 
 // کلاس اصلی نصب و راه‌اندازی
 class Setup {
@@ -55,21 +62,19 @@ class Setup {
     // بررسی اتصال به دیتابیس
     public function testDatabaseConnection($host, $username, $password, $database) {
         try {
-            $conn = new mysqli($host, $username, $password);
-            if ($conn->connect_error) {
-                throw new Exception("خطا در اتصال به دیتابیس: " . $conn->connect_error);
-            }
-
-            // بررسی وجود دیتابیس
-            if (!$conn->select_db($database)) {
-                // تلاش برای ساخت دیتابیس
-                if (!$conn->query("CREATE DATABASE IF NOT EXISTS `$database`")) {
-                    throw new Exception("خطا در ساخت دیتابیس: " . $conn->error);
-                }
-                $conn->select_db($database);
-            }
-
-            $this->dbConnection = $conn;
+            // استفاده از تابع getDbConnection برای اتصال ایمن
+            $tempHost = defined('DB_HOST') ? DB_HOST : $host;
+            $tempUser = defined('DB_USER') ? DB_USER : $username;
+            $tempPass = defined('DB_PASS') ? DB_PASS : $password;
+            $tempName = defined('DB_NAME') ? DB_NAME : $database;
+            
+            // موقتا مقادیر جدید را تنظیم کن
+            if (!defined('DB_HOST')) define('DB_HOST', $host);
+            if (!defined('DB_USER')) define('DB_USER', $username);
+            if (!defined('DB_PASS')) define('DB_PASS', $password);
+            if (!defined('DB_NAME')) define('DB_NAME', $database);
+            
+            $this->dbConnection = getDbConnection(true); // ایجاد دیتابیس اگر نبود
             return true;
 
         } catch (Exception $e) {
@@ -142,10 +147,27 @@ EOT;
                 
                 if (!$this->dbConnection->query($query)) {
                     $err = $this->dbConnection->error;
-                    // ignore duplicate foreign key name errors (idempotent runs / multiple sources)
-                    if (stripos($err, 'duplicate foreign key') !== false || stripos($err, 'Duplicate foreign key constraint name') !== false) {
+                    // ignore harmless duplicate constraint/index errors so installer is idempotent
+                    $errLower = strtolower($err);
+                    $harmless = [
+                        'duplicate foreign key',
+                        'duplicate key name',
+                        'duplicate entry',
+                        'already exists',
+                        'duplicate',
+                        'cannot add foreign key constraint',
+                        'constraint already exists',
+                    ];
+
+                    $isHarmless = false;
+                    foreach ($harmless as $h) {
+                        if (strpos($errLower, $h) !== false) { $isHarmless = true; break; }
+                    }
+
+                    if ($isHarmless) {
                         continue;
                     }
+
                     throw new Exception($err);
                 }
             }
@@ -214,12 +236,18 @@ EOT;
             ) {
                 return false;
             }
-            require_once CONFIG_FILE;
-            if (isset($conn)) {
+            
+            try {
+                // تلاش برای اتصال به دیتابیس
+                $conn = getDbConnection(false);
                 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'system_version'");
                 if ($result && $row = $result->fetch_assoc()) {
                     return version_compare($row['setting_value'], SYSTEM_VERSION, '<');
                 }
+                $conn->close();
+            } catch (Exception $e) {
+                // دیتابیس موجود نیست یا جدول settings ندارد - نیاز به نصب
+                return true;
             }
         }
         return false;
@@ -299,6 +327,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <div class="container setup-container">
+        <?php if (!empty(
+            
+            
+            
+            $_SESSION['setup_required']
+        )): ?>
+            <div class="alert alert-warning"><?php echo htmlspecialchars($_SESSION['setup_required']); ?></div>
+            <?php unset($_SESSION['setup_required']); ?>
+        <?php endif; ?>
         <div class="card shadow">
             <div class="card-header bg-primary text-white">
                 <h3 class="card-title mb-0">نصب و راه‌اندازی سیستم مدیریت انبار</h3>
@@ -385,6 +422,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <?php endif; ?>
                         </div>
                     </form>
+                    <?php if (file_exists(__DIR__ . '/finish_install.php')): ?>
+                        <hr>
+                        <h6>پایان نصب</h6>
+                        <p>پس از اطمینان از عملکرد سیستم، می‌توانید فایل‌های نصب را حذف کنید.</p>
+                        <form method="post" action="finish_install.php" onsubmit="return confirm('آیا مطمئن هستید؟ این فایل‌ها حذف خواهند شد.');">
+                            <input type="hidden" name="confirm" value="1">
+                            <button type="submit" class="btn btn-danger">حذف فایل‌های نصب</button>
+                        </form>
+                    <?php endif; ?>
                 <?php endif; ?>
             </div>
         </div>

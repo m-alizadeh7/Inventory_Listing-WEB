@@ -32,6 +32,16 @@ $business_info = getBusinessInfo();
 // Load complete template using new function
 get_template('settings');
 
-// لود فوتر
-include_once "$theme_dir/footer.php";
+// لود فوتر با روش ایمن
+if (function_exists('get_template_part')) {
+    get_template_part('footer');
+} else {
+    // fallback: try ACTIVE_THEME_PATH if defined
+    if (defined('ACTIVE_THEME_PATH') && file_exists(ACTIVE_THEME_PATH . '/footer.php')) {
+        include_once ACTIVE_THEME_PATH . '/footer.php';
+    } else {
+        // last resort: include project-level footer if exists
+        if (file_exists(__DIR__ . '/footer.php')) include_once __DIR__ . '/footer.php';
+    }
+}
 ?>

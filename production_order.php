@@ -125,5 +125,11 @@ foreach ($parts as $part) {
 $all_parts_available = true;
 
 // Load template using new system
+// Defensive defaults for template keys to avoid undefined index warnings
+$order['devices_count'] = $order['devices_count'] ?? (is_array($devices) ? count($devices) : 0);
+$order['total_quantity'] = $order['total_quantity'] ?? array_sum(array_column($devices ?: [], 'quantity'));
+
+if (!is_array($devices)) $devices = [];
+
 get_template('production_order');
 ?>

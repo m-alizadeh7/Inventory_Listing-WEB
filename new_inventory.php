@@ -165,7 +165,7 @@ $stmt->close();
                         <i class="bi bi-house"></i>
                         <span class="btn-text">بازگشت به منو</span>
                     </a>
-                    <button type="button" class="btn btn-primary btn-icon" onclick="saveAll(false)">
+                    <button type="button" id="saveTempBtn" class="btn btn-primary btn-icon" onclick="saveAll(false)">
                         <i class="bi bi-save"></i>
                         <span class="btn-text">ذخیره موقت</span>
                     </button>
@@ -206,7 +206,7 @@ $stmt->close();
                                 <td class="text-center"><?= htmlspecialchars($item['unit']) ?></td>
                                 <td>
                                     <input type="number" class="form-control form-control-sm inventory-input" 
-                                           value="<?= htmlspecialchars($item['recorded_inventory'] ?? '-') ?>" 
+                                        value="<?= htmlspecialchars($item['recorded_inventory'] ?? '') ?>" 
                                            step="0.01" onchange="markModified(this)">
                                 </td>
                                 <td>
@@ -255,7 +255,7 @@ $stmt->close();
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
-                    <button type="button" class="btn btn-success" onclick="finalizeInventory()">تایید و پایان</button>
+                    <button type="button" id="finalizeConfirmBtn" class="btn btn-success" onclick="finalizeInventory()">تایید و پایان</button>
                 </div>
             </div>
         </div>
@@ -289,15 +289,27 @@ function saveAll(isFinalize = false) {
     }
 
     // نمایش وضعیت درحال بارگذاری
-    const saveBtn = document.querySelector('.btn-primary');
-    const originalText = saveBtn.innerHTML;
-    saveBtn.disabled = true;
-    saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> در حال ذخیره...';
+    const saveBtn = isFinalize ? document.getElementById('finalizeConfirmBtn') : document.getElementById('saveTempBtn');
+    const originalText = saveBtn ? saveBtn.innerHTML : '';
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> در حال ذخیره...';
+    }
+
+    // if finalizing include completed_by / completed_at
+    let payload = { items: data, finalize: isFinalize };
+    if (isFinalize) {
+        const completedBy = document.getElementById('completedBy') ? document.getElementById('completedBy').value : '';
+        let completedAt = document.getElementById('completedAt') ? document.getElementById('completedAt').value : '';
+        if (completedAt.length === 16) completedAt = completedAt.replace('T', ' ') + ':00';
+        payload.completed_by = completedBy;
+        payload.completed_at = completedAt;
+    }
 
     fetch('save_inventory.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: data, finalize: isFinalize })
+        body: JSON.stringify(payload)
     })
     .then(response => {
         console.log('Save response status:', response.status);
@@ -308,8 +320,10 @@ function saveAll(isFinalize = false) {
     })
     .then(result => {
         console.log('Save response data:', result);
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = originalText;
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalText;
+        }
         
         if (result.success) {
             if (!isFinalize) {
@@ -318,6 +332,10 @@ function saveAll(isFinalize = false) {
                     row.classList.add('saved-row');
                 });
                 showToast('اطلاعات با موفقیت ذخیره شد.', 'success');
+            } else {
+                showToast('انبارگردانی با موفقیت نهایی شد.', 'success');
+                // Redirect to home after short delay
+                setTimeout(() => window.location.href = 'index.php', 1200);
             }
         } else {
             showToast('خطا در ذخیره اطلاعات: ' + result.message, 'danger');
@@ -325,8 +343,10 @@ function saveAll(isFinalize = false) {
     })
     .catch(error => {
         console.error('Save error details:', error);
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = originalText;
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalText;
+        }
         showToast('خطا در ارتباط با سرور: ' + error.message, 'danger');
     });
 }
@@ -337,52 +357,14 @@ function showFinalizeModal() {
 }
 
 function finalizeInventory() {
+    // Validation is done inside saveAll when finalizing; just trigger saveAll with finalize=true
     const completedBy = document.getElementById('completedBy').value;
-    let completedAt = document.getElementById('completedAt').value;
+    const completedAt = document.getElementById('completedAt').value;
     if (!completedBy || !completedAt) {
         showToast('لطفاً تمام فیلدها را پر کنید.', 'warning');
         return;
     }
-    // تبدیل مقدار datetime-local به فرمت مناسب MySQL (YYYY-MM-DD HH:MM:SS)
-    if (completedAt.length === 16) {
-        completedAt = completedAt.replace('T', ' ') + ':00';
-    }
-    const finalizeBtn = document.querySelector('#finalizeModal .btn-success');
-    const originalText = finalizeBtn.innerHTML;
-    finalizeBtn.disabled = true;
-    finalizeBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> در حال نهایی‌سازی...';
-    fetch('finalize_inventory.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            completed_by: completedBy,
-            completed_at: completedAt
-        })
-    })
-    .then(response => {
-        console.log('Response status:', response.status);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(result => {
-        console.log('Response data:', result);
-        finalizeBtn.disabled = false;
-        finalizeBtn.innerHTML = originalText;
-        if (result.success) {
-            showToast('انبارگردانی با موفقیت نهایی شد.', 'success');
-            setTimeout(() => window.location.href = 'index.php', 1500);
-        } else {
-            showToast('خطا در نهایی کردن انبارگردانی: ' + result.message, 'danger');
-        }
-    })
-    .catch(error => {
-        console.error('Finalize error details:', error);
-        finalizeBtn.disabled = false;
-        finalizeBtn.innerHTML = originalText;
-        showToast('خطا در ارتباط با سرور: ' + error.message, 'danger');
-    });
+    saveAll(true);
 }
 
 // جستجو در جدول

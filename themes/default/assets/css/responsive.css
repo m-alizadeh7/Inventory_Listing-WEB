@@ -1,0 +1,40 @@
+/* Responsive styles */
+
+/* Mobile styles */
+@media (max-width: 767.98px) {
+    .mobile-hidden {
+        display: none !important;
+    }
+    
+    .card-sm-fullwidth {
+        margin-left: -15px;
+        margin-right: -15px;
+        border-radius: 0;
+    }
+    
+    h1, .h1 {
+        font-size: 1.75rem;
+    }
+    
+    h2, .h2 {
+        font-size: 1.5rem;
+    }
+}
+
+/* Tablet styles */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .tablet-hidden {
+        display: none !important;
+    }
+}
+
+/* Desktop styles */
+@media (min-width: 992px) {
+    .desktop-hidden {
+        display: none !important;
+    }
+    
+    .mobile-footer {
+        display: none;
+    }
+}

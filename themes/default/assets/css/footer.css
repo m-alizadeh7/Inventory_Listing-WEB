@@ -1,0 +1,119 @@
+/* Professional Footer Styles */
+
+/* Desktop footer - Compact and modern */
+.footer {
+    margin-top: 2rem !important;
+    padding: 0.75rem 0 !important;
+    background: linear-gradient(90deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    border-top: 1px solid #dee2e6 !important;
+    font-size: 0.85rem;
+}
+
+.footer a {
+    color: #6c757d;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.footer a:hover {
+    color: #495057;
+}
+
+.footer .text-primary {
+    color: #0d6efd !important;
+}
+
+.footer .text-primary:hover {
+    color: #0b5ed7 !important;
+}
+
+/* Sticky mobile footer */
+.mobile-footer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-top: none;
+    padding: 0.5rem 0.5rem;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 1030;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+}
+
+.mobile-footer a {
+    color: rgba(255,255,255,0.8);
+    font-size: 0.85rem;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem 0.3rem;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    min-width: 60px;
+}
+
+.mobile-footer a i {
+    font-size: 1.4rem;
+    margin-bottom: 0.25rem;
+    transition: transform 0.3s ease;
+}
+
+.mobile-footer a div {
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.mobile-footer a:hover,
+.mobile-footer a.active {
+    color: white;
+    background: rgba(255,255,255,0.2);
+    transform: translateY(-3px);
+}
+
+.mobile-footer a:hover i,
+.mobile-footer a.active i {
+    transform: scale(1.2);
+}
+
+/* Desktop footer */
+footer.footer {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+    border-top: none;
+}
+
+footer.footer .container {
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+footer.footer a {
+    color: #ecf0f1;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+footer.footer a:hover {
+    color: #3498db;
+    transform: translateY(-1px);
+}
+
+footer.footer .text-muted {
+    color: #bdc3c7 !important;
+}
+
+/* Make desktop footer sticky to bottom when content is short */
+@media(min-width:992px) {
+    footer.footer.d-none.d-lg-block {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1025;
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+    }
+}

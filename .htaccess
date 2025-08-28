@@ -1,0 +1,73 @@
+# Secure htaccess file for Inventory Management System
+RewriteEngine On
+RewriteBase /mini/Inventory_Listing-WEB/
+
+# Protect configuration files
+<FilesMatch "^(config\.php|\.env|composer\.json|package\.json)$">
+  Order Allow,Deny
+  Deny from all
+</FilesMatch>
+
+# Protect database and log files
+<FilesMatch "\.(sql|log|lock|json|md|ini|bat|sh)$">
+  Order Allow,Deny
+  Deny from all
+</FilesMatch>
+
+# Protect hidden files
+<FilesMatch "^\.">
+  Order Allow,Deny
+  Deny from all
+</FilesMatch>
+
+# Protect theme directories from direct PHP execution
+<FilesMatch "themes/.*\.php$">
+  Order Allow,Deny
+  Deny from all
+</FilesMatch>
+# But allow theme entry points
+<FilesMatch "(header|footer|functions|navigation)\.php$">
+  Order Allow,Deny
+  Allow from all
+</FilesMatch>
+
+# Prevent directory listing
+Options -Indexes
+
+# Prevent access to backup files
+<FilesMatch "~$">
+  Order Allow,Deny
+  Deny from all
+</FilesMatch>
+
+# Set security headers
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-XSS-Protection "1; mode=block"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  Header set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+  Header set Content-Security-Policy "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com 'unsafe-inline'; style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; img-src 'self' data:; font-src 'self' https://cdn.jsdelivr.net; connect-src 'self';"
+</IfModule>
+
+# PHP settings
+<IfModule mod_php.c>
+  php_flag display_errors Off
+  php_flag log_errors On
+  php_value error_log /path/to/error.log
+  php_flag register_globals Off
+  php_flag allow_url_fopen Off
+  php_flag allow_url_include Off
+  php_value max_input_time 60
+  php_value max_execution_time 30
+  php_value upload_max_filesize 10M
+  php_value post_max_size 10M
+  php_value memory_limit 128M
+  php_flag session.cookie_httponly On
+  php_flag session.use_only_cookies On
+</IfModule>
+
+# Redirect to login if not logged in
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]

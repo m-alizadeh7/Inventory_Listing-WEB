@@ -1,0 +1,148 @@
+/* تنظیمات اصلی */
+:root {
+    --primary-color: #667eea;
+    --secondary-color: #764ba2;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #17a2b8;
+    --light-color: #f8f9fa;
+    --dark-color: #343a40;
+    --gray-color: #6c757d;
+}
+
+/* تنظیمات بدنه */
+body {
+    font-family: 'Vazirmatn', Tahoma, Arial, sans-serif;
+}
+
+/* گرادینت اصلی */
+.bg-gradient-primary {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+}
+
+/* کارت‌ها */
+.card {
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    border: none;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* دکمه‌ها */
+.btn {
+    border-radius: 7px;
+    padding: 0.5rem 1.25rem;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+    border: none;
+}
+
+.btn-primary:hover {
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+/* فرم‌ها */
+.form-control {
+    border-radius: 7px;
+    border: 1px solid #e9ecef;
+    padding: 0.6rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* جدول‌ها */
+.table {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+}
+
+/* الرت‌ها */
+.alert {
+    border-radius: 10px;
+    border: none;
+}
+
+/* ناوبری و فوتر */
+.navbar {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.footer {
+    border-top: 1px solid #e9ecef;
+    padding: 1.5rem 0;
+    margin-top: 3rem;
+}
+
+/* لودینگ */
+.loader {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* دشبورد */
+.dashboard-stat {
+    border-radius: 10px;
+    padding: 1.5rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+}
+
+.dashboard-stat i {
+    position: absolute;
+    bottom: -10px;
+    right: 10px;
+    font-size: 4rem;
+    opacity: 0.2;
+}
+
+.dashboard-stat.primary {
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+}
+
+.dashboard-stat.success {
+    background: linear-gradient(45deg, #28a745, #20c997);
+}
+
+.dashboard-stat.warning {
+    background: linear-gradient(45deg, #ffc107, #fd7e14);
+}
+
+.dashboard-stat.danger {
+    background: linear-gradient(45deg, #dc3545, #e83e8c);
+}
+
+/* ریسپانسیو */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 1rem;
+    }
+}

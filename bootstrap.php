@@ -178,3 +178,13 @@ function get_template($template_name) {
     // Load footer
     get_template_part('footer');
 }
+
+// بارگذاری سیستم بررسی لایسنس
+if (file_exists(dirname(__FILE__) . "/core/license/license_check.php")) {
+    require_once dirname(__FILE__) . "/core/license/license_check.php";
+    
+    // اجرای بررسی لایسنس
+    if (function_exists("enforce_license")) {
+        enforce_license();
+    }
+}

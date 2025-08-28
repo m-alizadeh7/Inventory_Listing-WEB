@@ -146,47 +146,6 @@ if (isset($conn) || function_exists('get_db_connection')) {
     }
 }
 
-// Helper: get theme file path with fallback to core
-function theme_file($relative) {
-    $themeFile = ACTIVE_THEME_PATH . '/' . ltrim($relative, '/');
-    if (file_exists($themeFile)) return $themeFile;
-    // fallback: look into /includes/theme_defaults/
-    $fallback = __DIR__ . '/includes/theme_defaults/' . ltrim($relative, '/');
-    return $fallback;
-}
-
-// Load a template part from the active theme
-function get_template_part($slug) {
-    $file = theme_file($slug . '.php');
-    if (file_exists($file)) {
-        include $file;
-    }
-}
-
-// Get theme asset URL
-function get_theme_asset_url($path) {
-    $theme_url = 'themes/' . ACTIVE_THEME;
-    return $theme_url . '/' . ltrim($path, '/');
-}
-
-// Load full page template with header and footer
-function get_template($template_name) {
-    // Get business info for header
-    global $business_info;
-    if (!isset($business_info)) {
-        $business_info = getBusinessInfo();
-    }
-    
-    // Load header
-    get_template_part('header');
-    
-    // Load template content
-    get_template_part('templates/' . $template_name);
-    
-    // Load footer
-    get_template_part('footer');
-}
-
 // بارگذاری سیستم بررسی لایسنس
 if (file_exists(dirname(__FILE__) . "/core/license/license_check.php")) {
     require_once dirname(__FILE__) . "/core/license/license_check.php";

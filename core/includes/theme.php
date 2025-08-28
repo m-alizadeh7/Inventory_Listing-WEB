@@ -4,6 +4,7 @@
  */
 
 // Initialize theme system
+if (!function_exists('init_theme')) {
 function init_theme() {
     // Theme base path
     if (!defined('THEMES_PATH')) {
@@ -33,8 +34,10 @@ function init_theme() {
         require_once $theme_functions;
     }
 }
+}
 
 // Helper: get theme file path with fallback to core
+if (!function_exists('theme_file')) {
 function theme_file($relative) {
     $themeFile = ACTIVE_THEME_PATH . '/' . ltrim($relative, '/');
     if (file_exists($themeFile)) return $themeFile;
@@ -42,24 +45,30 @@ function theme_file($relative) {
     $fallback = __DIR__ . '/../../includes/theme_defaults/' . ltrim($relative, '/');
     return $fallback;
 }
+}
 
 // Load header
+if (!function_exists('get_header')) {
 function get_header() {
     $header_file = theme_file('header.php');
     if (file_exists($header_file)) {
         include $header_file;
     }
 }
+}
 
 // Load footer  
+if (!function_exists('get_footer')) {
 function get_footer() {
     $footer_file = theme_file('footer.php');
     if (file_exists($footer_file)) {
         include $footer_file;
     }
 }
+}
 
 // Load complete template
+if (!function_exists('get_template')) {
 function get_template($template_name) {
     // Get business info for header
     global $business_info;
@@ -81,68 +90,50 @@ function get_template($template_name) {
     // Load footer
     get_footer();
 }
+}
 
 // Load a template part from the active theme
+if (!function_exists('get_template_part')) {
 function get_template_part($slug) {
     $file = theme_file($slug . '.php');
     if (file_exists($file)) {
         include $file;
     }
 }
+}
 
 // Get theme asset URL
+if (!function_exists('get_theme_asset_url')) {
 function get_theme_asset_url($path) {
     $theme_url = 'themes/' . ACTIVE_THEME;
     return $theme_url . '/' . ltrim($path, '/');
 }
+}
 
-// Flash message functions
+// Set flash message to display on next page load
+if (!function_exists('set_flash_message')) {
 function set_flash_message($message, $type = 'info') {
-    // Try to ensure session is started; if headers already sent we cannot start one here
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-        if (!headers_sent()) {
-            session_start();
-        } else {
-            // Unable to start session; skip storing flash to avoid warnings
-            return false;
-        }
-    }
-    $_SESSION['flash_message'] = $message;
-    $_SESSION['flash_type'] = $type;
+    $_SESSION['flash_message'] = [
+        'message' => $message,
+        'type' => $type
+    ];
+}
 }
 
+// Get and clear flash message
+if (!function_exists('get_flash_message')) {
 function get_flash_message() {
-    // If session isn't active and we can't start one (headers sent), return null
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-        if (!headers_sent()) {
-            session_start();
-        } else {
-            return null;
-        }
-    }
-
-    if (isset($_SESSION['flash_message'])) {
-        $message = $_SESSION['flash_message'];
-        $type = $_SESSION['flash_type'] ?? 'info';
-
-        unset($_SESSION['flash_message']);
-        unset($_SESSION['flash_type']);
-
-        return array('message' => $message, 'type' => $type);
-    }
-
-    return null;
+    $message = isset($_SESSION['flash_message']) ? $_SESSION['flash_message'] : null;
+    unset($_SESSION['flash_message']);
+    return $message;
+}
 }
 
-// Render flash messages in templates (bootstrap alert)
-function display_flash_messages() {
-    // Do not attempt to start a session if headers already sent
-    if (session_status() !== PHP_SESSION_ACTIVE && headers_sent()) {
+// Display flash message if exists
+if (!function_exists('show_flash_message')) {
+function show_flash_message() {
+    if (!function_exists('get_flash_message')) {
         return;
-    }
-    // ensure session is active otherwise get_flash_message will start one
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-        session_start();
     }
     $fm = get_flash_message();
     if ($fm && !empty($fm['message'])) {
@@ -152,4 +143,5 @@ function display_flash_messages() {
         echo "<button type=\"button\" class=\"btn-close\" data-bs-dismiss=\"alert\"></button>";
         echo "</div>";
     }
+}
 }

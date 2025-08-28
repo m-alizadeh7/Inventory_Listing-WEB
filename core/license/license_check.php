@@ -7,40 +7,6 @@
 require_once dirname(__FILE__) . '/LicenseManager.php';
 
 /**
- * بررسی آیا کاربر ادمین است
- * @return bool آیا کاربر ادمین است
- */
-function is_admin() {
-    // بررسی وجود سشن ادمین
-    if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true) {
-        return true;
-    }
-    
-    // بررسی وجود سشن نقش کاربر
-    if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin') {
-        return true;
-    }
-    
-    return false;
-}
-
-/**
- * دریافت URL پنل ادمین
- * @return string آدرس پنل ادمین
- */
-function get_admin_url() {
-    $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
-    $admin_path = dirname($_SERVER['PHP_SELF']);
-    
-    // اطمینان از پایان یافتن مسیر با '/'
-    if (substr($admin_path, -1) !== '/') {
-        $admin_path .= '/';
-    }
-    
-    return $base_url . $admin_path . 'admin/';
-}
-
-/**
  * بررسی لایسنس برنامه
  * @return bool آیا لایسنس معتبر است
  */

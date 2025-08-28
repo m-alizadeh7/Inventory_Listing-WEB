@@ -1,4 +1,9 @@
 <?php
+// Start session
+if (!session_id()) {
+    session_start();
+}
+
 // Bootstrap for theme support
 // Theme base path
 define('THEMES_PATH', __DIR__ . '/themes');
@@ -57,6 +62,9 @@ if (!isset($conn) || !$conn) {
 
 // Load security manager
 require_once __DIR__ . '/core/includes/SecurityManager.php';
+
+// Load theme functions
+require_once __DIR__ . '/core/includes/theme.php';
 
 // Initialize global security manager
 global $security;

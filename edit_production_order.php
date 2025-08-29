@@ -136,6 +136,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_device'])) {
             $stmt->close();
         }
     }
+}
+
 // Handle adding new device to order
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_device'])) {
     $device_id = (int)($_POST['device_id'] ?? 0);

@@ -2,8 +2,8 @@
 // Database configuration
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
-define('DB_PASS', '123');
-define('DB_NAME', 'php1');
+define('DB_PASS', '');
+define('DB_NAME', 'portal');
 
 // System version
 define('SYSTEM_VERSION', '1.0.0');

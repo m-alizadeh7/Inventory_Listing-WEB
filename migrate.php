@@ -5,7 +5,7 @@ try {
     $tempConn = new mysqli(
         $_ENV['DB_HOST'] ?? 'localhost',
         $_ENV['DB_USER'] ?? 'root', 
-        $_ENV['DB_PASS'] ?? '123'
+        $_ENV['DB_PASS'] ?? ''
     );
     
     if ($tempConn->connect_error) {

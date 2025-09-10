@@ -53,6 +53,7 @@ function theme_enqueue_scripts() {
  * @param string $slug The slug name for the template part
  * @param string $name Optional. The name of the specialized template
  */
+if (!function_exists('get_theme_part')) {
 function get_theme_part($slug, $args = null) {
     $template = '';
     
@@ -70,6 +71,7 @@ function get_theme_part($slug, $args = null) {
     if ($template) {
         include $template;
     }
+}
 }
 
 /**

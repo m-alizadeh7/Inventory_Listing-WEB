@@ -12,6 +12,9 @@ if (!session_id()) {
 // Include bootstrap for database and theme support
 require_once __DIR__ . '/bootstrap.php';
 
+// Force SPA mode for AJAX requests
+$_GET['spa_mode'] = '1';
+
 // Check if it's an AJAX request
 if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) != 'xmlhttprequest') {
     http_response_code(403);

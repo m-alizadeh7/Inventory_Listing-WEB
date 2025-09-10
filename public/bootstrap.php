@@ -68,6 +68,37 @@ if (!isset($conn) || !$conn) {
 // Load security manager
 require_once __DIR__ . '/../app/core/includes/SecurityManager.php';
 
+// SPA Mode Detection and Setup - MUST happen before theme.php is loaded
+if (isset($_GET['spa_mode']) || isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+    // Override theme functions for SPA mode
+    if (!function_exists('get_header')) {
+        function get_header() {
+            // Skip header in SPA mode
+        }
+    }
+
+    if (!function_exists('get_footer')) {
+        function get_footer() {
+            // Skip footer in SPA mode
+        }
+    }
+
+    if (!function_exists('get_theme_part')) {
+        function get_theme_part($part) {
+            // Skip navigation and footer components in SPA mode
+            if (in_array($part, ['navigation', 'mobile-footer', 'desktop-footer'])) {
+                return;
+            }
+
+            // For other parts, load normally
+            $theme_part_path = ACTIVE_THEME_PATH . '/template-parts/' . $part . '.php';
+            if (file_exists($theme_part_path)) {
+                include $theme_part_path;
+            }
+        }
+    }
+}
+
 // Load theme functions
 require_once __DIR__ . '/../app/core/includes/theme.php';
 
@@ -113,9 +144,9 @@ $active = getSetting('active_theme', 'default');
 define('ACTIVE_THEME', $active);
 define('ACTIVE_THEME_PATH', THEMES_PATH . '/' . ACTIVE_THEME);
 
-// Load theme functions
+// Load theme functions (skip in SPA mode to avoid function redeclaration)
 $theme_functions = ACTIVE_THEME_PATH . '/functions.php';
-if (file_exists($theme_functions)) {
+if (file_exists($theme_functions) && !isset($_GET['spa_mode']) && !isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
     require_once $theme_functions;
 }
 
@@ -158,36 +189,5 @@ if (file_exists(dirname(__FILE__) . "/../app/core/license/license_check.php")) {
     // اجرای بررسی لایسنس
     if (function_exists("enforce_license")) {
         enforce_license();
-    }
-}
-
-// SPA Mode Detection and Setup
-if (isset($_GET['spa_mode']) || isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-    // Override theme functions for SPA mode
-    if (!function_exists('get_header')) {
-        function get_header() {
-            // Skip header in SPA mode
-        }
-    }
-
-    if (!function_exists('get_footer')) {
-        function get_footer() {
-            // Skip footer in SPA mode
-        }
-    }
-
-    if (!function_exists('get_theme_part')) {
-        function get_theme_part($part) {
-            // Skip navigation and footer components in SPA mode
-            if (in_array($part, ['navigation', 'mobile-footer', 'desktop-footer'])) {
-                return;
-            }
-
-            // For other parts, load normally
-            $theme_part_path = ACTIVE_THEME_PATH . '/template-parts/' . $part . '.php';
-            if (file_exists($theme_part_path)) {
-                include $theme_part_path;
-            }
-        }
     }
 }

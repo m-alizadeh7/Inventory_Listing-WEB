@@ -1,201 +1,204 @@
 <?php
 /**
- *    'breadcrumbs' => array(
-        array('text' => 'خانه', 'url' => '../index.php'),
-        array('text' => 'گروه‌های کالا')
-    ),entory Categories Template
+ * Inventory Categories Template with sidebar layout
  * Professional management for product categories
  */
 
 // Make database connection available
 global $conn;
 
-// Page header data
-$header_args = array(
-    'title' => 'مدیریت گروه‌های کالا',
-    'subtitle' => 'ایجاد و مدیریت گروه‌بندی کالاها برای شمارش و گزارش‌گیری دسته‌ای',
-    'icon' => 'bi bi-collection',
-    'breadcrumbs' => array(
-        array('text' => 'خانه', 'url' => '../index.php'),
-        array('text' => 'مدیریت گروه‌های کالا')
-    ),
-    'actions' => array(
-        array(
-            'text' => 'شمارش دسته‌ای',
-            'url' => 'physical_count.php',
-            'class' => 'btn-primary',
-            'icon' => 'bi bi-calculator'
-        ),
-        array(
-            'text' => 'بازگشت',
-            'url' => '../index.php',
-            'class' => 'btn-secondary',
-            'icon' => 'bi bi-house'
-        )
-    )
-);
-
-get_theme_part('page-header', $header_args);
-
-// Load alerts
+// Load alerts component
 get_theme_part('alerts');
 
-// Statistics cards
-$total_categories = count($categories);
-$total_items = array_sum(array_column($categories, 'items_count'));
-$empty_categories = count(array_filter($categories, function($cat) { return $cat['items_count'] == 0; }));
-
-$stats = array(
-    array(
-        'icon' => 'bi bi-collection',
-        'value' => number_format($total_categories),
-        'label' => 'کل گروه‌ها',
-        'icon_color' => 'text-primary'
-    ),
-    array(
-        'icon' => 'bi bi-boxes',
-        'value' => number_format($total_items),
-        'label' => 'کل کالاها',
-        'icon_color' => 'text-success'
-    ),
-    array(
-        'icon' => 'bi bi-exclamation-circle',
-        'value' => number_format($empty_categories),
-        'label' => 'گروه‌های خالی',
-        'icon_color' => 'text-warning'
-    ),
-    array(
-        'icon' => 'bi bi-percent',
-        'value' => $total_categories > 0 ? number_format(($total_categories - $empty_categories) / $total_categories * 100, 1) . '%' : '0%',
-        'label' => 'پر بودن',
-        'icon_color' => 'text-info'
-    )
-);
-
-include ACTIVE_THEME_PATH . '/template-parts/stats-cards.php';
+// Check for pending migrations
+checkMigrationsPrompt();
 ?>
 
-<div class="row">
-    <!-- Add Category Form -->
-    <div class="col-lg-4">
-        <div class="card form-card fade-in hover-lift">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-plus-lg me-2"></i>افزودن گروه جدید
-                </h5>
+<div class="dashboard-layout">
+    <!-- Sidebar Navigation -->
+    <?php get_theme_part('sidebar'); ?>
+
+    <!-- Main Content -->
+    <div class="dashboard-main">
+        <div class="dashboard-content">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h2 mb-1">
+                        <i class="bi bi-collection text-info me-2"></i>
+                        مدیریت گروه‌های کالا
+                    </h1>
+                    <p class="text-muted mb-0">ایجاد و مدیریت گروه‌بندی کالاها برای شمارش و گزارش‌گیری دسته‌ای</p>
+                </div>
+                <div>
+                    <a href="physical_count.php" class="btn btn-primary me-2">
+                        <i class="bi bi-calculator"></i>
+                        شمارش دسته‌ای
+                    </a>
+                    <a href="../index.php" class="btn btn-outline-secondary">
+                        <i class="bi bi-house"></i>
+                        بازگشت به داشبرد
+                    </a>
+                </div>
             </div>
-            <div class="card-body">
-                <form method="POST">
-                    <div class="mb-3">
-                        <label for="category_name" class="form-label">نام گروه</label>
-                        <input type="text" name="category_name" id="category_name" 
-                               class="form-control" required maxlength="100"
-                               placeholder="مثال: قطعات الکترونیکی">
+
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="../index.php">
+                            <i class="bi bi-house"></i>
+                            داشبرد
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">گروه‌های کالا</li>
+                </ol>
+            </nav>
+
+            <!-- Statistics Cards -->
+            <?php
+            $total_categories = count($categories);
+            $total_items = array_sum(array_column($categories, 'items_count'));
+            $empty_categories = count(array_filter($categories, function($cat) { return $cat['items_count'] == 0; }));
+
+            $stats = array(
+                array(
+                    'icon' => 'bi bi-collection',
+                    'value' => number_format($total_categories),
+                    'label' => 'کل گروه‌ها',
+                    'bg_class' => 'bg-primary',
+                    'text_class' => 'text-white'
+                ),
+                array(
+                    'icon' => 'bi bi-box-seam',
+                    'value' => number_format($total_items),
+                    'label' => 'کل کالاها',
+                    'bg_class' => 'bg-success',
+                    'text_class' => 'text-white'
+                ),
+                array(
+                    'icon' => 'bi bi-dash-circle',
+                    'value' => number_format($empty_categories),
+                    'label' => 'گروه‌های خالی',
+                    'bg_class' => 'bg-warning',
+                    'text_class' => 'text-dark'
+                )
+            );
+            ?>
+
+            <div class="dashboard-cards mb-4">
+                <?php foreach ($stats as $stat): ?>
+                <div class="dashboard-card">
+                    <div class="card-icon <?php echo $stat['bg_class']; ?> <?php echo $stat['text_class']; ?>">
+                        <i class="<?php echo $stat['icon']; ?>"></i>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label for="category_description" class="form-label">توضیحات</label>
-                        <textarea name="category_description" id="category_description" 
-                                  class="form-control" rows="3"
-                                  placeholder="توضیحات اختیاری در مورد این گروه..."></textarea>
-                    </div>
-                    
-                    <div class="d-grid">
-                        <button type="submit" name="add_category" class="btn btn-primary">
-                            <i class="bi bi-check-lg me-2"></i>افزودن گروه
-                        </button>
-                    </div>
-                </form>
+                    <div class="card-value"><?php echo $stat['value']; ?></div>
+                    <div class="card-label"><?php echo $stat['label']; ?></div>
+                </div>
+                <?php endforeach; ?>
             </div>
-        </div>
-    </div>
-    
-    <!-- Categories List -->
-    <div class="col-lg-8">
-        <div class="card fade-in-delay-1 hover-lift">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-list-ul me-2"></i>لیست گروه‌های کالا
-                </h5>
-            </div>
-            <div class="card-body p-0">
-                <?php if (empty($categories)): ?>
-                    <div class="text-center py-5">
-                        <i class="bi bi-collection display-4 text-muted mb-3"></i>
-                        <h5 class="text-muted">هیچ گروهی تعریف نشده است</h5>
-                        <p class="text-muted">برای شروع، یک گروه کالا جدید ایجاد کنید</p>
-                    </div>
-                <?php else: ?>
-                    <div class="table-responsive">
-                        <?php enhanced_table_start('categoriesTable', 'گزارش گروه‌های کالا', 'سیستم مدیریت انبار'); ?>
-                            <thead class="table-light">
-                                <tr>
-                                    <th>نام گروه</th>
-                                    <th>توضیحات</th>
-                                    <th>تعداد کالا</th>
-                                    <th>تاریخ ایجاد</th>
-                                    <th width="150">عملیات</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($categories as $index => $category): ?>
-                                    <tr class="fade-in" style="animation-delay: <?php echo $index * 0.05; ?>s;">
+
+            <!-- Alerts -->
+            <?php get_theme_part('alerts'); ?>
+
+            <!-- Categories Management -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-list-ul me-2"></i>
+                        لیست گروه‌های کالا
+                    </h5>
+                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                        <i class="bi bi-plus-lg"></i>
+                        افزودن گروه جدید
+                    </button>
+                </div>
+                <div class="card-body">
+                    <?php if (empty($categories)): ?>
+                        <div class="text-center py-5">
+                            <i class="bi bi-collection fs-1 text-muted mb-3"></i>
+                            <h5 class="text-muted">هیچ گروه کالایی یافت نشد</h5>
+                            <p class="text-muted">برای شروع، گروه کالایی جدید ایجاد کنید</p>
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                                <i class="bi bi-plus-lg"></i>
+                                ایجاد گروه اول
+                            </button>
+                        </div>
+                    <?php else: ?>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>نام گروه</th>
+                                        <th>توضیحات</th>
+                                        <th>تعداد کالا</th>
+                                        <th>عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($categories as $index => $category): ?>
+                                    <tr>
+                                        <td><?php echo $index + 1; ?></td>
                                         <td>
-                                            <strong class="text-primary">
-                                                <?php echo htmlspecialchars($category['category_name']); ?>
-                                            </strong>
+                                            <strong><?php echo htmlspecialchars($category['category_name']); ?></strong>
                                         </td>
+                                        <td><?php echo htmlspecialchars($category['category_description'] ?? ''); ?></td>
                                         <td>
-                                            <?php if (!empty($category['category_description'])): ?>
-                                                <span class="text-truncate d-inline-block" style="max-width: 200px;" 
-                                                      title="<?php echo htmlspecialchars($category['category_description']); ?>">
-                                                    <?php echo htmlspecialchars($category['category_description']); ?>
-                                                </span>
-                                            <?php else: ?>
-                                                <span class="text-muted">-</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
-                                            <?php if ($category['items_count'] > 0): ?>
-                                                <span class="badge bg-success">
-                                                    <?php echo number_format($category['items_count']); ?> کالا
-                                                </span>
-                                            <?php else: ?>
-                                                <span class="badge bg-light text-dark">خالی</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
-                                            <small class="text-muted">
-                                                <?php echo !empty($category['created_at']) ? gregorianToJalali($category['created_at']) : '-'; ?>
-                                            </small>
+                                            <span class="badge bg-primary"><?php echo $category['items_count']; ?></span>
                                         </td>
                                         <td>
                                             <div class="btn-group btn-group-sm">
-                                                <button type="button" class="btn btn-outline-primary" 
-                                                        onclick="editCategory(<?php echo $category['category_id']; ?>)"
-                                                        title="ویرایش گروه">
+                                                <button type="button" class="btn btn-outline-primary" onclick="editCategory(<?php echo $category['category_id']; ?>, '<?php echo addslashes($category['category_name']); ?>', '<?php echo addslashes($category['category_description'] ?? ''); ?>')">
                                                     <i class="bi bi-pencil"></i>
                                                 </button>
-                                                <a href="physical_count.php?category_id=<?php echo $category['category_id']; ?>" 
-                                                   class="btn btn-outline-info" title="شمارش این گروه">
-                                                    <i class="bi bi-calculator"></i>
-                                                </a>
-                                                <?php if ($category['items_count'] == 0): ?>
-                                                    <button type="button" class="btn btn-outline-danger" 
-                                                            onclick="deleteCategory(<?php echo $category['category_id']; ?>)"
-                                                            title="حذف گروه">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-                                                <?php endif; ?>
+                                                <button type="button" class="btn btn-outline-danger" onclick="deleteCategory(<?php echo $category['category_id']; ?>, '<?php echo addslashes($category['category_name']); ?>')">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        <?php enhanced_table_end(); ?>
-                    </div>
-                <?php endif; ?>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php endif; ?>
+                </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Category Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-plus-lg me-2"></i>
+                    افزودن گروه کالایی جدید
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="category_name" class="form-label">نام گروه <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="category_name" name="category_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="category_description" class="form-label">توضیحات</label>
+                        <textarea class="form-control" id="category_description" name="category_description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                    <button type="submit" name="add_category" class="btn btn-primary">
+                        <i class="bi bi-plus-lg"></i>
+                        افزودن گروه
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -206,30 +209,28 @@ include ACTIVE_THEME_PATH . '/template-parts/stats-cards.php';
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="bi bi-pencil me-2"></i>ویرایش گروه کالا
+                    <i class="bi bi-pencil me-2"></i>
+                    ویرایش گروه کالایی
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="POST" id="editCategoryForm">
+            <form method="post">
                 <div class="modal-body">
-                    <input type="hidden" name="category_id" id="edit_category_id">
-                    
+                    <input type="hidden" id="edit_category_id" name="category_id">
                     <div class="mb-3">
-                        <label for="edit_category_name" class="form-label">نام گروه</label>
-                        <input type="text" name="category_name" id="edit_category_name" 
-                               class="form-control" required maxlength="100">
+                        <label for="edit_category_name" class="form-label">نام گروه <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="edit_category_name" name="category_name" required>
                     </div>
-                    
                     <div class="mb-3">
                         <label for="edit_category_description" class="form-label">توضیحات</label>
-                        <textarea name="category_description" id="edit_category_description" 
-                                  class="form-control" rows="3"></textarea>
+                        <textarea class="form-control" id="edit_category_description" name="category_description" rows="3"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
-                    <button type="submit" name="edit_category" class="btn btn-primary">
-                        <i class="bi bi-check-lg me-1"></i>ذخیره تغییرات
+                    <button type="submit" name="update_category" class="btn btn-primary">
+                        <i class="bi bi-save"></i>
+                        ذخیره تغییرات
                     </button>
                 </div>
             </form>
@@ -237,52 +238,51 @@ include ACTIVE_THEME_PATH . '/template-parts/stats-cards.php';
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteCategoryModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title text-danger">
-                    <i class="bi bi-exclamation-triangle me-2"></i>تأیید حذف
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>آیا از حذف این گروه کالا اطمینان دارید؟</p>
-                <p class="text-muted small">این عمل قابل بازگشت نیست.</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
-                <form method="POST" style="display: inline;">
-                    <input type="hidden" name="category_id" id="delete_category_id">
-                    <button type="submit" name="delete_category" class="btn btn-danger">
-                        <i class="bi bi-trash me-1"></i>حذف
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- Mobile Sidebar Toggle -->
+<button class="sidebar-toggle d-lg-none" onclick="toggleSidebar()">
+    <i class="bi bi-list"></i>
+</button>
+
+<!-- Mobile Overlay -->
+<div class="sidebar-overlay d-lg-none" onclick="toggleSidebar()"></div>
 
 <script>
-// Categories data for JavaScript operations
-const categoriesData = <?php echo json_encode($categories); ?>;
+function toggleSidebar() {
+    const sidebar = document.querySelector('.dashboard-sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
 
-function editCategory(categoryId) {
-    const category = categoriesData.find(c => c.category_id == categoryId);
-    if (category) {
-        document.getElementById('edit_category_id').value = categoryId;
-        document.getElementById('edit_category_name').value = category.category_name;
-        document.getElementById('edit_category_description').value = category.category_description || '';
-        
-        const modal = new bootstrap.Modal(document.getElementById('editCategoryModal'));
-        modal.show();
-    }
+    sidebar.classList.toggle('show');
+    overlay.classList.toggle('show');
 }
 
-function deleteCategory(categoryId) {
-    document.getElementById('delete_category_id').value = categoryId;
-    const modal = new bootstrap.Modal(document.getElementById('deleteCategoryModal'));
+// Close sidebar when clicking on a link (mobile)
+document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', () => {
+        if (window.innerWidth < 992) {
+            toggleSidebar();
+        }
+    });
+});
+
+function editCategory(id, name, description) {
+    document.getElementById('edit_category_id').value = id;
+    document.getElementById('edit_category_name').value = name;
+    document.getElementById('edit_category_description').value = description;
+
+    const modal = new bootstrap.Modal(document.getElementById('editCategoryModal'));
     modal.show();
+}
+
+function deleteCategory(id, name) {
+    if (confirm(`آیا مطمئن هستید که می‌خواهید گروه "${name}" را حذف کنید؟`)) {
+        const form = document.createElement('form');
+        form.method = 'post';
+        form.innerHTML = `
+            <input type="hidden" name="category_id" value="${id}">
+            <input type="hidden" name="delete_category" value="1">
+        `;
+        document.body.appendChild(form);
+        form.submit();
+    }
 }
 </script>

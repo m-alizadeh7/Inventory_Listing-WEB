@@ -1,6 +1,6 @@
 <?php
 /**
- * Professional Home template for default theme. 
+ * Professional Home template for default theme with sidebar layout.
  * Expects $business_info to be available.
  */
 
@@ -11,250 +11,204 @@ global $conn;
 get_theme_part('alerts');
 
 // Check for pending migrations
-checkMigrationsPrompt(); 
-
-// Page header data
-$header_args = array(
-    'title' => 'سیستم مدیریت انبار ' . ($business_info['business_name'] ?? ''),
-    'subtitle' => 'مدیریت هوشمند موجودی، انبارگردانی و تولید',
-    'icon' => 'bi bi-boxes'
-);
-
-get_theme_part('page-header', $header_args);
+checkMigrationsPrompt();
 ?>
 
-<div class="home-dashboard">
-    <!-- Dashboard Statistics -->
-    <?php
-    // Get dashboard statistics
-    $inventory_count = $conn->query("SELECT COUNT(*) as count FROM inventory")->fetch_assoc()['count'] ?? 0;
-    $devices_count = $conn->query("SELECT COUNT(*) as count FROM devices")->fetch_assoc()['count'] ?? 0;
-    $orders_count = $conn->query("SELECT COUNT(*) as count FROM production_orders")->fetch_assoc()['count'] ?? 0;
-    $pending_orders = $conn->query("SELECT COUNT(*) as count FROM production_orders WHERE status = 'pending'")->fetch_assoc()['count'] ?? 0;
-    
-    $stats = array(
-        array(
-            'icon' => 'bi bi-box-seam',
-            'value' => number_format($inventory_count),
-            'label' => 'کالاهای موجود',
-            'icon_color' => 'text-primary'
-        ),
-        array(
-            'icon' => 'bi bi-hdd-stack',
-            'value' => number_format($devices_count),
-            'label' => 'دستگاه‌ها',
-            'icon_color' => 'text-info'
-        ),
-        array(
-            'icon' => 'bi bi-list-check',
-            'value' => number_format($orders_count),
-            'label' => 'سفارشات تولید',
-            'icon_color' => 'text-success'
-        ),
-        array(
-            'icon' => 'bi bi-clock-history',
-            'value' => number_format($pending_orders),
-            'label' => 'سفارشات در انتظار',
-            'icon_color' => 'text-warning'
-        )
-    );
-    
-    include ACTIVE_THEME_PATH . '/template-parts/stats-cards.php';
-    ?>
+<div class="dashboard-layout">
+    <!-- Sidebar Navigation -->
+    <?php get_theme_part('sidebar'); ?>
 
-    <!-- Inventory Management Section -->
-    <section class="mb-5 fade-in-delay-1">
-        <h2 class="section-title">
-            <i class="bi bi-box-seam me-2"></i>
-            مدیریت انبار
-        </h2>
-        <p class="text-muted mb-4">مدیریت موجودی و انبارگردانی‌های سیستم</p>
-        
-        <div class="row g-4">
-            <?php 
-            // Inventory management cards
-            $inventory_cards = array(
+    <!-- Main Content -->
+    <div class="dashboard-main">
+        <div class="dashboard-content">
+            <!-- Welcome Section -->
+            <div class="welcome-section">
+                <h1 class="welcome-title">
+                    <i class="bi bi-house-door"></i>
+                    <?php echo htmlspecialchars($business_info['business_name'] ?? 'سیستم مدیریت انبار'); ?>
+                </h1>
+                <p class="welcome-subtitle">مدیریت هوشمند موجودی، انبارگردانی و تولید</p>
+            </div>
+
+            <!-- Dashboard Statistics -->
+            <?php
+            // Get dashboard statistics
+            $inventory_count = $conn->query("SELECT COUNT(*) as count FROM inventory")->fetch_assoc()['count'] ?? 0;
+            $devices_count = $conn->query("SELECT COUNT(*) as count FROM devices")->fetch_assoc()['count'] ?? 0;
+            $orders_count = $conn->query("SELECT COUNT(*) as count FROM production_orders")->fetch_assoc()['count'] ?? 0;
+            $pending_orders = $conn->query("SELECT COUNT(*) as count FROM production_orders WHERE status = 'pending'")->fetch_assoc()['count'] ?? 0;
+
+            $stats = array(
                 array(
-                    'title' => 'مدیریت موجودی انبار',
                     'icon' => 'bi-box-seam',
-                    'text' => 'جستجو، مشاهده و مدیریت موجودی کالاها با امکانات پیشرفته.',
-                    'link' => 'public/inventory_records.php',
-                    'link_text' => 'مشاهده موجودی',
-                    'icon_bg' => 'bg-primary bg-opacity-10',
-                    'icon_color' => 'text-primary',
-                    'button_class' => 'btn-primary'
+                    'value' => number_format($inventory_count),
+                    'label' => 'کالاهای موجود',
+                    'bg_class' => 'bg-primary',
+                    'text_class' => 'text-white'
                 ),
                 array(
-                    'title' => 'گروه‌های کالا',
-                    'icon' => 'bi-tags',
-                    'text' => 'مدیریت گروه‌بندی کالاها برای سازماندهی بهتر انبار.',
-                    'link' => 'public/inventory_categories.php',
-                    'link_text' => 'مدیریت گروه‌ها',
-                    'icon_bg' => 'bg-info bg-opacity-10',
-                    'icon_color' => 'text-info',
-                    'button_class' => 'btn-info'
-                ),
-                array(
-                    'title' => 'شمارش فیزیکی',
-                    'icon' => 'bi-clipboard-check',
-                    'text' => 'انجام شمارش فیزیکی انبار با امکان شمارش گروهی یا کامل.',
-                    'link' => 'public/physical_count.php',
-                    'link_text' => 'شمارش فیزیکی',
-                    'icon_bg' => 'bg-success bg-opacity-10',
-                    'icon_color' => 'text-success',
-                    'button_class' => 'btn-success'
-                ),
-                array(
-                    'title' => 'خروج موردی کالا',
-                    'icon' => 'bi-box-arrow-right',
-                    'text' => 'ثبت خروج موردی کالاها از انبار با ذکر دلیل و مسئول.',
-                    'link' => 'public/manual_withdrawals.php',
-                    'link_text' => 'خروج موردی',
-                    'icon_bg' => 'bg-warning bg-opacity-10',
-                    'icon_color' => 'text-warning',
-                    'button_class' => 'btn-warning'
-                ),
-                array(
-                    'title' => 'یادداشت‌های اضطراری',
-                    'icon' => 'bi-exclamation-triangle',
-                    'text' => 'ثبت و مدیریت یادداشت‌های اضطراری و هشدارهای انبار.',
-                    'link' => 'public/emergency_notes.php',
-                    'link_text' => 'یادداشت‌ها',
-                    'icon_bg' => 'bg-danger bg-opacity-10',
-                    'icon_color' => 'text-danger',
-                    'button_class' => 'btn-danger'
-                ),
-                array(
-                    'title' => 'انبارگردانی جدید',
-                    'icon' => 'bi-plus-circle',
-                    'text' => 'شروع یک انبارگردانی جدید برای ثبت موجودی‌ها و کنترل دقیق انبار.',
-                    'link' => 'public/new_inventory.php',
-                    'link_text' => 'انبارگردانی جدید',
-                    'icon_bg' => 'bg-secondary bg-opacity-10',
-                    'icon_color' => 'text-secondary',
-                    'button_class' => 'btn-secondary'
-                )
-            );
-            
-            // Render inventory cards
-            foreach ($inventory_cards as $card) {
-                the_dashboard_card($card);
-            }
-            ?>
-        </div>
-    </section>
-
-    <!-- Production Management Section -->
-    <section class="mb-5 fade-in-delay-2">
-        <h2 class="section-title">
-            <i class="bi bi-gear-fill me-2"></i>
-            مدیریت تولید
-        </h2>
-        <p class="text-muted mb-4">ثبت و پیگیری سفارشات تولید و مدیریت دستگاه‌ها</p>
-        
-        <div class="row g-4">
-            <?php 
-            // Production management cards
-            $production_cards = array(
-                array(
-                    'title' => 'ثبت سفارش تولید',
-                    'icon' => 'bi-plus-square',
-                    'text' => 'ایجاد سفارش جدید برای تولید محصولات با مدیریت قطعات.',
-                    'link' => 'public/new_production_order.php',
-                    'link_text' => 'ثبت سفارش جدید',
-                    'icon_bg' => 'bg-warning bg-opacity-10',
-                    'icon_color' => 'text-warning',
-                    'button_class' => 'btn-warning'
-                ),
-                array(
-                    'title' => 'مدیریت سفارشات تولید',
-                    'icon' => 'bi-list-check',
-                    'text' => 'مشاهده، ویرایش و پیگیری وضعیت سفارشات تولید.',
-                    'link' => 'public/production_orders.php',
-                    'link_text' => 'مدیریت سفارشات',
-                    'icon_bg' => 'bg-danger bg-opacity-10',
-                    'icon_color' => 'text-danger',
-                    'button_class' => 'btn-danger'
-                ),
-                array(
-                    'title' => 'دستگاه‌ها و BOM',
                     'icon' => 'bi-hdd-stack',
-                    'text' => 'مدیریت لیست دستگاه‌ها، قطعات و ساختار محصولات.',
-                    'link' => 'public/devices.php',
-                    'link_text' => 'مدیریت دستگاه‌ها',
-                    'icon_bg' => 'bg-secondary bg-opacity-10',
-                    'icon_color' => 'text-secondary',
-                    'button_class' => 'btn-secondary'
+                    'value' => number_format($devices_count),
+                    'label' => 'دستگاه‌ها',
+                    'bg_class' => 'bg-info',
+                    'text_class' => 'text-white'
+                ),
+                array(
+                    'icon' => 'bi-list-check',
+                    'value' => number_format($orders_count),
+                    'label' => 'سفارشات تولید',
+                    'bg_class' => 'bg-success',
+                    'text_class' => 'text-white'
+                ),
+                array(
+                    'icon' => 'bi-clock-history',
+                    'value' => number_format($pending_orders),
+                    'label' => 'سفارشات در انتظار',
+                    'bg_class' => 'bg-warning',
+                    'text_class' => 'text-dark'
                 )
             );
-            
-            // Render production cards
-            foreach ($production_cards as $card) {
-                the_dashboard_card($card);
-            }
             ?>
-        </div>
-    </section>
 
-    <!-- Quick Actions Section -->
-    <section class="fade-in-delay-3">
-        <h2 class="section-title">
-            <i class="bi bi-lightning-fill me-2"></i>
-            دسترسی سریع
-        </h2>
-        <p class="text-muted mb-4">ابزارها و تنظیمات سیستم</p>
-        
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="card hover-lift">
-                    <div class="card-body text-center">
-                        <div class="d-flex align-items-center justify-content-center mb-3">
-                            <div class="bg-info bg-opacity-10 p-3 rounded-circle">
-                                <i class="bi bi-gear-fill text-info fs-4"></i>
-                            </div>
-                        </div>
-                        <h5 class="card-title">تنظیمات سیستم</h5>
-                        <p class="card-text text-muted">تنظیمات کلی سیستم و پیکربندی</p>
-                        <a href="public/settings.php" class="btn btn-info">
-                            <i class="bi bi-arrow-left-circle"></i> تنظیمات
-                        </a>
+            <div class="dashboard-cards">
+                <?php foreach ($stats as $stat): ?>
+                <div class="dashboard-card">
+                    <div class="card-icon <?php echo $stat['bg_class']; ?> <?php echo $stat['text_class']; ?>">
+                        <i class="<?php echo $stat['icon']; ?>"></i>
                     </div>
+                    <div class="card-value"><?php echo $stat['value']; ?></div>
+                    <div class="card-label"><?php echo $stat['label']; ?></div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="mb-4">
+                <h2 class="section-title">
+                    <i class="bi bi-lightning-fill"></i>
+                    دسترسی سریع
+                </h2>
+
+                <div class="quick-actions">
+                    <a href="public/new_inventory.php" class="quick-action-card">
+                        <div class="quick-action-icon bg-primary bg-opacity-10 text-primary">
+                            <i class="bi bi-plus-circle"></i>
+                        </div>
+                        <h5 class="quick-action-title">انبارگردانی جدید</h5>
+                        <p class="quick-action-text">شروع یک انبارگردانی جدید</p>
+                        <span class="quick-action-btn btn-primary">
+                            <i class="bi bi-arrow-left"></i>
+                            شروع
+                        </span>
+                    </a>
+
+                    <a href="public/new_production_order.php" class="quick-action-card">
+                        <div class="quick-action-icon bg-warning bg-opacity-10 text-warning">
+                            <i class="bi bi-plus-square"></i>
+                        </div>
+                        <h5 class="quick-action-title">سفارش تولید جدید</h5>
+                        <p class="quick-action-text">ایجاد سفارش تولید جدید</p>
+                        <span class="quick-action-btn btn-warning">
+                            <i class="bi bi-arrow-left"></i>
+                            ایجاد
+                        </span>
+                    </a>
+
+                    <a href="public/settings.php" class="quick-action-card">
+                        <div class="quick-action-icon bg-info bg-opacity-10 text-info">
+                            <i class="bi bi-gear"></i>
+                        </div>
+                        <h5 class="quick-action-title">تنظیمات سیستم</h5>
+                        <p class="quick-action-text">مدیریت تنظیمات سیستم</p>
+                        <span class="quick-action-btn btn-info">
+                            <i class="bi bi-arrow-left"></i>
+                            تنظیمات
+                        </span>
+                    </a>
+
+                    <a href="public/backup.php" class="quick-action-card">
+                        <div class="quick-action-icon bg-success bg-opacity-10 text-success">
+                            <i class="bi bi-download"></i>
+                        </div>
+                        <h5 class="quick-action-title">پشتیبان‌گیری</h5>
+                        <p class="quick-action-text">ایجاد پشتیبان از داده‌ها</p>
+                        <span class="quick-action-btn btn-success">
+                            <i class="bi bi-arrow-left"></i>
+                            پشتیبان‌گیری
+                        </span>
+                    </a>
                 </div>
             </div>
-            
-            <div class="col-md-4">
-                <div class="card hover-lift">
-                    <div class="card-body text-center">
-                        <div class="d-flex align-items-center justify-content-center mb-3">
-                            <div class="bg-primary bg-opacity-10 p-3 rounded-circle">
-                                <i class="bi bi-truck text-primary fs-4"></i>
-                            </div>
+
+            <!-- Recent Activity Section -->
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="dashboard-card">
+                        <h5 class="section-title mb-3">
+                            <i class="bi bi-activity"></i>
+                            فعالیت‌های اخیر
+                        </h5>
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-clock-history fs-1 mb-2"></i>
+                            <p>فعالیت‌های اخیر به زودی نمایش داده خواهد شد</p>
                         </div>
-                        <h5 class="card-title">مدیریت تامین‌کنندگان</h5>
-                        <p class="card-text text-muted">مدیریت لیست تامین‌کنندگان</p>
-                        <a href="public/suppliers.php" class="btn btn-primary">
-                            <i class="bi bi-arrow-left-circle"></i> تامین‌کنندگان
-                        </a>
                     </div>
                 </div>
-            </div>
-            
-            <div class="col-md-4">
-                <div class="card hover-lift">
-                    <div class="card-body text-center">
-                        <div class="d-flex align-items-center justify-content-center mb-3">
-                            <div class="bg-success bg-opacity-10 p-3 rounded-circle">
-                                <i class="bi bi-download text-success fs-4"></i>
+
+                <div class="col-lg-6">
+                    <div class="dashboard-card">
+                        <h5 class="section-title mb-3">
+                            <i class="bi bi-bar-chart"></i>
+                            آمار سریع
+                        </h5>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="text-center">
+                                    <div class="fs-4 fw-bold text-primary">
+                                        <?php echo $conn->query("SELECT COUNT(*) as count FROM suppliers")->fetch_assoc()['count'] ?? 0; ?>
+                                    </div>
+                                    <small class="text-muted">تامین‌کننده</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-center">
+                                    <div class="fs-4 fw-bold text-info">
+                                        <?php echo $conn->query("SELECT COUNT(*) as count FROM inventory_categories")->fetch_assoc()['count'] ?? 0; ?>
+                                    </div>
+                                    <small class="text-muted">گروه کالا</small>
+                                </div>
                             </div>
                         </div>
-                        <h5 class="card-title">پشتیبان‌گیری</h5>
-                        <p class="card-text text-muted">پشتیبان‌گیری از اطلاعات سیستم</p>
-                        <a href="public/backup.php" class="btn btn-success">
-                            <i class="bi bi-arrow-left-circle"></i> پشتیبان‌گیری
-                        </a>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 </div>
+
+<!-- Mobile Sidebar Toggle -->
+<button class="sidebar-toggle d-lg-none" onclick="toggleSidebar()">
+    <i class="bi bi-list"></i>
+</button>
+
+<!-- Mobile Overlay -->
+<div class="sidebar-overlay d-lg-none" onclick="toggleSidebar()"></div>
+
+<script>
+function toggleSidebar() {
+    const sidebar = document.querySelector('.dashboard-sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+
+    sidebar.classList.toggle('show');
+    overlay.classList.toggle('show');
+}
+
+// Close sidebar when clicking on a link (mobile)
+document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', () => {
+        if (window.innerWidth < 992) {
+            toggleSidebar();
+        }
+    });
+});
+</script>

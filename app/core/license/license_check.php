@@ -30,7 +30,7 @@ function enforce_license($redirect = true) {
     ];
     
     // بررسی آیا صفحه جاری از بررسی لایسنس مستثنی است
-    $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    $current_path = isset($_SERVER['REQUEST_URI']) ? parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) : '';
     foreach ($exempt_paths as $path) {
         if (strpos($current_path, $path) === 0) {
             return true;

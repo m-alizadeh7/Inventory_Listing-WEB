@@ -51,18 +51,18 @@ if (!in_array($page, $allowed_pages)) {
 
 // Validate URL path
 $allowed_paths = [
-    'public/inventory_records.php',
-    'public/inventory_categories.php',
-    'public/physical_count.php',
-    'public/manual_withdrawals.php',
-    'public/emergency_notes.php',
-    'public/new_inventory.php',
-    'public/new_production_order.php',
-    'public/production_orders.php',
-    'public/devices.php',
-    'public/suppliers.php',
-    'public/settings.php',
-    'public/backup.php'
+    'inventory_records.php',
+    'inventory_categories.php',
+    'physical_count.php',
+    'manual_withdrawals.php',
+    'emergency_notes.php',
+    'new_inventory.php',
+    'new_production_order.php',
+    'production_orders.php',
+    'devices.php',
+    'suppliers.php',
+    'settings.php',
+    'backup.php'
 ];
 
 if (!in_array($url, $allowed_paths)) {

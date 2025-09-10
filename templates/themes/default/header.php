@@ -25,8 +25,13 @@ $current_user = $security ? $security->getCurrentUser() : null;
 </head>
 <body>
 <?php 
-// Load navigation from template-parts
-get_theme_part('navigation'); 
+// For dashboard pages, don't load navigation as it's included in the sidebar
+$current_page = basename($_SERVER['PHP_SELF']);
+$dashboard_pages = ['index.php', 'settings.php', 'inventory_categories.php'];
+
+if (!in_array($current_page, $dashboard_pages) && !isset($_GET['dashboard'])) {
+    get_theme_part('navigation'); 
+}
 ?>
 <div class="content-wrapper pt-5">
-    <div class="container pt-4">
+    <div class="container-fluid pt-4">

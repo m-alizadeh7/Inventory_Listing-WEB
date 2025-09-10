@@ -27,14 +27,8 @@ function theme_enqueue_styles() {
     echo '<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">' . PHP_EOL;
     echo '<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css" rel="stylesheet">' . PHP_EOL;
     
-    // Theme CSS files in order
-    echo '<link href="' . THEME_CSS_URI . '/base.css?v=' . THEME_VERSION . '" rel="stylesheet">' . PHP_EOL;
-    echo '<link href="' . THEME_CSS_URI . '/header.css?v=' . THEME_VERSION . '" rel="stylesheet">' . PHP_EOL;
-    echo '<link href="' . THEME_CSS_URI . '/footer.css?v=' . THEME_VERSION . '" rel="stylesheet">' . PHP_EOL;
-    echo '<link href="' . THEME_CSS_URI . '/cards.css?v=' . THEME_VERSION . '" rel="stylesheet">' . PHP_EOL;
-    echo '<link href="' . THEME_CSS_URI . '/forms.css?v=' . THEME_VERSION . '" rel="stylesheet">' . PHP_EOL;
-    echo '<link href="' . THEME_CSS_URI . '/animations.css?v=' . THEME_VERSION . '" rel="stylesheet">' . PHP_EOL;
-    echo '<link href="' . THEME_CSS_URI . '/responsive.css?v=' . THEME_VERSION . '" rel="stylesheet">' . PHP_EOL;
+    // Main theme CSS file (contains all styles)
+    echo '<link href="' . THEME_URI . '/assets/style.css?v=' . THEME_VERSION . '" rel="stylesheet">' . PHP_EOL;
 }
 
 /**

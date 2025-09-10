@@ -12,6 +12,9 @@ get_theme_part('alerts');
 
 // Check for pending migrations
 checkMigrationsPrompt();
+
+// Set dashboard flag for header
+$_GET['dashboard'] = '1';
 ?>
 
 <div class="dashboard-layout">

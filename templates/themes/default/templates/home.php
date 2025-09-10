@@ -12,6 +12,9 @@ get_theme_part('alerts');
 
 // Check for pending migrations
 checkMigrationsPrompt();
+
+// Set dashboard flag for header
+$_GET['dashboard'] = '1';
 ?>
 
 <div class="dashboard-layout">
@@ -148,9 +151,46 @@ checkMigrationsPrompt();
                             <i class="bi bi-activity"></i>
                             فعالیت‌های اخیر
                         </h5>
-                        <div class="text-center text-muted py-4">
-                            <i class="bi bi-clock-history fs-1 mb-2"></i>
-                            <p>فعالیت‌های اخیر به زودی نمایش داده خواهد شد</p>
+                        <div class="activity-list">
+                            <?php
+                            // Get recent activities (last 5 inventory records)
+                            $recent_activities = $conn->query("
+                                SELECT i.item_name, i.quantity, i.created_at, 'inventory' as type
+                                FROM inventory i
+                                ORDER BY i.created_at DESC
+                                LIMIT 5
+                            ");
+                            
+                            if ($recent_activities && $recent_activities->num_rows > 0) {
+                                while ($activity = $recent_activities->fetch_assoc()) {
+                                    $time_ago = time() - strtotime($activity['created_at']);
+                                    $time_text = $time_ago < 3600 ? ceil($time_ago / 60) . ' دقیقه پیش' : 
+                                                ($time_ago < 86400 ? ceil($time_ago / 3600) . ' ساعت پیش' : 
+                                                ceil($time_ago / 86400) . ' روز پیش');
+                                    ?>
+                                    <div class="activity-item">
+                                        <div class="activity-icon bg-primary bg-opacity-10 text-primary">
+                                            <i class="bi bi-box-seam"></i>
+                                        </div>
+                                        <div class="activity-content">
+                                            <div class="activity-text">
+                                                <strong><?php echo htmlspecialchars($activity['item_name']); ?></strong>
+                                                به موجودی اضافه شد
+                                            </div>
+                                            <small class="activity-time"><?php echo $time_text; ?></small>
+                                        </div>
+                                    </div>
+                                    <?php
+                                }
+                            } else {
+                                ?>
+                                <div class="text-center text-muted py-4">
+                                    <i class="bi bi-clock-history fs-1 mb-2"></i>
+                                    <p>فعالیت‌های اخیر به زودی نمایش داده خواهد شد</p>
+                                </div>
+                                <?php
+                            }
+                            ?>
                         </div>
                     </div>
                 </div>

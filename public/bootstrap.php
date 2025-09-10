@@ -160,3 +160,28 @@ if (file_exists(dirname(__FILE__) . "/../app/core/license/license_check.php")) {
         enforce_license();
     }
 }
+
+// SPA Mode Detection and Setup
+if (isset($_GET['spa_mode']) || isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+    // Override theme functions for SPA mode
+    function get_header() {
+        // Skip header in SPA mode
+    }
+
+    function get_footer() {
+        // Skip footer in SPA mode
+    }
+
+    function get_theme_part($part) {
+        // Skip navigation and footer components in SPA mode
+        if (in_array($part, ['navigation', 'mobile-footer', 'desktop-footer'])) {
+            return;
+        }
+
+        // For other parts, load normally
+        $theme_part_path = ACTIVE_THEME_PATH . '/template-parts/' . $part . '.php';
+        if (file_exists($theme_part_path)) {
+            include $theme_part_path;
+        }
+    }
+}

@@ -28,7 +28,7 @@ if (!$conn->query($createSql)) {
 // Fetch business info
 $business_info = getBusinessInfo();
 
-// Load header
+// Load header (will be skipped in SPA mode)
 get_header();
 
 // Load settings template directly
@@ -39,6 +39,6 @@ if (file_exists($template_file)) {
     echo '<div class="alert alert-danger">فایل تنظیمات یافت نشد.</div>';
 }
 
-// Load footer
+// Load footer (will be skipped in SPA mode)
 get_footer();
 ?>

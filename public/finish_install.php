@@ -61,7 +61,7 @@ header('Content-Type: text/html; charset=utf-8');
         </ul></div>
     <?php endif; ?>
 
-    <a href="/php1/index.php" class="btn btn-primary">رفتن به صفحه اصلی</a>
+    <a href="index.php" class="btn btn-primary">رفتن به صفحه اصلی</a>
 </div>
 </body>
 </html>

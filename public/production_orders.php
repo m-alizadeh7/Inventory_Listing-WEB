@@ -1,10 +1,5 @@
 <?php
-require_once '../config/config.php';
-require_once '../app/includes/functions.php';
-
-// Initialize theme
-require_once 'core/includes/theme.php';
-init_theme();
+require_once 'bootstrap.php';
 
 // حذف سفارش تولید
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_order'])) {

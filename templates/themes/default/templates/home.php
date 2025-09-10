@@ -78,7 +78,7 @@ get_theme_part('page-header', $header_args);
                     'title' => 'مدیریت موجودی انبار',
                     'icon' => 'bi-box-seam',
                     'text' => 'جستجو، مشاهده و مدیریت موجودی کالاها با امکانات پیشرفته.',
-                    'link' => 'app/inventory_records.php',
+                    'link' => 'public/inventory_records.php',
                     'link_text' => 'مشاهده موجودی',
                     'icon_bg' => 'bg-primary bg-opacity-10',
                     'icon_color' => 'text-primary',
@@ -88,7 +88,7 @@ get_theme_part('page-header', $header_args);
                     'title' => 'گروه‌های کالا',
                     'icon' => 'bi-tags',
                     'text' => 'مدیریت گروه‌بندی کالاها برای سازماندهی بهتر انبار.',
-                    'link' => 'app/inventory_categories.php',
+                    'link' => 'public/inventory_categories.php',
                     'link_text' => 'مدیریت گروه‌ها',
                     'icon_bg' => 'bg-info bg-opacity-10',
                     'icon_color' => 'text-info',
@@ -98,7 +98,7 @@ get_theme_part('page-header', $header_args);
                     'title' => 'شمارش فیزیکی',
                     'icon' => 'bi-clipboard-check',
                     'text' => 'انجام شمارش فیزیکی انبار با امکان شمارش گروهی یا کامل.',
-                    'link' => 'app/physical_count.php',
+                    'link' => 'public/physical_count.php',
                     'link_text' => 'شمارش فیزیکی',
                     'icon_bg' => 'bg-success bg-opacity-10',
                     'icon_color' => 'text-success',
@@ -108,7 +108,7 @@ get_theme_part('page-header', $header_args);
                     'title' => 'خروج موردی کالا',
                     'icon' => 'bi-box-arrow-right',
                     'text' => 'ثبت خروج موردی کالاها از انبار با ذکر دلیل و مسئول.',
-                    'link' => 'app/manual_withdrawals.php',
+                    'link' => 'public/manual_withdrawals.php',
                     'link_text' => 'خروج موردی',
                     'icon_bg' => 'bg-warning bg-opacity-10',
                     'icon_color' => 'text-warning',
@@ -118,7 +118,7 @@ get_theme_part('page-header', $header_args);
                     'title' => 'یادداشت‌های اضطراری',
                     'icon' => 'bi-exclamation-triangle',
                     'text' => 'ثبت و مدیریت یادداشت‌های اضطراری و هشدارهای انبار.',
-                    'link' => 'app/emergency_notes.php',
+                    'link' => 'public/emergency_notes.php',
                     'link_text' => 'یادداشت‌ها',
                     'icon_bg' => 'bg-danger bg-opacity-10',
                     'icon_color' => 'text-danger',
@@ -128,7 +128,7 @@ get_theme_part('page-header', $header_args);
                     'title' => 'انبارگردانی جدید',
                     'icon' => 'bi-plus-circle',
                     'text' => 'شروع یک انبارگردانی جدید برای ثبت موجودی‌ها و کنترل دقیق انبار.',
-                    'link' => 'app/new_inventory.php',
+                    'link' => 'public/new_inventory.php',
                     'link_text' => 'انبارگردانی جدید',
                     'icon_bg' => 'bg-secondary bg-opacity-10',
                     'icon_color' => 'text-secondary',
@@ -160,7 +160,7 @@ get_theme_part('page-header', $header_args);
                     'title' => 'ثبت سفارش تولید',
                     'icon' => 'bi-plus-square',
                     'text' => 'ایجاد سفارش جدید برای تولید محصولات با مدیریت قطعات.',
-                    'link' => 'app/new_production_order.php',
+                    'link' => 'public/new_production_order.php',
                     'link_text' => 'ثبت سفارش جدید',
                     'icon_bg' => 'bg-warning bg-opacity-10',
                     'icon_color' => 'text-warning',
@@ -170,7 +170,7 @@ get_theme_part('page-header', $header_args);
                     'title' => 'مدیریت سفارشات تولید',
                     'icon' => 'bi-list-check',
                     'text' => 'مشاهده، ویرایش و پیگیری وضعیت سفارشات تولید.',
-                    'link' => 'app/production_orders.php',
+                    'link' => 'public/production_orders.php',
                     'link_text' => 'مدیریت سفارشات',
                     'icon_bg' => 'bg-danger bg-opacity-10',
                     'icon_color' => 'text-danger',
@@ -180,7 +180,7 @@ get_theme_part('page-header', $header_args);
                     'title' => 'دستگاه‌ها و BOM',
                     'icon' => 'bi-hdd-stack',
                     'text' => 'مدیریت لیست دستگاه‌ها، قطعات و ساختار محصولات.',
-                    'link' => 'app/devices.php',
+                    'link' => 'public/devices.php',
                     'link_text' => 'مدیریت دستگاه‌ها',
                     'icon_bg' => 'bg-secondary bg-opacity-10',
                     'icon_color' => 'text-secondary',
@@ -215,7 +215,7 @@ get_theme_part('page-header', $header_args);
                         </div>
                         <h5 class="card-title">تنظیمات سیستم</h5>
                         <p class="card-text text-muted">تنظیمات کلی سیستم و پیکربندی</p>
-                        <a href="app/settings.php" class="btn btn-info">
+                        <a href="public/settings.php" class="btn btn-info">
                             <i class="bi bi-arrow-left-circle"></i> تنظیمات
                         </a>
                     </div>
@@ -232,7 +232,7 @@ get_theme_part('page-header', $header_args);
                         </div>
                         <h5 class="card-title">مدیریت تامین‌کنندگان</h5>
                         <p class="card-text text-muted">مدیریت لیست تامین‌کنندگان</p>
-                        <a href="app/suppliers.php" class="btn btn-primary">
+                        <a href="public/suppliers.php" class="btn btn-primary">
                             <i class="bi bi-arrow-left-circle"></i> تامین‌کنندگان
                         </a>
                     </div>
@@ -249,7 +249,7 @@ get_theme_part('page-header', $header_args);
                         </div>
                         <h5 class="card-title">پشتیبان‌گیری</h5>
                         <p class="card-text text-muted">پشتیبان‌گیری از اطلاعات سیستم</p>
-                        <a href="app/backup.php" class="btn btn-success">
+                        <a href="public/backup.php" class="btn btn-success">
                             <i class="bi bi-arrow-left-circle"></i> پشتیبان‌گیری
                         </a>
                     </div>

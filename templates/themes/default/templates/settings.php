@@ -7,19 +7,25 @@
 // Make database connection available
 global $conn;
 
+// Load alerts component
+get_theme_part('alerts');
+
+// Check for pending migrations
+checkMigrationsPrompt();
+
 // Page header data
 $header_args = array(
     'title' => 'تنظیمات سیستم',
     'subtitle' => 'مدیریت تنظیمات و پیکربندی سیستم مدیریت انبار',
     'icon' => 'bi bi-gear',
     'breadcrumbs' => array(
-        array('text' => 'خانه', 'url' => 'index.php'),
+        array('text' => 'خانه', 'url' => '../index.php'),
         array('text' => 'تنظیمات سیستم')
     ),
     'actions' => array(
         array(
             'text' => 'بازگشت',
-            'url' => 'index.php',
+            'url' => '../index.php',
             'class' => 'btn-secondary',
             'icon' => 'bi bi-house'
         )
@@ -270,16 +276,10 @@ if (table_exists($conn, 'settings')) {
 }
 ?>
 
-<div class="container my-5">
+<div class="settings-page">
+    <!-- Settings Content -->
     <div class="row justify-content-center">
         <div class="col-md-10">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="h2"><i class="bi bi-gear"></i> تنظیمات سیستم</h1>
-                <a href="index.php" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i> بازگشت به داشبورد
-                </a>
-            </div>
-
             <?php if ($message): ?>
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
                     <i class="bi bi-check-circle"></i> <?php echo $message; ?>

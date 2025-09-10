@@ -9,8 +9,8 @@ function theme_default_setup() {
     // Theme version for cache busting
     define('THEME_VERSION', '1.0.0');
     
-    // Theme directory URI (for assets)
-    define('THEME_URI', 'themes/default');
+    // Theme directory URI (for assets) - corrected path
+    define('THEME_URI', 'templates/themes/default');
     
     // Asset paths
     define('THEME_CSS_URI', THEME_URI . '/assets/css');

@@ -10,13 +10,13 @@ $header_args = array(
     'subtitle' => 'ایجاد و مدیریت سفارشات تولید برای دستگاه‌های مختلف',
     'icon' => 'bi bi-boxes',
     'breadcrumbs' => array(
-        array('text' => 'خانه', 'url' => 'index.php'),
+        array('text' => 'خانه', 'url' => '../index.php'),
         array('text' => 'مدیریت سفارشات تولید')
     ),
     'actions' => array(
         array(
             'text' => 'بازگشت',
-            'url' => 'index.php',
+            'url' => '../index.php',
             'class' => 'btn-secondary',
             'icon' => 'bi bi-house'
         )

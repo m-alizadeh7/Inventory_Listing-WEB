@@ -55,9 +55,8 @@ class SecurityManager {
             
             // دریافت اطلاعات کاربر
             $stmt = $this->conn->prepare("
-                SELECT u.*, ur.role_name, ur.hierarchy_level 
+                SELECT u.* 
                 FROM users u 
-                JOIN user_roles ur ON u.role_id = ur.role_id 
                 WHERE u.username = ? AND u.is_active = 1
             ");
             $stmt->bind_param('s', $username);
@@ -254,10 +253,10 @@ class SecurityManager {
             return;
         }
         
-        // به‌روزرسانی آخرین فعالیت
-        $stmt = $this->conn->prepare("UPDATE user_sessions SET last_activity = NOW() WHERE session_id = ?");
-        $stmt->bind_param('s', $_SESSION['session_id']);
-        $stmt->execute();
+        // به‌روزرسانی آخرین فعالیت - ستون last_activity وجود ندارد
+        // $stmt = $this->conn->prepare("UPDATE user_sessions SET last_activity = NOW() WHERE session_id = ?");
+        // $stmt->bind_param('s', $_SESSION['session_id']);
+        // $stmt->execute();
         
         $this->current_user = $session_data;
     }

@@ -1,6 +1,8 @@
 <?php
-/**
- * Production Orders List Template
+/**    'breadcrumbs' => array(
+        array('text' => 'خانه', 'url' => '../index.php'),
+        array('text' => 'سفارشات تولید')
+    ),Production Orders List Template
  * Professional design for managing production orders
  */
 
@@ -10,7 +12,7 @@ $header_args = array(
     'subtitle' => 'مشاهده و مدیریت کلیه سفارشات تولید',
     'icon' => 'bi bi-list-check',
     'breadcrumbs' => array(
-        array('text' => 'خانه', 'url' => 'index.php'),
+        array('text' => 'خانه', 'url' => '../index.php'),
         array('text' => 'مدیریت سفارشات تولید')
     ),
     'actions' => array(
@@ -22,7 +24,7 @@ $header_args = array(
         ),
         array(
             'text' => 'بازگشت',
-            'url' => 'index.php',
+            'url' => '../index.php',
             'class' => 'btn-secondary',
             'icon' => 'bi bi-house'
         )

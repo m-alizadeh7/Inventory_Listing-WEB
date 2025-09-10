@@ -14,38 +14,36 @@ $errors = [];
 $success = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Simple debug
+    file_put_contents(__DIR__ . '/debug.log', 'POST received: ' . print_r($_POST, true) . "\n", FILE_APPEND);
+    
     if ($step == 1) {
-        // Test database connection
         $dbhost = trim($_POST['dbhost'] ?? 'localhost');
         $dbname = trim($_POST['dbname'] ?? 'portal');
         $dbuser = trim($_POST['dbuser'] ?? 'root');
-        $dbpass = trim($_POST['dbpass'] ?? ''); // رمز عبور اجباری نیست
+        $dbpass = trim($_POST['dbpass'] ?? '');
         
         if (empty($dbhost) || empty($dbname) || empty($dbuser)) {
             $errors[] = 'لطفاً همه فیلدهای اجباری را پر کنید.';
         } else {
-            // Test connection
             try {
+                // Simple connection test
                 $test_conn = new mysqli($dbhost, $dbuser, $dbpass);
                 if ($test_conn->connect_error) {
                     throw new Exception('خطا در اتصال: ' . $test_conn->connect_error);
                 }
                 
-                // Create database if not exists
+                // Create database
                 $test_conn->query("CREATE DATABASE IF NOT EXISTS `$dbname` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-                $test_conn->select_db($dbname);
                 $test_conn->close();
                 
                 // Save config
                 $config_content = "<?php\n";
-                $config_content .= "// Database configuration\n";
                 $config_content .= "define('DB_HOST', '" . addslashes($dbhost) . "');\n";
                 $config_content .= "define('DB_USER', '" . addslashes($dbuser) . "');\n";
                 $config_content .= "define('DB_PASS', '" . addslashes($dbpass) . "');\n";
-                $config_content .= "define('DB_NAME', '" . addslashes($dbname) . "');\n\n";
-                $config_content .= "// System version\n";
-                $config_content .= "define('SYSTEM_VERSION', '1.0.0');\n\n";
-                $config_content .= "// Database connection\n";
+                $config_content .= "define('DB_NAME', '" . addslashes($dbname) . "');\n";
+                $config_content .= "define('SYSTEM_VERSION', '1.0.0');\n";
                 $config_content .= "try {\n";
                 $config_content .= "    \$conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);\n";
                 $config_content .= "    \$conn->set_charset('utf8mb4');\n";
@@ -56,21 +54,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $config_content .= "    die('Database error: ' . \$e->getMessage());\n";
                 $config_content .= "}\n";
                 
-                if (file_put_contents(__DIR__ . '/../../config/config.php', $config_content)) {
-                    header('Location: install.php?step=2');
+                $config_path = __DIR__ . '/../../config/config.php';
+                if (file_put_contents($config_path, $config_content)) {
+                    file_put_contents(__DIR__ . '/debug.log', 'Config saved successfully, redirecting...' . "\n", FILE_APPEND);
+                    echo "<script>window.location.href = '/portal/app/admin/install.php?step=2';</script>";
                     exit;
                 } else {
                     $errors[] = 'خطا در ایجاد فایل پیکربندی.';
+                    file_put_contents(__DIR__ . '/debug.log', 'Failed to save config file' . "\n", FILE_APPEND);
                 }
                 
             } catch (Exception $e) {
                 $errors[] = $e->getMessage();
+                file_put_contents(__DIR__ . '/debug.log', 'Exception: ' . $e->getMessage() . "\n", FILE_APPEND);
             }
         }
     }
 }
 
 $business_info = ['business_name' => 'سیستم مدیریت انبار و تولید'];
+
+// Debug message
+echo "<!-- Debug: Page loaded at " . date('Y-m-d H:i:s') . " -->";
+echo "<script>console.log('PHP executed successfully');</script>";
 ?>
 
 <!DOCTYPE html>
@@ -209,7 +215,7 @@ $business_info = ['business_name' => 'سیستم مدیریت انبار و تو
                     </div>
                 <?php endif; ?>
                 
-                <form method="post" class="needs-validation" novalidate>
+                <form method="post" action="">
                     <input type="hidden" name="step" value="1">
                     
                     <div class="mb-3">
@@ -269,21 +275,41 @@ $business_info = ['business_name' => 'سیستم مدیریت انبار و تو
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Form validation
-        (function () {
-            'use strict'
-            var forms = document.querySelectorAll('.needs-validation')
-            Array.prototype.slice.call(forms)
-                .forEach(function (form) {
-                    form.addEventListener('submit', function (event) {
-                        if (!form.checkValidity()) {
-                            event.preventDefault()
-                            event.stopPropagation()
-                        }
-                        form.classList.add('was-validated')
-                    }, false)
-                })
-        })()
+        // Simple form validation
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            const submitBtn = document.querySelector('button[type="submit"]');
+            
+            form.addEventListener('submit', function(e) {
+                console.log('Form is being submitted...');
+                
+                // Basic validation
+                const requiredFields = form.querySelectorAll('input[required]');
+                let isValid = true;
+                
+                requiredFields.forEach(field => {
+                    if (!field.value.trim()) {
+                        field.classList.add('is-invalid');
+                        isValid = false;
+                    } else {
+                        field.classList.remove('is-invalid');
+                        field.classList.add('is-valid');
+                    }
+                });
+                
+                if (!isValid) {
+                    e.preventDefault();
+                    alert('لطفاً همه فیلدهای اجباری را پر کنید.');
+                    return false;
+                }
+                
+                // Show loading state
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="bi bi-hourglass me-2"></i>در حال پردازش...';
+                
+                console.log('Form validation passed, submitting...');
+            });
+        });
     </script>
 </body>
 </html>

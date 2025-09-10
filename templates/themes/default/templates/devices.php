@@ -13,7 +13,7 @@ $header_args = array(
     'subtitle' => 'مدیریت و ثبت اطلاعات دستگاه‌های موجود در سیستم',
     'icon' => 'bi bi-cpu',
     'breadcrumbs' => array(
-        array('text' => 'خانه', 'url' => 'index.php'),
+        array('text' => 'خانه', 'url' => '../index.php'),
         array('text' => 'مدیریت دستگاه‌ها')
     ),
     'actions' => array(
@@ -25,7 +25,7 @@ $header_args = array(
         ),
         array(
             'text' => 'بازگشت',
-            'url' => 'index.php',
+            'url' => '../index.php',
             'class' => 'btn-secondary',
             'icon' => 'bi bi-house'
         )
@@ -279,7 +279,7 @@ if (isset($_GET['msg'])) {
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3"><i class="bi bi-hdd-rack"></i> مدیریت دستگاه‌ها</h1>
-        <a href="index.php" class="btn btn-outline-secondary">
+        <a href="../index.php" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left"></i> بازگشت به داشبورد
         </a>
     </div>

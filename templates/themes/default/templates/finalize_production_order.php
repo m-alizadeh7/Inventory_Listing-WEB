@@ -13,7 +13,7 @@ $header_args = array(
     'subtitle' => 'بررسی موجودی انبار و تأیید نهایی کردن سفارش تولید',
     'icon' => 'bi bi-check2-square',
     'breadcrumbs' => array(
-        array('text' => 'خانه', 'url' => 'index.php'),
+        array('text' => 'خانه', 'url' => '../index.php'),
         array('text' => 'سفارشات تولید', 'url' => 'production_orders.php'),
         array('text' => 'سفارش ' . ($order['order_code'] ?? ''), 'url' => 'production_order.php?id=' . $order_id),
         array('text' => 'نهایی کردن')

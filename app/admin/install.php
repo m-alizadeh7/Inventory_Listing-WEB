@@ -7,8 +7,8 @@
 define('INSTALLING', true);
 
 // Load config if exists
-if (file_exists(__DIR__ . '/../config.php')) {
-    require_once __DIR__ . '/../config.php';
+if (file_exists(__DIR__ . '/../../config/config.php')) {
+    require_once __DIR__ . '/../../config/config.php';
 } else {
     header('Location: setup-config.php');
     exit;
@@ -123,6 +123,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step == 2) {
                     }
                 }
             }
+            
+            // Create default user roles if they don't exist
+            $conn->query("INSERT IGNORE INTO user_roles (role_id, role_name, role_name_fa, description, hierarchy_level) VALUES 
+                (1, 'admin', 'مدیر سیستم', 'دسترسی کامل به تمام بخش‌های سیستم', 0),
+                (2, 'manager', 'مدیر', 'دسترسی مدیریتی به بیشتر بخش‌ها', 1),
+                (3, 'user', 'کاربر', 'دسترسی محدود به بخش‌های خاص', 2)");
             
             // Create admin user
             $password_hash = password_hash($admin_pass, PASSWORD_DEFAULT);

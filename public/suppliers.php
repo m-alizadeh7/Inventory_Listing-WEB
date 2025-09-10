@@ -1,6 +1,5 @@
 <?php
-require_once '../config/config.php';
-require_once '../app/includes/functions.php';
+require_once 'bootstrap.php';
 // اطمینان از وجود جداول اصلی و ستون bom_id
 $conn->query("CREATE TABLE IF NOT EXISTS suppliers (
     supplier_id INT AUTO_INCREMENT PRIMARY KEY,

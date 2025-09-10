@@ -1,6 +1,9 @@
 <?php
 /**
- * Inventory Categories Template
+ *    'breadcrumbs' => array(
+        array('text' => 'خانه', 'url' => '../index.php'),
+        array('text' => 'گروه‌های کالا')
+    ),entory Categories Template
  * Professional management for product categories
  */
 
@@ -13,7 +16,7 @@ $header_args = array(
     'subtitle' => 'ایجاد و مدیریت گروه‌بندی کالاها برای شمارش و گزارش‌گیری دسته‌ای',
     'icon' => 'bi bi-collection',
     'breadcrumbs' => array(
-        array('text' => 'خانه', 'url' => 'index.php'),
+        array('text' => 'خانه', 'url' => '../index.php'),
         array('text' => 'مدیریت گروه‌های کالا')
     ),
     'actions' => array(
@@ -25,7 +28,7 @@ $header_args = array(
         ),
         array(
             'text' => 'بازگشت',
-            'url' => 'index.php',
+            'url' => '../index.php',
             'class' => 'btn-secondary',
             'icon' => 'bi bi-house'
         )

@@ -23,7 +23,7 @@ $header_args = array(
     'subtitle' => 'جزئیات کامل سفارش تولید و لیست قطعات مورد نیاز',
     'icon' => 'bi bi-factory',
     'breadcrumbs' => array(
-        array('text' => 'خانه', 'url' => 'index.php'),
+        array('text' => 'خانه', 'url' => '../index.php'),
         array('text' => 'سفارشات تولید', 'url' => 'production_orders.php'),
         array('text' => 'جزئیات سفارش')
     ),

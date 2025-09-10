@@ -2,9 +2,8 @@
 require_once '../config/config.php';
 require_once '../app/includes/functions.php';
 
-// Initialize theme
-require_once 'core/includes/theme.php';
-init_theme();
+// Load bootstrap for theme initialization
+require_once 'bootstrap.php';
 
 // بررسی و ایجاد جدول settings
 $createSql = "CREATE TABLE IF NOT EXISTS settings (
@@ -29,19 +28,17 @@ if (!$conn->query($createSql)) {
 // Fetch business info
 $business_info = getBusinessInfo();
 
-// Load complete template using new function
-get_template('settings');
+// Load header
+get_header();
 
-// لود فوتر با روش ایمن
-if (function_exists('get_template_part')) {
-    get_template_part('footer');
+// Load settings template directly
+$template_file = ACTIVE_THEME_PATH . '/templates/settings.php';
+if (file_exists($template_file)) {
+    include $template_file;
 } else {
-    // fallback: try ACTIVE_THEME_PATH if defined
-    if (defined('ACTIVE_THEME_PATH') && file_exists(ACTIVE_THEME_PATH . '/footer.php')) {
-        include_once ACTIVE_THEME_PATH . '/footer.php';
-    } else {
-        // last resort: include project-level footer if exists
-        if (file_exists(__DIR__ . '/footer.php')) include_once __DIR__ . '/footer.php';
-    }
+    echo '<div class="alert alert-danger">فایل تنظیمات یافت نشد.</div>';
 }
+
+// Load footer
+get_footer();
 ?>

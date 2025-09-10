@@ -25,8 +25,13 @@ if (!file_exists(__DIR__ . '/../config/config.php') && !defined('INSTALLING')) {
 
         // safe redirect to installer on localhost
         if (file_exists(__DIR__ . '/../app/admin/setup-config.php')) {
-            header('Location: /portal/app/admin/setup-config.php');
-            exit;
+            // Don't redirect if we're already on setup pages
+            $current_path = $_SERVER['REQUEST_URI'] ?? '';
+            if (strpos($current_path, 'setup-config.php') === false && 
+                strpos($current_path, 'install.php') === false) {
+                header('Location: /portal/app/admin/setup-config.php');
+                exit;
+            }
         } elseif (file_exists(__DIR__ . '/../app/setup.php')) {
             header('Location: /portal/app/setup.php');
             exit;

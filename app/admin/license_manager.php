@@ -80,7 +80,7 @@ get_header();
             <small>فعال‌سازی و بررسی وضعیت لایسنس نرم‌افزار</small>
         </h1>
         <ol class="breadcrumb">
-            <li><a href="index.php"><i class="fa fa-dashboard"></i> داشبورد</a></li>
+            <li><a href="../../public/index.php"><i class="fa fa-dashboard"></i> داشبورد</a></li>
             <li class="active">مدیریت لایسنس</li>
         </ol>
     </section>

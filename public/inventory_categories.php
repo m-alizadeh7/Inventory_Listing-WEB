@@ -1,10 +1,5 @@
 <?php
-require_once 'config.php';
-require_once 'includes/functions.php';
-
-// Initialize theme
-require_once 'core/includes/theme.php';
-init_theme();
+require_once 'bootstrap.php';
 
 // Ensure table exists (safe create)
 $conn->query("CREATE TABLE IF NOT EXISTS inventory_categories (

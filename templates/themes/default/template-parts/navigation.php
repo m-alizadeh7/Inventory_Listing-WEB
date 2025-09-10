@@ -28,22 +28,22 @@ $current_user = $security ? $security->getCurrentUser() : null;
                     <i class="fas fa-warehouse me-1"></i>مدیریت انبار
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="app/inventory_records.php"><i class="fas fa-list me-2"></i>موجودی انبار</a></li>
+                    <li><a class="dropdown-item" href="public/inventory_records.php"><i class="fas fa-list me-2"></i>موجودی انبار</a></li>
                     <?php if ($security->hasPermission('inventory.categories')): ?>
-                    <li><a class="dropdown-item" href="app/inventory_categories.php"><i class="fas fa-tags me-2"></i>گروه‌های کالا</a></li>
+                    <li><a class="dropdown-item" href="public/inventory_categories.php"><i class="fas fa-tags me-2"></i>گروه‌های کالا</a></li>
                     <?php endif; ?>
                     <?php if ($security->hasPermission('inventory.count')): ?>
-                    <li><a class="dropdown-item" href="app/physical_count.php"><i class="fas fa-clipboard-list me-2"></i>شمارش فیزیکی</a></li>
+                    <li><a class="dropdown-item" href="public/physical_count.php"><i class="fas fa-clipboard-list me-2"></i>شمارش فیزیکی</a></li>
                     <?php endif; ?>
                     <?php if ($security->hasPermission('inventory.withdraw')): ?>
-                    <li><a class="dropdown-item" href="app/manual_withdrawals.php"><i class="fas fa-minus-circle me-2"></i>خروج موردی</a></li>
+                    <li><a class="dropdown-item" href="public/manual_withdrawals.php"><i class="fas fa-minus-circle me-2"></i>خروج موردی</a></li>
                     <?php endif; ?>
                     <?php if ($security->hasPermission('inventory.manage')): ?>
-                    <li><a class="dropdown-item" href="app/emergency_notes.php"><i class="fas fa-exclamation-triangle me-2"></i>یادداشت‌های اضطراری</a></li>
+                    <li><a class="dropdown-item" href="public/emergency_notes.php"><i class="fas fa-exclamation-triangle me-2"></i>یادداشت‌های اضطراری</a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="app/new_inventory.php"><i class="fas fa-plus me-2"></i>انبارگردانی جدید</a></li>
+                    <li><a class="dropdown-item" href="public/new_inventory.php"><i class="fas fa-plus me-2"></i>انبارگردانی جدید</a></li>
                     <?php endif; ?>
-                    <li><a class="dropdown-item" href="app/view_inventories.php"><i class="fas fa-chart-line me-2"></i>گزارش‌ها</a></li>
+                    <li><a class="dropdown-item" href="public/view_inventories.php"><i class="fas fa-chart-line me-2"></i>گزارش‌ها</a></li>
                 </ul>
             </div>
             <?php endif; ?>
@@ -55,18 +55,18 @@ $current_user = $security ? $security->getCurrentUser() : null;
                     <i class="fas fa-industry me-1"></i>تولید
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="app/production_orders.php"><i class="fas fa-list-alt me-2"></i>سفارشات تولید</a></li>
+                    <li><a class="dropdown-item" href="public/production_orders.php"><i class="fas fa-list-alt me-2"></i>سفارشات تولید</a></li>
                     <?php if ($security->hasPermission('production.manage')): ?>
-                    <li><a class="dropdown-item" href="app/new_production_order.php"><i class="fas fa-plus me-2"></i>سفارش جدید</a></li>
+                    <li><a class="dropdown-item" href="public/new_production_order.php"><i class="fas fa-plus me-2"></i>سفارش جدید</a></li>
                     <?php endif; ?>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="app/devices.php"><i class="fas fa-cog me-2"></i>دستگاه‌ها</a></li>
-                    <li><a class="dropdown-item" href="app/device_bom.php"><i class="fas fa-list me-2"></i>BOM دستگاه‌ها</a></li>
+                    <li><a class="dropdown-item" href="public/devices.php"><i class="fas fa-cog me-2"></i>دستگاه‌ها</a></li>
+                    <li><a class="dropdown-item" href="public/device_bom.php"><i class="fas fa-list me-2"></i>BOM دستگاه‌ها</a></li>
                 </ul>
             </div>
             <?php endif; ?>
 
-            <a href="index.php" class="btn btn-sm btn-outline-secondary me-3">
+            <a href="../index.php" class="btn btn-sm btn-outline-secondary me-3">
                 <i class="fas fa-home me-1"></i>صفحه اصلی
             </a>
             
@@ -85,13 +85,13 @@ $current_user = $security ? $security->getCurrentUser() : null;
                     </h6></li>
                     <li><hr class="dropdown-divider"></li>
                     <?php if ($security->hasPermission('users.manage')): ?>
-                    <li><a class="dropdown-item" href="app/users.php"><i class="fas fa-users me-2"></i>مدیریت کاربران</a></li>
+                    <li><a class="dropdown-item" href="public/users.php"><i class="fas fa-users me-2"></i>مدیریت کاربران</a></li>
                     <?php endif; ?>
                     <?php if ($security->hasPermission('system.admin')): ?>
-                    <li><a class="dropdown-item" href="app/settings.php"><i class="fas fa-cog me-2"></i>تنظیمات سیستم</a></li>
+                    <li><a class="dropdown-item" href="public/settings.php"><i class="fas fa-cog me-2"></i>تنظیمات سیستم</a></li>
                     <?php endif; ?>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger" href="app/logout.php"><i class="fas fa-sign-out-alt me-2"></i>خروج</a></li>
+                    <li><a class="dropdown-item text-danger" href="public/logout.php"><i class="fas fa-sign-out-alt me-2"></i>خروج</a></li>
                 </ul>
             </div>
             <?php endif; ?>
@@ -115,13 +115,13 @@ $current_user = $security ? $security->getCurrentUser() : null;
                 <i class="fas fa-warehouse me-2"></i>مدیریت انبار
             </h6>
             <ul class="list-unstyled ps-3">
-                <li><a href="app/inventory_records.php" class="d-block py-2 text-decoration-none"><i class="fas fa-list me-2"></i>موجودی انبار</a></li>
-                <li><a href="app/inventory_categories.php" class="d-block py-2 text-decoration-none"><i class="fas fa-tags me-2"></i>گروه‌های کالا</a></li>
-                <li><a href="app/physical_count.php" class="d-block py-2 text-decoration-none"><i class="fas fa-clipboard-list me-2"></i>شمارش فیزیکی</a></li>
-                <li><a href="app/manual_withdrawals.php" class="d-block py-2 text-decoration-none"><i class="fas fa-minus-circle me-2"></i>خروج موردی</a></li>
-                <li><a href="app/emergency_notes.php" class="d-block py-2 text-decoration-none"><i class="fas fa-exclamation-triangle me-2"></i>یادداشت‌های اضطراری</a></li>
-                <li><a href="app/new_inventory.php" class="d-block py-2 text-decoration-none"><i class="fas fa-plus me-2"></i>انبارگردانی جدید</a></li>
-                <li><a href="app/view_inventories.php" class="d-block py-2 text-decoration-none"><i class="fas fa-chart-line me-2"></i>گزارش‌ها</a></li>
+                <li><a href="public/inventory_records.php" class="d-block py-2 text-decoration-none"><i class="fas fa-list me-2"></i>موجودی انبار</a></li>
+                <li><a href="public/inventory_categories.php" class="d-block py-2 text-decoration-none"><i class="fas fa-tags me-2"></i>گروه‌های کالا</a></li>
+                <li><a href="public/physical_count.php" class="d-block py-2 text-decoration-none"><i class="fas fa-clipboard-list me-2"></i>شمارش فیزیکی</a></li>
+                <li><a href="public/manual_withdrawals.php" class="d-block py-2 text-decoration-none"><i class="fas fa-minus-circle me-2"></i>خروج موردی</a></li>
+                <li><a href="public/emergency_notes.php" class="d-block py-2 text-decoration-none"><i class="fas fa-exclamation-triangle me-2"></i>یادداشت‌های اضطراری</a></li>
+                <li><a href="public/new_inventory.php" class="d-block py-2 text-decoration-none"><i class="fas fa-plus me-2"></i>انبارگردانی جدید</a></li>
+                <li><a href="public/view_inventories.php" class="d-block py-2 text-decoration-none"><i class="fas fa-chart-line me-2"></i>گزارش‌ها</a></li>
             </ul>
         </div>
 
@@ -131,10 +131,10 @@ $current_user = $security ? $security->getCurrentUser() : null;
                 <i class="fas fa-industry me-2"></i>مدیریت تولید
             </h6>
             <ul class="list-unstyled ps-3">
-                <li><a href="app/production_orders.php" class="d-block py-2 text-decoration-none"><i class="fas fa-list-alt me-2"></i>سفارشات تولید</a></li>
-                <li><a href="app/new_production_order.php" class="d-block py-2 text-decoration-none"><i class="fas fa-plus me-2"></i>سفارش جدید</a></li>
-                <li><a href="app/devices.php" class="d-block py-2 text-decoration-none"><i class="fas fa-cog me-2"></i>دستگاه‌ها</a></li>
-                <li><a href="app/device_bom.php" class="d-block py-2 text-decoration-none"><i class="fas fa-list me-2"></i>BOM دستگاه‌ها</a></li>
+                <li><a href="public/production_orders.php" class="d-block py-2 text-decoration-none"><i class="fas fa-list-alt me-2"></i>سفارشات تولید</a></li>
+                <li><a href="public/new_production_order.php" class="d-block py-2 text-decoration-none"><i class="fas fa-plus me-2"></i>سفارش جدید</a></li>
+                <li><a href="public/devices.php" class="d-block py-2 text-decoration-none"><i class="fas fa-cog me-2"></i>دستگاه‌ها</a></li>
+                <li><a href="public/device_bom.php" class="d-block py-2 text-decoration-none"><i class="fas fa-list me-2"></i>BOM دستگاه‌ها</a></li>
             </ul>
         </div>
 
@@ -144,8 +144,8 @@ $current_user = $security ? $security->getCurrentUser() : null;
                 <i class="fas fa-cogs me-2"></i>سایر بخش‌ها
             </h6>
             <ul class="list-unstyled ps-3">
-                <li><a href="app/suppliers.php" class="d-block py-2 text-decoration-none"><i class="fas fa-truck me-2"></i>تامین‌کنندگان</a></li>
-                <li><a href="app/settings.php" class="d-block py-2 text-decoration-none"><i class="fas fa-cog me-2"></i>تنظیمات</a></li>
+                <li><a href="public/suppliers.php" class="d-block py-2 text-decoration-none"><i class="fas fa-truck me-2"></i>تامین‌کنندگان</a></li>
+                <li><a href="public/settings.php" class="d-block py-2 text-decoration-none"><i class="fas fa-cog me-2"></i>تنظیمات</a></li>
             </ul>
         </div>
     </div>

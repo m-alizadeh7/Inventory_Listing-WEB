@@ -483,6 +483,29 @@ function loadPage(page, url) {
     });
     event.target.classList.add('active');
 
+    // Special handling for dashboard - no need to load via AJAX
+    if (page === 'dashboard') {
+        // Hide loading overlay
+        loadingOverlay.style.display = 'none';
+
+        // Show main dashboard content
+        mainContent.style.display = 'block';
+
+        // Hide SPA content container
+        spaContent.style.display = 'none';
+
+        // Clear SPA content
+        spaContent.innerHTML = '';
+
+        // Update page title
+        document.title = 'سیستم مدیریت انبار';
+
+        // Update URL without page reload
+        history.pushState({page: page}, 'داشبرد', '#dashboard');
+
+        return; // Exit early for dashboard
+    }
+
     // Load page content via AJAX using our API
     const apiUrl = `public/spa_loader.php?page=${encodeURIComponent(page)}&url=${encodeURIComponent(url)}`;
 
@@ -633,11 +656,16 @@ document.addEventListener('DOMContentLoaded', function() {
     if (hash && hash !== 'dashboard') {
         const navLink = document.querySelector(`[data-page="${hash}"]`);
         if (navLink) {
+            // Only load page if it's not the dashboard (which is already loaded)
             navLink.click();
         }
     } else {
-        // Set dashboard as active by default
-        document.querySelector('[data-page="dashboard"]').classList.add('active');
+        // Set dashboard as active by default (content is already loaded)
+        const dashboardLink = document.querySelector('[data-page="dashboard"]');
+        if (dashboardLink) {
+            dashboardLink.classList.add('active');
+        }
+    }
     }
 });
 </script>

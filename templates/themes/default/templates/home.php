@@ -39,7 +39,7 @@ $_GET['dashboard'] = '1';
             $inventory_count = $conn->query("SELECT COUNT(*) as count FROM inventory")->fetch_assoc()['count'] ?? 0;
             $devices_count = $conn->query("SELECT COUNT(*) as count FROM devices")->fetch_assoc()['count'] ?? 0;
             $orders_count = $conn->query("SELECT COUNT(*) as count FROM production_orders")->fetch_assoc()['count'] ?? 0;
-            $pending_orders = $conn->query("SELECT COUNT(*) as count FROM production_orders WHERE status = 'pending'")->fetch_assoc()['count'] ?? 0;
+            $pending_orders = $conn->query("SELECT COUNT(*) as count FROM production_orders WHERE status IN ('draft', 'confirmed')")->fetch_assoc()['count'] ?? 0;
 
             $stats = array(
                 array(
@@ -66,7 +66,7 @@ $_GET['dashboard'] = '1';
                 array(
                     'icon' => 'bi-clock-history',
                     'value' => number_format($pending_orders),
-                    'label' => 'سفارشات در انتظار',
+                    'label' => 'سفارشات آماده',
                     'bg_class' => 'bg-warning',
                     'text_class' => 'text-dark'
                 )
@@ -155,9 +155,10 @@ $_GET['dashboard'] = '1';
                             <?php
                             // Get recent activities (last 5 inventory records)
                             $recent_activities = $conn->query("
-                                SELECT i.item_name, i.quantity, i.created_at, 'inventory' as type
+                                SELECT i.item_name, i.current_inventory as quantity, i.last_updated as created_at, 'inventory' as type
                                 FROM inventory i
-                                ORDER BY i.created_at DESC
+                                WHERE i.last_updated IS NOT NULL
+                                ORDER BY i.last_updated DESC
                                 LIMIT 5
                             ");
                             
@@ -175,7 +176,7 @@ $_GET['dashboard'] = '1';
                                         <div class="activity-content">
                                             <div class="activity-text">
                                                 <strong><?php echo htmlspecialchars($activity['item_name']); ?></strong>
-                                                به موجودی اضافه شد
+                                                موجودی به‌روزرسانی شد
                                             </div>
                                             <small class="activity-time"><?php echo $time_text; ?></small>
                                         </div>

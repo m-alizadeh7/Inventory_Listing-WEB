@@ -70,7 +70,7 @@ require_once __DIR__ . '/../app/core/includes/SecurityManager.php';
 
 // Initialize security if not set
 if (!isset($security)) {
-    $security = new SecurityManager();
+    $security = new \App\Core\SecurityManager();
 }
 
 // SPA Mode Detection and Setup - MUST happen before theme.php is loaded

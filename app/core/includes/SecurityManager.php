@@ -2,7 +2,10 @@
 /**
  * کلاس مدیریت احراز هویت و امنیت
  * Authentication & Authorization System
+ * Namespace: App\Core
  */
+
+namespace App\Core;
 
 class SecurityManager {
     private $conn;

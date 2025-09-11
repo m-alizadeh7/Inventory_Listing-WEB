@@ -15,6 +15,9 @@ if (!file_exists(__DIR__ . '/../config/config.php')) {
 // Load bootstrap (config, functions, theme)
 require_once __DIR__ . '/bootstrap.php';
 
+// Load Database class
+require_once __DIR__ . '/../app/core/Database.php';
+
 // Initialize dependencies
 $db = Database::getInstance();
 $security = new SecurityManager($db->getConnection());

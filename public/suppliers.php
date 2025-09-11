@@ -1,185 +1,223 @@
 <?php
 require_once 'bootstrap.php';
-// اطمینان از وجود جداول اصلی و ستون bom_id
-$conn->query("CREATE TABLE IF NOT EXISTS suppliers (
-    supplier_id INT AUTO_INCREMENT PRIMARY KEY,
-    supplier_code VARCHAR(50),
-    supplier_name VARCHAR(255),
-    address TEXT,
-    contact_person VARCHAR(255),
-    phone VARCHAR(50),
-    email VARCHAR(255)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
-$conn->query("CREATE TABLE IF NOT EXISTS device_bom (
-    device_id INT,
-    supplier_id INT,
-    item_code VARCHAR(50),
-    FOREIGN KEY (device_id) REFERENCES devices(device_id) ON DELETE CASCADE,
-    FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
-// اطمینان از وجود ستون supplier_id در device_bom
-$res = $conn->query("SHOW COLUMNS FROM device_bom LIKE 'supplier_id'");
-if ($res && $res->num_rows === 0) {
-    $conn->query("ALTER TABLE device_bom ADD COLUMN supplier_id INT");
-}
-$res = $conn->query("SHOW COLUMNS FROM device_bom LIKE 'bom_id'");
-if ($res && $res->num_rows === 0) {
-    // بررسی وجود ستون AUTO_INCREMENT دیگر
-    $auto = $conn->query("SHOW COLUMNS FROM device_bom WHERE Extra LIKE '%auto_increment%'");
-    if ($auto && $auto->num_rows === 0) {
-        $conn->query("ALTER TABLE device_bom ADD COLUMN bom_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY FIRST");
-    } else {
-        $conn->query("ALTER TABLE device_bom ADD COLUMN bom_id INT NULL FIRST");
+
+// Handle supplier operations
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['add_supplier'])) {
+        $supplier_name = clean($_POST['supplier_name']);
+        $contact_person = clean($_POST['contact_person']);
+        $phone = clean($_POST['phone']);
+        $email = clean($_POST['email']);
+        $address = clean($_POST['address']);
+        $supplier_code = clean($_POST['supplier_code']);
+
+        $stmt = $conn->prepare("INSERT INTO suppliers (supplier_name, contact_person, phone, email, address, supplier_code) VALUES (?, ?, ?, ?, ?, ?)");
+        if ($stmt->bind_param('ssssss', $supplier_name, $contact_person, $phone, $email, $address, $supplier_code) && $stmt->execute()) {
+            set_flash_message('تامین‌کننده با موفقیت اضافه شد', 'success');
+        } else {
+            set_flash_message('خطا در افزودن تامین‌کننده: ' . $conn->error, 'danger');
+        }
     }
-}
 
-// حذف تامین‌کننده
-if (isset($_POST['delete_supplier'])) {
-    $supplier_id = clean($_POST['supplier_id']);
-    // بررسی استفاده از تامین‌کننده در BOM
-    $check = $conn->query("SELECT COUNT(*) as used FROM device_bom WHERE supplier_id = $supplier_id")->fetch_assoc();
-    
-    if ($check['used'] > 0) {
-        $error = 'این تامین‌کننده در لیست قطعات استفاده شده و قابل حذف نیست.';
-    } else {
-        $conn->query("DELETE FROM suppliers WHERE supplier_id = $supplier_id");
-        header('Location: suppliers.php?msg=deleted');
-        exit;
+    if (isset($_POST['edit_supplier'])) {
+        $id = (int)$_POST['supplier_id'];
+        $supplier_name = clean($_POST['supplier_name']);
+        $contact_person = clean($_POST['contact_person']);
+        $phone = clean($_POST['phone']);
+        $email = clean($_POST['email']);
+        $address = clean($_POST['address']);
+        $supplier_code = clean($_POST['supplier_code']);
+
+        $stmt = $conn->prepare("UPDATE suppliers SET supplier_name = ?, contact_person = ?, phone = ?, email = ?, address = ?, supplier_code = ? WHERE supplier_id = ?");
+        if ($stmt->bind_param('ssssssi', $supplier_name, $contact_person, $phone, $email, $address, $supplier_code, $id) && $stmt->execute()) {
+            set_flash_message('تامین‌کننده با موفقیت ویرایش شد', 'success');
+        } else {
+            set_flash_message('خطا در ویرایش تامین‌کننده: ' . $conn->error, 'danger');
+        }
     }
+
+    if (isset($_POST['delete_supplier'])) {
+        $id = (int)$_POST['supplier_id'];
+
+        // Check if supplier has items
+        $check = $conn->query("SELECT COUNT(*) as count FROM inventory WHERE supplier_id = $id");
+        $count = $check->fetch_assoc()['count'];
+
+        if ($count > 0) {
+            set_flash_message("نمی‌توان این تامین‌کننده را حذف کرد. $count کالا از این تامین‌کننده موجود است", 'warning');
+        } else {
+            if ($conn->query("DELETE FROM suppliers WHERE supplier_id = $id")) {
+                set_flash_message('تامین‌کننده با موفقیت حذف شد', 'success');
+            } else {
+                set_flash_message('خطا در حذف تامین‌کننده: ' . $conn->error, 'danger');
+            }
+        }
+    }
+
+    header('Location: suppliers.php');
+    exit;
 }
 
-// دریافت لیست تامین‌کنندگان با آمار استفاده
-$result = $conn->query("
-    SELECT s.*, 
-           COUNT(DISTINCT b.device_id) as devices_count,
-           COUNT(b.bom_id) as parts_count
-    FROM suppliers s
-    LEFT JOIN device_bom b ON s.supplier_id = b.supplier_id
-    GROUP BY s.supplier_id
-    ORDER BY s.supplier_name
-");
-
+// Get suppliers with item counts
 $suppliers = [];
-while ($row = $result->fetch_assoc()) {
-    $suppliers[] = $row;
+$sql = "SELECT s.*, COUNT(i.inventory_code) as items_count
+        FROM suppliers s
+        LEFT JOIN inventory i ON s.supplier_id = i.supplier_id
+        GROUP BY s.supplier_id
+        ORDER BY s.supplier_name";
+$result = $conn->query($sql);
+if ($result) {
+    while ($row = $result->fetch_assoc()) {
+        $suppliers[] = $row;
+    }
 }
+
+$page_title = 'مدیریت تامین‌کنندگان';
+$page_description = 'مشاهده و مدیریت تامین‌کنندگان و اطلاعات تماس آنها';
+
+get_header();
 ?>
 
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>مدیریت تامین‌کنندگان</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        body { background: #f7f7f7; padding-top: 2rem; }
-        .supplier-info:hover { background-color: #f8f9fa; }
-        .badge { font-size: 0.9rem; }
-    </style>
-</head>
-<body>
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>📋 مدیریت تامین‌کنندگان</h2>
-        <div>
-            <a href="new_supplier.php" class="btn btn-primary">
-                <i class="bi bi-plus-lg"></i> افزودن تامین‌کننده جدید
-            </a>
-            <a href="index.php" class="btn btn-secondary">بازگشت</a>
+<div class="container-fluid px-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-0">تامین‌کنندگان</h4>
+                    <p class="text-muted mb-0">مدیریت تامین‌کنندگان و اطلاعات تماس آنها</p>
+                </div>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSupplierModal">
+                    <i class="bi bi-plus-circle me-1"></i>
+                    تامین‌کننده جدید
+                </button>
+            </div>
         </div>
     </div>
 
-    <?php if (isset($_GET['msg'])): ?>
-        <?php if ($_GET['msg'] === 'added'): ?>
-            <div class="alert alert-success">تامین‌کننده جدید با موفقیت اضافه شد.</div>
-        <?php elseif ($_GET['msg'] === 'deleted'): ?>
-            <div class="alert alert-warning">تامین‌کننده با موفقیت حذف شد.</div>
-        <?php elseif ($_GET['msg'] === 'updated'): ?>
-            <div class="alert alert-info">اطلاعات تامین‌کننده بروزرسانی شد.</div>
-        <?php endif; ?>
-    <?php endif; ?>
-
-    <?php if (isset($error)): ?>
-        <div class="alert alert-danger"><?= $error ?></div>
-    <?php endif; ?>
-
-    <?php if (empty($suppliers)): ?>
-        <div class="alert alert-info">هیچ تامین‌کننده‌ای ثبت نشده است.</div>
-    <?php else: ?>
-        <div class="table-responsive">
-            <table class="table table-bordered table-hover">
-                <thead class="table-light">
-                    <tr>
-                        <th>کد تامین‌کننده</th>
-                        <th>نام شرکت</th>
-                        <th>شخص رابط</th>
-                        <th>اطلاعات تماس</th>
-                        <th>آمار</th>
-                        <th>عملیات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($suppliers as $supplier): ?>
-                        <tr class="supplier-info">
-                            <td><?= htmlspecialchars($supplier['supplier_code']) ?></td>
-                            <td>
-                                <strong><?= htmlspecialchars($supplier['supplier_name']) ?></strong>
-                                <?php if ($supplier['address']): ?>
-                                    <br>
-                                    <small class="text-muted"><?= htmlspecialchars($supplier['address']) ?></small>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>کد تامین‌کننده</th>
+                                    <th>نام تامین‌کننده</th>
+                                    <th>شخص تماس</th>
+                                    <th>تلفن</th>
+                                    <th>ایمیل</th>
+                                    <th>تعداد کالا</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($suppliers)): ?>
+                                    <tr>
+                                        <td colspan="7" class="text-center py-4">
+                                            <i class="bi bi-truck fs-1 text-muted mb-2"></i>
+                                            <p class="text-muted mb-0">هیچ تامین‌کننده‌ای یافت نشد</p>
+                                        </td>
+                                    </tr>
+                                <?php else: ?>
+                                    <?php foreach ($suppliers as $supplier): ?>
+                                        <tr>
+                                            <td><?php echo htmlspecialchars($supplier['supplier_code']); ?></td>
+                                            <td><?php echo htmlspecialchars($supplier['supplier_name']); ?></td>
+                                            <td><?php echo htmlspecialchars($supplier['contact_person']); ?></td>
+                                            <td><?php echo htmlspecialchars($supplier['phone']); ?></td>
+                                            <td><?php echo htmlspecialchars($supplier['email']); ?></td>
+                                            <td>
+                                                <span class="badge bg-info"><?php echo $supplier['items_count']; ?></span>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="editSupplier(<?php echo $supplier['supplier_id']; ?>)">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteSupplier(<?php echo $supplier['supplier_id']; ?>)">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
                                 <?php endif; ?>
-                            </td>
-                            <td>
-                                <?= htmlspecialchars($supplier['contact_person'] ?? '-') ?>
-                            </td>
-                            <td>
-                                <?php if ($supplier['phone']): ?>
-                                    <div>📞 <?= htmlspecialchars($supplier['phone']) ?></div>
-                                <?php endif; ?>
-                                <?php if ($supplier['email']): ?>
-                                    <div>📧 <?= htmlspecialchars($supplier['email']) ?></div>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <span class="badge bg-info">
-                                    <?= $supplier['devices_count'] ?> دستگاه
-                                </span>
-                                <span class="badge bg-primary">
-                                    <?= $supplier['parts_count'] ?> قطعه
-                                </span>
-                            </td>
-                            <td>
-                                <div class="btn-group">
-                                    <a href="edit_supplier.php?id=<?= $supplier['supplier_id'] ?>" 
-                                       class="btn btn-sm btn-primary">
-                                        <i class="bi bi-pencil"></i> ویرایش
-                                    </a>
-                                    <a href="supplier_parts.php?id=<?= $supplier['supplier_id'] ?>" 
-                                       class="btn btn-sm btn-info">
-                                        <i class="bi bi-box"></i> قطعات
-                                    </a>
-                                    <?php if ($supplier['parts_count'] == 0): ?>
-                                        <form method="POST" class="d-inline" 
-                                              onsubmit="return confirm('آیا از حذف این تامین‌کننده اطمینان دارید؟');">
-                                            <input type="hidden" name="supplier_id" 
-                                                   value="<?= $supplier['supplier_id'] ?>">
-                                            <button type="submit" name="delete_supplier" 
-                                                    class="btn btn-sm btn-danger">
-                                                <i class="bi bi-trash"></i> حذف
-                                            </button>
-                                        </form>
-                                    <?php endif; ?>
-                                </div>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
-    <?php endif; ?>
+    </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<!-- Add Supplier Modal -->
+<div class="modal fade" id="addSupplierModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">افزودن تامین‌کننده جدید</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="supplier_code" class="form-label">کد تامین‌کننده *</label>
+                            <input type="text" class="form-control" id="supplier_code" name="supplier_code" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="supplier_name" class="form-label">نام تامین‌کننده *</label>
+                            <input type="text" class="form-control" id="supplier_name" name="supplier_name" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="contact_person" class="form-label">شخص تماس</label>
+                            <input type="text" class="form-control" id="contact_person" name="contact_person">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="phone" class="form-label">تلفن</label>
+                            <input type="tel" class="form-control" id="phone" name="phone">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">ایمیل</label>
+                        <input type="email" class="form-control" id="email" name="email">
+                    </div>
+                    <div class="mb-3">
+                        <label for="address" class="form-label">آدرس</label>
+                        <textarea class="form-control" id="address" name="address" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                    <button type="submit" name="add_supplier" class="btn btn-primary">افزودن تامین‌کننده</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function editSupplier(supplierId) {
+    // TODO: Implement edit functionality
+    alert('ویرایش تامین‌کننده ' + supplierId);
+}
+
+function deleteSupplier(supplierId) {
+    if (confirm('آیا از حذف این تامین‌کننده اطمینان دارید؟')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.innerHTML = `
+            <input type="hidden" name="supplier_id" value="${supplierId}">
+            <input type="hidden" name="delete_supplier" value="1">
+        `;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+
+<?php get_footer(); ?>

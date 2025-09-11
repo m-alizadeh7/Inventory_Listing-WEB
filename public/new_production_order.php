@@ -1,114 +1,97 @@
 <?php
 require_once 'bootstrap.php';
 
-// حذف سفارش
-if (isset($_POST['delete_order_id'])) {
-    $delete_id = (int)$_POST['delete_order_id'];
-    $conn->query("DELETE FROM production_order_items WHERE order_id = $delete_id");
-    $conn->query("DELETE FROM production_orders WHERE order_id = $delete_id");
-    set_flash_message('سفارش با موفقیت حذف شد', 'success');
-    header('Location: new_production_order.php');
-    exit;
-}
+// Handle new production order operations
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['create_order'])) {
+        $order_number = clean($_POST['order_number']);
+        $product_name = clean($_POST['product_name']);
+        $description = clean($_POST['description']);
+        $quantity = (int)$_POST['quantity'];
+        $deadline = clean($_POST['deadline']);
+        $priority = clean($_POST['priority']);
+        $status = 'pending';
 
-// افزودن سفارش جدید
-if (isset($_POST['save_new_order'])) {
-    try {
-        $conn->begin_transaction();
-        
-        // ایجاد کد سفارش جدید
-        $prefix = 'ORD';
-        $sql = "SELECT MAX(CAST(SUBSTRING(order_code, 4) AS UNSIGNED)) as max_num FROM production_orders WHERE order_code LIKE 'ORD%'";
-        $result = $conn->query($sql)->fetch_assoc();
-        $next_num = ($result['max_num'] ?? 0) + 1;
-        $order_code = $prefix . sprintf('%03d', $next_num);
-        
-        $notes = clean($_POST['notes'] ?? '');
-        
-        // ایجاد سفارش جدید
-        $sql = "INSERT INTO production_orders (order_code, status, notes) VALUES (?, 'pending', ?)";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param('ss', $order_code, $notes);
-        $stmt->execute();
-        $order_id = $conn->insert_id;
-
-        // افزودن آیتم‌های سفارش
-        if (isset($_POST['items']) && is_array($_POST['items'])) {
-            $sql = "INSERT INTO production_order_items (order_id, device_id, quantity) VALUES (?, ?, ?)";
-            $stmt = $conn->prepare($sql);
-            
-            foreach ($_POST['items'] as $item) {
-                $device_id = (int)$item['device_id'];
-                $quantity = (int)$item['quantity'];
-                
-                if ($device_id > 0 && $quantity > 0) {
-                    $stmt->bind_param('iii', $order_id, $device_id, $quantity);
-                    $stmt->execute();
-                }
-            }
+        $stmt = $conn->prepare("INSERT INTO production_orders (order_number, product_name, description, quantity, deadline, priority, status) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        if ($stmt->bind_param('sssisss', $order_number, $product_name, $description, $quantity, $deadline, $priority, $status) && $stmt->execute()) {
+            set_flash_message('سفارش تولید با موفقیت ایجاد شد', 'success');
+            header('Location: production_orders.php');
+            exit;
+        } else {
+            set_flash_message('خطا در ایجاد سفارش: ' . $conn->error, 'danger');
         }
-        
-        $conn->commit();
-        set_flash_message("سفارش تولید {$order_code} با موفقیت ثبت شد", 'success');
-        header('Location: production_order.php?id=' . $order_id);
-        exit;
-        
-    } catch (Exception $e) {
-        $conn->rollback();
-        set_flash_message('خطا در ثبت سفارش: ' . $e->getMessage(), 'danger');
     }
 }
 
-// دریافت لیست دستگاه‌ها
-$devices = [];
-$sql = "SELECT d.device_id, d.device_code, d.device_name, 
-         COUNT(db.id) as parts_count
-     FROM devices d 
-     LEFT JOIN device_bom db ON d.device_id = db.device_id 
-     GROUP BY d.device_id 
-     ORDER BY d.device_name";
-$result = $conn->query($sql);
-if ($result) {
-    while ($row = $result->fetch_assoc()) {
-        $devices[] = $row;
-    }
-}
-
-// دریافت لیست سفارشات
-$orders = [];
-$result_orders = $conn->query("SELECT order_id, order_code, created_at, status FROM production_orders ORDER BY created_at DESC");
-if ($result_orders) {
-    while ($row = $result_orders->fetch_assoc()) {
-        $orders[] = $row;
-    }
-}
-
-// آمار سفارشات
-$orders_count = [
-    'all' => 0,
-    'pending' => 0,
-    'in_progress' => 0,
-    'completed' => 0
-];
-
-$sql = "SELECT status, COUNT(*) as count FROM production_orders GROUP BY status";
-$result = $conn->query($sql);
-if ($result) {
-    while ($row = $result->fetch_assoc()) {
-        $orders_count[$row['status']] = $row['count'];
-        $orders_count['all'] += $row['count'];
-    }
-}
-
-// Page title and meta
-$page_title = 'مدیریت سفارشات تولید';
-$page_description = 'ایجاد و مدیریت سفارشات تولید برای دستگاه‌های مختلف';
+$page_title = 'سفارش تولید جدید';
+$page_description = 'ایجاد سفارش تولید جدید';
 
 get_header();
 ?>
 
 <div class="container-fluid px-4">
-    <?php include ACTIVE_THEME_PATH . '/templates/new_production_order.php'; ?>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-plus-square me-2"></i>
+                        ایجاد سفارش تولید جدید
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="order_number" class="form-label">شماره سفارش *</label>
+                                <input type="text" class="form-control" id="order_number" name="order_number" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="product_name" class="form-label">نام محصول *</label>
+                                <input type="text" class="form-control" id="product_name" name="product_name" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">توضیحات</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="quantity" class="form-label">تعداد *</label>
+                                <input type="number" class="form-control" id="quantity" name="quantity" min="1" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="deadline" class="form-label">مهلت تحویل *</label>
+                                <input type="date" class="form-control" id="deadline" name="deadline" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="priority" class="form-label">اولویت *</label>
+                                <select class="form-select" id="priority" name="priority" required>
+                                    <option value="low">کم</option>
+                                    <option value="medium" selected>متوسط</option>
+                                    <option value="high">زیاد</option>
+                                    <option value="urgent">فوری</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" name="create_order" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i>
+                                ایجاد سفارش
+                            </button>
+                            <a href="production_orders.php" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>
+                                بازگشت
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <?php get_footer(); ?>

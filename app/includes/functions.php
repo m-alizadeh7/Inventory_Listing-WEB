@@ -9,15 +9,7 @@ function gregorianToJalali($date) {
     $month = date('n', $timestamp);
     $day = date('j', $timestamp);
     $hour = date('H', $timestamp);
-    $minute = date('/**
- * اجرای فایل‌های migration
- */
-function runMigrations($conn = null) {
-    if ($conn === null) {
-        global $conn;
-    }
-    
-    // اطمینان از وجود جدول migrationsmestamp);
+    $minute = date('i', $timestamp);
     
     $jYear = $jMonth = $jDay = 0;
     convertToJalali($year, $month, $day, $jYear, $jMonth, $jDay);

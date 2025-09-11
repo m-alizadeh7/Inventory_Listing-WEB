@@ -12,6 +12,8 @@ if ($method === 'POST' && strpos($request, '/api/login') !== false) {
     $apiController->login();
 } elseif ($method === 'GET' && strpos($request, '/api/dashboard-stats') !== false) {
     $apiController->getDashboardStats();
+} elseif ($method === 'GET' && strpos($request, '/api/recent-activities') !== false) {
+    $apiController->getRecentActivities();
 } elseif ($method === 'GET' && strpos($request, '/api/devices') !== false) {
     $deviceController->getDevices();
 } elseif ($method === 'POST' && strpos($request, '/api/devices') !== false) {

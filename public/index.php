@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_migrations'])) {
 }
 
 // Get business info
-$business_info = getBusinessInfo();
+$business_info = getBusinessInfo($conn);
 
 // Load complete template using new function
 get_template('home');

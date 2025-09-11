@@ -45,7 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$business_info = getBusinessInfo();
+// Get business info for header
+$business_info = getBusinessInfo($conn);
 ?>
 
 <!DOCTYPE html>

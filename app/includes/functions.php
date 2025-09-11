@@ -276,8 +276,10 @@ function ensureSupplierSchema() {
 /**
  * دریافت اطلاعات کسب و کار
  */
-function getBusinessInfo() {
-    global $conn;
+function getBusinessInfo($conn = null) {
+    if ($conn === null) {
+        global $conn;
+    }
     
     $business_info = [
         'business_name' => 'سیستم انبارداری',

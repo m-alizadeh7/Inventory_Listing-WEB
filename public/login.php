@@ -2,11 +2,10 @@
 // Load application bootstrap which initializes config, DB connection and SecurityManager
 require_once __DIR__ . '/bootstrap.php';
 
-global $security;
 if (!isset($security) || !$security) {
     // fallback: ensure SecurityManager is available
-    if (file_exists(__DIR__ . '/core/includes/SecurityManager.php') && isset($conn) && $conn instanceof mysqli) {
-        require_once __DIR__ . '/core/includes/SecurityManager.php';
+    if (file_exists(__DIR__ . '/../app/core/includes/SecurityManager.php') && isset($conn) && $conn instanceof mysqli) {
+        require_once __DIR__ . '/../app/core/includes/SecurityManager.php';
         $security = new SecurityManager($conn);
     }
 }

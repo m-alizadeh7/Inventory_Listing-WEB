@@ -1,7 +1,6 @@
 
 <?php
-require_once 'config.php';
-require_once 'includes/functions.php';
+require_once __DIR__ . '/bootstrap.php';
 // بررسی و ایجاد جدول inventory_records اگر وجود ندارد
 $res = $conn->query("SHOW TABLES LIKE 'inventory_records'");
 if ($res && $res->num_rows === 0) {

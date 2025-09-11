@@ -2,7 +2,6 @@
 // تنظیم مسیر اصلی
 define('ROOT_PATH', dirname(__FILE__));
 
-global $conn;
 require_once ROOT_PATH . '/bootstrap.php';
 if (!isset($conn) || !$conn || !($conn instanceof mysqli)) {
     echo '<div style="color:red; font-weight:bold; margin:2rem;">خطا در اتصال به پایگاه داده. لطفاً تنظیمات دیتابیس را بررسی کنید.</div>';

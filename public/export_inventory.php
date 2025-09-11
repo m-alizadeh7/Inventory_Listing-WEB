@@ -2,9 +2,7 @@
 // تنظیم مسیر اصلی
 define('ROOT_PATH', dirname(__FILE__));
 
-global $conn;
-require_once ROOT_PATH . '/config.php';
-require_once ROOT_PATH . '/includes/functions.php';
+require_once ROOT_PATH . '/bootstrap.php';
 
 // بررسی پارامتر session
 if (!isset($_GET['session']) || empty($_GET['session'])) {

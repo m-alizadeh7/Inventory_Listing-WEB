@@ -30,7 +30,6 @@ if (!defined('INSTALLING')) {
 }
 
 // بررسی ورود کاربر
-global $security;
 if (isset($security)) {
     $security->requireLogin();
 }

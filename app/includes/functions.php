@@ -177,8 +177,10 @@ function clean($string) {
 /**
  * بررسی و نمایش اعلان مایگریشن‌های جدید
  */
-function checkMigrationsPrompt() {
-    global $conn;
+function checkMigrationsPrompt($conn = null) {
+    if ($conn === null) {
+        global $conn;
+    }
     // Ensure we have a mysqli connection when called from bootstrap; try to obtain one if not present
     if (!isset($conn) || !($conn instanceof mysqli)) {
         if (function_exists('getDbConnection')) {

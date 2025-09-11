@@ -68,6 +68,11 @@ if (!isset($conn) || !$conn) {
 // Load security manager
 require_once __DIR__ . '/../app/core/includes/SecurityManager.php';
 
+// Initialize security if not set
+if (!isset($security)) {
+    $security = new SecurityManager();
+}
+
 // SPA Mode Detection and Setup - MUST happen before theme.php is loaded
 if (isset($_GET['spa_mode']) || isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
     // Override theme functions for SPA mode

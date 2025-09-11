@@ -110,7 +110,7 @@ require_once __DIR__ . '/../app/core/includes/theme.php';
 // Initialize global security manager
 global $security;
 if (isset($conn) && $conn instanceof mysqli) {
-    $security = new SecurityManager($conn);
+    $security = new \App\Core\SecurityManager($conn);
 }
 
 // Check database version and if DB needs update, redirect to setup (only on web/local)

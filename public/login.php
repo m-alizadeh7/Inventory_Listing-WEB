@@ -11,7 +11,7 @@ if (!isset($security) || !$security) {
 }
 
 // اگر کاربر وارد شده، به صفحه اصلی هدایت کن
-if ($security->isLoggedIn()) {
+if (isset($security) && $security->isLoggedIn()) {
     $redirect = $_SESSION['redirect_after_login'] ?? 'index.php';
     unset($_SESSION['redirect_after_login']);
     header('Location: ' . $redirect);
@@ -26,12 +26,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $username = clean($_POST['username'] ?? '');
         $password = $_POST['password'] ?? '';
         $remember_me = isset($_POST['remember_me']);
-        
+
         if (empty($username) || empty($password)) {
             $error_message = 'لطفاً نام کاربری و رمز عبور را وارد کنید.';
         } else {
             $result = $security->login($username, $password, $remember_me);
-            
+
             if ($result['success']) {
                 $redirect = $_SESSION['redirect_after_login'] ?? 'index.php';
                 unset($_SESSION['redirect_after_login']);
@@ -46,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Get business info for header
 $business_info = getBusinessInfo($conn);
+echo "<!-- Debug: Business info loaded: " . htmlspecialchars($business_info['business_name']) . " -->\n";
 ?>
 
 <!DOCTYPE html>

@@ -6,17 +6,26 @@
 
 namespace App\Core;
 
+/**
+ * Helper function to get DB instance
+ */
+if (!function_exists('getDbConnection')) {
+function getDbConnection() {
+    return \App\Core\Database::getInstance()->getConnection();
+}
+}
+
 class Database {
     private static $instance = null;
     private $conn;
 
     private function __construct() {
         if (!defined('DB_HOST')) {
-            throw new Exception('Database configuration not found.');
+            throw new \Exception('Database configuration not found.');
         }
-        $this->conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+        $this->conn = new \mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
         if ($this->conn->connect_error) {
-            throw new Exception('Database connection failed: ' . $this->conn->connect_error);
+            throw new \Exception('Database connection failed: ' . $this->conn->connect_error);
         }
         $this->conn->set_charset('utf8mb4');
     }
@@ -58,6 +67,6 @@ class Database {
 }
 
 // Helper function to get DB instance
-function getDbConnection() {
+function getDatabaseConnection() {
     return Database::getInstance()->getConnection();
 }

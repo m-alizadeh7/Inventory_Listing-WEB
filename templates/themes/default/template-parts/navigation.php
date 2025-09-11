@@ -5,8 +5,7 @@
  */
 
 // Get current user info
-global $security;
-$current_user = $security ? $security->getCurrentUser() : null;
+$current_user = isset($security) ? $security->getCurrentUser() : null;
 ?>
 <nav class="main-menu navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
     <div class="container d-flex align-items-center justify-content-between">

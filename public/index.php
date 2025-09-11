@@ -20,7 +20,7 @@ require_once __DIR__ . '/../app/core/Database.php';
 
 // Initialize dependencies
 $db = Database::getInstance();
-$security = new SecurityManager($db->getConnection());
+$security = new \App\Core\SecurityManager($db->getConnection());
 
 // Check if installation is complete
 if (!defined('INSTALLING')) {

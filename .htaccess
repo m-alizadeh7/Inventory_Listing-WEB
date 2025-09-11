@@ -1,4 +1,16 @@
 RewriteEngine On
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
+
+# Allow direct access to public directory files
+RewriteCond %{REQUEST_URI} ^/portal/(login\.php|logout\.php|setup\.php|install\.php|php_test\.php)$ [NC]
+RewriteRule ^(.*)$ public/$1 [QSA,L]
+
+# Allow direct access to existing files
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^(.*)$ - [QSA,L]
+
+# Allow direct access to existing directories
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^(.*)$ - [QSA,L]
+
+# Redirect everything else to public/index.php
 RewriteRule ^(.*)$ public/index.php [QSA,L]

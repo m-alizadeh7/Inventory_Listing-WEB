@@ -179,7 +179,20 @@ function clean($string) {
  */
 function checkMigrationsPrompt($conn = null) {
     if ($conn === null) {
+        // First try to use the global $conn from config.php
         global $conn;
+        if (!isset($conn) || !($conn instanceof mysqli)) {
+            // If global $conn is not available, try getDbConnection()
+            if (function_exists('getDbConnection')) {
+                try {
+                    $conn = getDbConnection();
+                } catch (Exception $e) {
+                    $conn = null;
+                }
+            } else {
+                $conn = null;
+            }
+        }
     }
     // Ensure we have a mysqli connection when called from bootstrap; try to obtain one if not present
     if (!isset($conn) || !($conn instanceof mysqli)) {
@@ -243,19 +256,29 @@ function checkMigrationsPrompt($conn = null) {
  */
 function ensureSupplierSchema($conn = null) {
     if ($conn === null) {
+        // First try to use the global $conn from config.php
         global $conn;
+        if (!isset($conn) || !($conn instanceof mysqli)) {
+            // If global $conn is not available, try getDbConnection()
+            if (function_exists('getDbConnection')) {
+                try {
+                    $conn = getDbConnection();
+                } catch (Exception $e) {
+                    $conn = null;
+                }
+            } else {
+                $conn = null;
+            }
+        }
     }
     
     // اطمینان از وجود جدول suppliers
-        // Ensure DB connection
-        if (!isset($conn) || !($conn instanceof mysqli)) {
-            if (function_exists('getDbConnection')) {
-                try { $conn = getDbConnection(false); } catch (Exception $e) { $conn = null; }
-            } else { $conn = null; }
-        }
-        if (!isset($conn) || !($conn instanceof mysqli)) return;
+    // Ensure DB connection
+    if (!isset($conn) || !($conn instanceof mysqli)) {
+        return;
+    }
 
-        $conn->query("CREATE TABLE IF NOT EXISTS suppliers (
+    $conn->query("CREATE TABLE IF NOT EXISTS suppliers (
         supplier_id INT AUTO_INCREMENT PRIMARY KEY,
         supplier_name VARCHAR(255) NOT NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
@@ -282,7 +305,20 @@ function ensureSupplierSchema($conn = null) {
  */
 function getBusinessInfo($conn = null) {
     if ($conn === null) {
+        // First try to use the global $conn from config.php
         global $conn;
+        if (!isset($conn) || !($conn instanceof mysqli)) {
+            // If global $conn is not available, try getDbConnection()
+            if (function_exists('getDbConnection')) {
+                try {
+                    $conn = getDbConnection();
+                } catch (Exception $e) {
+                    $conn = null;
+                }
+            } else {
+                $conn = null;
+            }
+        }
     }
     
     $business_info = [
@@ -292,6 +328,11 @@ function getBusinessInfo($conn = null) {
         'business_email' => '',
         'business_website' => ''
     ];
+    
+    // If no database connection, return default values
+    if ($conn === null || !($conn instanceof mysqli)) {
+        return $business_info;
+    }
     
     $business_fields = ['business_name', 'business_address', 'business_phone', 'business_email', 'business_website'];
 
@@ -321,7 +362,20 @@ function getBusinessInfo($conn = null) {
  */
 function getSetting($name, $default = null, $conn = null) {
     if ($conn === null) {
+        // First try to use the global $conn from config.php
         global $conn;
+        if (!isset($conn) || !($conn instanceof mysqli)) {
+            // If global $conn is not available, try getDbConnection()
+            if (function_exists('getDbConnection')) {
+                try {
+                    $conn = getDbConnection();
+                } catch (Exception $e) {
+                    $conn = null;
+                }
+            } else {
+                $conn = null;
+            }
+        }
     }
     // Ensure we have a mysqli connection; try to obtain one if not present
     if (!isset($conn) || !($conn instanceof mysqli)) {
@@ -365,7 +419,27 @@ function getSetting($name, $default = null, $conn = null) {
  * اجرای فایل‌های migration
  */
 function runMigrations($conn = null) {
-    global $conn;
+    if ($conn === null) {
+        // First try to use the global $conn from config.php
+        global $conn;
+        if (!isset($conn) || !($conn instanceof mysqli)) {
+            // If global $conn is not available, try getDbConnection()
+            if (function_exists('getDbConnection')) {
+                try {
+                    $conn = getDbConnection();
+                } catch (Exception $e) {
+                    $conn = null;
+                }
+            } else {
+                $conn = null;
+            }
+        }
+    }
+    
+    // If no database connection, skip migrations
+    if ($conn === null || !($conn instanceof mysqli)) {
+        return;
+    }
     
     // اطمینان از وجود جدول migrations
     $conn->query("CREATE TABLE IF NOT EXISTS migrations (
@@ -436,7 +510,7 @@ function runMigrations($conn = null) {
 /**
  * Get database connection
  */
-function getDbConnection($exitOnError = true) {
+function getDatabaseConnection($exitOnError = true) {
     if (!defined('DB_HOST') || !defined('DB_USER') || !defined('DB_PASS') || !defined('DB_NAME')) {
         if ($exitOnError) {
             throw new Exception('Database configuration not found');

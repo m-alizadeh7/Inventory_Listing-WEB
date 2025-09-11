@@ -3,7 +3,7 @@ require_once 'config.php';
 require_once 'includes/functions.php';
 
 // Initialize theme
-require_once 'core/includes/theme.php';
+require_once __DIR__ . '/../app/core/includes/theme.php';
 init_theme();
 
 // حذف سفارش

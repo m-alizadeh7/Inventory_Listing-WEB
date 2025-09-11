@@ -9,8 +9,19 @@ function theme_default_setup() {
     // Theme version for cache busting
     define('THEME_VERSION', '1.0.0');
     
-    // Theme directory URI (for assets) - corrected path
-    define('THEME_URI', 'templates/themes/default');
+    // Calculate relative path to theme from current script
+    $script_path = $_SERVER['SCRIPT_NAME'] ?? '';
+    $portal_pos = strpos($script_path, '/portal/');
+    if ($portal_pos !== false) {
+        $relative_path = substr($script_path, $portal_pos + 8); // After /portal/
+        $depth = substr_count($relative_path, '/') - 1; // Number of directories deep
+        $depth = max(0, $depth); // Ensure depth is never negative
+        $up_levels = str_repeat('../', $depth);
+        define('THEME_URI', $up_levels . 'templates/themes/default');
+    } else {
+        // Fallback for scripts not under /portal/
+        define('THEME_URI', 'templates/themes/default');
+    }
     
     // Asset paths
     define('THEME_CSS_URI', THEME_URI . '/assets/css');

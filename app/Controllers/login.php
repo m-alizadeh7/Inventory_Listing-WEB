@@ -28,7 +28,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($username) || empty($password)) {
         $errors[] = 'لطفاً نام کاربری و رمز عبور را وارد کنید.';
     } else {
-        global $security;
         if (isset($security)) {
             $login_result = $security->login($username, $password, $remember_me);
             if ($login_result['success']) {

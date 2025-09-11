@@ -13,6 +13,17 @@ function init_theme() {
     
     // Determine active theme from settings table (fallback to default)
     global $conn;
+    if (!isset($conn) || !($conn instanceof mysqli)) {
+        if (function_exists('getDbConnection')) {
+            try {
+                $conn = getDbConnection();
+            } catch (Exception $e) {
+                $conn = null;
+            }
+        } else {
+            $conn = null;
+        }
+    }
     $active = 'default';
     
     if ($conn) {
@@ -71,7 +82,7 @@ function get_footer() {
 if (!function_exists('get_template')) {
 function get_template($template_name) {
     // Get business info for header
-    global $business_info;
+    $business_info = getBusinessInfo();
     if (!isset($business_info)) {
         $business_info = getBusinessInfo();
     }
@@ -95,10 +106,22 @@ function get_template($template_name) {
 // Load a template part from the active theme
 if (!function_exists('get_template_part')) {
 function get_template_part($slug) {
-    $file = theme_file($slug . '.php');
+    // First try template-parts directory
+    $file = ACTIVE_THEME_PATH . '/template-parts/' . $slug . '.php';
     if (file_exists($file)) {
         include $file;
+        return;
     }
+    
+    // Fallback to theme root
+    $file = ACTIVE_THEME_PATH . '/' . $slug . '.php';
+    if (file_exists($file)) {
+        include $file;
+        return;
+    }
+    
+    // If neither exists, show error
+    echo '<div class="alert alert-warning">Template part not found: ' . htmlspecialchars($slug) . '</div>';
 }
 }
 

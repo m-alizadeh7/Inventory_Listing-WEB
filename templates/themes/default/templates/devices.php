@@ -6,6 +6,17 @@
 
 // Make database connection available
 global $conn;
+if (!isset($conn) || !($conn instanceof mysqli)) {
+    if (function_exists('getDbConnection')) {
+        try {
+            $conn = getDbConnection();
+        } catch (Exception $e) {
+            $conn = null;
+        }
+    } else {
+        $conn = null;
+    }
+}
 
 // Page header data
 $header_args = array(

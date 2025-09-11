@@ -145,7 +145,7 @@ if (isset($conn) && $conn instanceof mysqli) {
 }
 
 // Determine active theme from settings table (fallback to default)
-$active = getSetting('active_theme', 'default');
+$active = getSetting('active_theme', 'default', $conn);
 define('ACTIVE_THEME', $active);
 define('ACTIVE_THEME_PATH', THEMES_PATH . '/' . ACTIVE_THEME);
 

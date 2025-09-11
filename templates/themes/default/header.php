@@ -9,8 +9,7 @@ if (!function_exists('theme_enqueue_styles')) {
 }
 
 // Get current user info
-global $security;
-$current_user = $security ? $security->getCurrentUser() : null;
+$current_user = isset($security) ? $security->getCurrentUser() : null;
 ?><!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
@@ -28,8 +27,9 @@ $current_user = $security ? $security->getCurrentUser() : null;
 // For dashboard pages, don't load navigation as it's included in the sidebar
 $current_page = basename($_SERVER['PHP_SELF']);
 $dashboard_pages = ['index.php', 'settings.php', 'inventory_categories.php'];
+$install_pages = ['install.php', 'setup-config.php', 'setup.php'];
 
-if (!in_array($current_page, $dashboard_pages) && !isset($_GET['dashboard'])) {
+if (!in_array($current_page, $dashboard_pages) && !in_array($current_page, $install_pages) && !isset($_GET['dashboard'])) {
     get_theme_part('navigation'); 
 }
 ?>

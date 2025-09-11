@@ -5,7 +5,7 @@
  */
 
 require_once '../../public/bootstrap.php';
-require_once '../core/license/LicenseManager.php';
+require_once __DIR__ . '/../core/license/LicenseManager.php';
 
 // بررسی دسترسی مدیر
 if (!is_admin()) {

@@ -11,12 +11,12 @@
                 <small class="text-muted d-flex align-items-center">
                     <i class="bi bi-person-badge me-1"></i>
                     <strong class="me-1">توسعه‌دهنده:</strong> 
-                    <a href="https://github.com/m-alizadeh7" target="_blank" class="text-decoration-none text-primary">
-                        m-alizadeh7
-                    </a>
+                    Mahdi Alizadeh
+                    <span class="mx-2">•</span>
+                    M.alizadeh7@live.com
                     <span class="mx-2">•</span>
                     <a href="https://alizadehx.ir" target="_blank" class="text-decoration-none text-primary">
-                        alizadehx.ir
+                        Alizadehx.ir
                     </a>
                 </small>
             </div>

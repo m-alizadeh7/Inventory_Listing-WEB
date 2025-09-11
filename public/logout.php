@@ -1,8 +1,6 @@
 <?php
 require_once 'bootstrap.php';
 
-global $security;
-
 // خروج از سیستم
 $security->logout();
 

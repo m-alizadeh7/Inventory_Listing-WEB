@@ -14,27 +14,31 @@ $current_path = $_SERVER['REQUEST_URI'];
     <div class="sidebar-header">
         <div class="sidebar-logo">
             <i class="bi bi-boxes fs-3 text-primary"></i>
-            <span class="sidebar-title">مدیریت انبار</span>
+            <div class="sidebar-title-container">
+                <div class="sidebar-title-main">مدیریت انبار</div>
+                <div class="sidebar-title-subtitle">پرتال جامع</div>
+            </div>
         </div>
     </div>
 
-    <nav class="sidebar-nav">
-        <!-- Dashboard -->
-        <div class="nav-section">
-            <div class="nav-section-title" onclick="toggleNavSection(this)">
-                <i class="bi bi-house-door"></i>
-                <span>داشبرد</span>
-                <i class="bi bi-chevron-down toggle-icon"></i>
+    <div class="sidebar-nav-container">
+        <nav class="sidebar-nav">
+            <!-- Dashboard -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleNavSection(this)">
+                    <i class="bi bi-house-door"></i>
+                    <span>داشبرد</span>
+                    <i class="bi bi-chevron-down toggle-icon"></i>
+                </div>
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link <?php echo ($current_page === 'index.php') ? 'active' : ''; ?>" data-page="dashboard" data-url="index.php">
+                            <i class="bi bi-speedometer2"></i>
+                            <span>داشبرد اصلی</span>
+                        </a>
+                    </li>
+                </ul>
             </div>
-            <ul class="nav-list">
-                <li class="nav-item">
-                    <a href="#" class="nav-link <?php echo ($current_page === 'index.php') ? 'active' : ''; ?>" data-page="dashboard" data-url="index.php">
-                        <i class="bi bi-speedometer2"></i>
-                        <span>داشبرد اصلی</span>
-                    </a>
-                </li>
-            </ul>
-        </div>
 
         <!-- Inventory Management -->
         <div class="nav-section">
@@ -141,6 +145,7 @@ $current_path = $_SERVER['REQUEST_URI'];
             </ul>
         </div>
     </nav>
+    </div>
 
     <!-- Sidebar Footer -->
     <div class="sidebar-footer">

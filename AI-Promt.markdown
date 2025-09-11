@@ -84,6 +84,22 @@ This is a PHP-based corporate portal project designed for manufacturing companie
   - Use SSR/SSG where appropriate to enhance initial load performance.
   - Structure the frontend modularly, potentially using Micro-Frontends for independent development of sections like dashboards or user management.
 
+## Migration Tasks (Updated for SPA Conversion)
+### Redesign Old PHP Pages to SPA Components
+- Identify all old PHP pages (at least 20, like dashboard.php, users.php) and completely convert them to new SPA components.
+- For each old page:
+  - Keep server-side logic (models and controllers) in PHP MVC and build RESTful APIs (e.g., GET /api/dashboard for data).
+  - Migrate frontend content (HTML/JS/CSS) to modular SPA components (e.g., Dashboard.vue or Users.js).
+  - Use client-side routing (Vue Router or React Router) so pages load without page reload.
+- Perform this conversion gradually: Start with dashboard, then migrate other pages one by one to avoid disrupting the project.
+- To prevent scalability issues, use techniques like Code Splitting and Lazy Loading to load only necessary components.
+
+### Design Modular and Empty Dashboard for Future
+- Design the dashboard page as a main component (Dashboard.vue or Dashboard.js) that is initially "empty" (only basic structure like a grid or container for widgets).
+- Prepare the dashboard section for creating widgets (e.g., stats cards, charts) and access links (shortcuts to other sections): Use dynamic child components loaded from API.
+- Keep the structure flexible for future expansion (e.g., use slots in Vue or children props in React, and State Management for dynamic widget management).
+- Add minimal initial content (e.g., welcome message), but focus on expandability.
+
 ## Testing and Debugging
 - Test all code in the XAMPP environment to ensure compatibility.
 - Include error logging in `config.php` for debugging, but disable it in production.

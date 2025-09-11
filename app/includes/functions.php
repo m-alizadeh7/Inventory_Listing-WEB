@@ -9,7 +9,15 @@ function gregorianToJalali($date) {
     $month = date('n', $timestamp);
     $day = date('j', $timestamp);
     $hour = date('H', $timestamp);
-    $minute = date('i', $timestamp);
+    $minute = date('/**
+ * اجرای فایل‌های migration
+ */
+function runMigrations($conn = null) {
+    if ($conn === null) {
+        global $conn;
+    }
+    
+    // اطمینان از وجود جدول migrationsmestamp);
     
     $jYear = $jMonth = $jDay = 0;
     convertToJalali($year, $month, $day, $jYear, $jMonth, $jDay);
@@ -241,8 +249,10 @@ function checkMigrationsPrompt($conn = null) {
 /**
  * اطمینان از وجود ساختار کامل جدول suppliers
  */
-function ensureSupplierSchema() {
-    global $conn;
+function ensureSupplierSchema($conn = null) {
+    if ($conn === null) {
+        global $conn;
+    }
     
     // اطمینان از وجود جدول suppliers
         // Ensure DB connection
@@ -317,8 +327,10 @@ function getBusinessInfo($conn = null) {
 /**
  * دریافت یک تنظیم از جدول settings
  */
-function getSetting($name, $default = null) {
-    global $conn;
+function getSetting($name, $default = null, $conn = null) {
+    if ($conn === null) {
+        global $conn;
+    }
     // Ensure we have a mysqli connection; try to obtain one if not present
     if (!isset($conn) || !($conn instanceof mysqli)) {
         if (function_exists('getDbConnection')) {
@@ -360,7 +372,7 @@ function getSetting($name, $default = null) {
 /**
  * اجرای فایل‌های migration
  */
-function runMigrations() {
+function runMigrations($conn = null) {
     global $conn;
     
     // اطمینان از وجود جدول migrations

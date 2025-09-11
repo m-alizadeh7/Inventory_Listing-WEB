@@ -1,7 +1,11 @@
 <?php
 /**
  * Database class for managing connections and queries
+ * Namespace: App\Core
  */
+
+namespace App\Core;
+
 class Database {
     private static $instance = null;
     private $conn;

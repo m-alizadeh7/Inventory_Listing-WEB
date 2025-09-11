@@ -6,10 +6,8 @@
 
 // Get inventory items with category and supplier info
 $inventory_items = [];
-$sql = "SELECT i.*, c.category_name, s.supplier_name
+$sql = "SELECT i.*, i.supplier as supplier_name
         FROM inventory i
-        LEFT JOIN inventory_categories c ON i.category_id = c.category_id
-        LEFT JOIN suppliers s ON i.supplier_id = s.supplier_id
         ORDER BY i.item_name";
 $result = $conn->query($sql);
 if ($result) {
@@ -142,7 +140,7 @@ if ($sup_result) {
                                         <td><?php echo htmlspecialchars($item['category_name'] ?? 'بدون گروه'); ?></td>
                                         <td><?php echo htmlspecialchars($item['supplier_name'] ?? 'بدون تامین‌کننده'); ?></td>
                                         <td>
-                                            <span class="fw-bold"><?php echo number_format($item['quantity'], 2); ?></span>
+                                            <span class="fw-bold"><?php echo number_format($item['current_inventory'], 2); ?></span>
                                         </td>
                                         <td><?php echo htmlspecialchars($item['unit']); ?></td>
                                         <td><?php echo htmlspecialchars($item['location'] ?? '-'); ?></td>

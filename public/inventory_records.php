@@ -60,10 +60,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Get inventory items with category and supplier info
 $inventory_items = [];
-$sql = "SELECT i.*, c.category_name, s.supplier_name
+$sql = "SELECT i.*, i.supplier as supplier_name
         FROM inventory i
-        LEFT JOIN inventory_categories c ON i.category_id = c.category_id
-        LEFT JOIN suppliers s ON i.supplier_id = s.supplier_id
         ORDER BY i.item_name";
 $result = $conn->query($sql);
 if ($result) {

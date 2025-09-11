@@ -33,6 +33,20 @@ This is a PHP-based corporate portal project designed for manufacturing companie
 - Avoid inline JavaScript or CSS in PHP files; separate them into dedicated files in `public/js` and `public/css` directories.
 - Use prepared statements for all database queries to prevent SQL injection.
 - Ensure the codebase is modular and reusable, with clear separation of concerns.
+- Implement code optimization techniques to manage scalability and performance, including:
+  - **Code Splitting**: Use modern bundlers (e.g., Webpack for React or Vite for Vue) to split code into chunks, loading only components relevant to the current page.
+  - **Lazy Loading**: Load non-essential modules (e.g., less-used portal pages like reporting sections) only when needed by the user.
+  - **Tree Shaking**: Employ bundling tools like Webpack to eliminate unused code, reducing overall file sizes.
+  - **Server-Side Rendering (SSR) or Static Site Generation (SSG)**: Integrate frameworks like Next.js (for React) or Nuxt.js (for Vue) to perform initial rendering on the server, improving load times and reducing client-side JavaScript volume.
+- Adopt clean architecture practices:
+  - Use design patterns such as Modular Architecture, Domain-Driven Design (DDD), or Micro-Frontends to ensure the project remains scalable.
+- Include testing and documentation:
+  - Implement automated tests (Unit and Integration) to prevent code chaos.
+  - Maintain good documentation for ease of maintenance.
+- Optimize performance:
+  - Use tools like Lighthouse for performance analysis, combined with techniques like Lazy Loading and SSR.
+- Implement monitoring:
+  - Integrate tools like Sentry or LogRocket for error tracking in production.
 
 ## File Structure
 - Example directory structure:
@@ -65,14 +79,20 @@ This is a PHP-based corporate portal project designed for manufacturing companie
 - Ensure the frontend communicates with the backend via RESTful APIs built in PHP.
 - Use AJAX or Fetch API for dynamic data loading without page refreshes.
 - Include responsive CSS (preferably with a framework like Bootstrap or Tailwind CSS) for compatibility with various devices.
+- Optimize for scalability in the SPA:
+  - Apply Code Splitting, Lazy Loading, and Tree Shaking to manage bundle sizes as the project grows (e.g., for handling 100+ pages/modules).
+  - Use SSR/SSG where appropriate to enhance initial load performance.
+  - Structure the frontend modularly, potentially using Micro-Frontends for independent development of sections like dashboards or user management.
 
 ## Testing and Debugging
 - Test all code in the XAMPP environment to ensure compatibility.
 - Include error logging in `config.php` for debugging, but disable it in production.
 - Write unit tests for critical components (e.g., user authentication, access control) using PHPUnit.
+- Use performance optimization tools and monitoring as outlined in Coding Standards.
 
 ## Additional Notes
 - Ensure the project is secure, with protections against common vulnerabilities like XSS, CSRF, and SQL injection.
 - Optimize performance for standard cPanel hosting environments (e.g., avoid heavy dependencies).
 - Keep the codebase lightweight and avoid unnecessary third-party libraries unless approved.
 - Never include references to AI tools, GitHub Copilot, or any generative AI in the codebase, comments, or documentation.
+
